@@ -1,0 +1,31 @@
+[package]
+name = "pinewasm_csil"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CSIL, the Chart Script Intermediate Language: a compact, versioned, stack-based bytecode"
+publish.workspace = true
+
+[dependencies]
+pinewasm_span = { workspace = true }
+pinewasm_hir = { workspace = true }
+pinewasm_mir = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[features]
+# Only for Aeneas extraction (Charon cannot start from an inherent method);
+# never enabled by production builds.
+aeneas = []
+
+[dev-dependencies]
+pinewasm_parse = { workspace = true }
+pinewasm_semantics = { workspace = true }
+insta = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true

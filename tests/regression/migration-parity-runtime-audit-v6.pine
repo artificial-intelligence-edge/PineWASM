@@ -1,0 +1,14 @@
+//@version=6
+indicator("Evaluation order check", precision=0)
+var a = array.new_int(1, 0)
+tick() =>
+    array.set(a, 0, array.get(a, 0) + 1)
+    true
+__v6_1 = tick()
+b = bar_index % 2 == 0 and __v6_1
+var __v6_2 = 5
+var firstMissing = na(__v6_2[1])
+plot(array.get(a, 0), "Call count")
+plot(bar_index + 1, "Expected calls")
+plot(firstMissing ? 1 : 0, "First bar history is na")
+plot(int(5 / 2), "Integer division")

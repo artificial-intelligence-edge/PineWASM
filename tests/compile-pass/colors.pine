@@ -1,0 +1,8 @@
+//@version=6
+indicator("Colors")
+up = color.green
+down = #FF5352
+neutral = #8080807F
+picked = close > open ? up : down
+same = picked == up
+plot(same ? 1.0 : 0.0)

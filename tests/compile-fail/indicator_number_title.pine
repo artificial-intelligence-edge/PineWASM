@@ -1,0 +1,3 @@
+//@version=6
+indicator(123)
+plot(close)

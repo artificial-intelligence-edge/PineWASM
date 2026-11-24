@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "suite": "subject-tiers-v1",
+  "status": "exploratory-not-accepted",
+  "subject": "pinewasm",
+  "host": "One fresh optimized native process per sample, built from this checkout with the pinned Rust toolchain",
+  "projection": "All named numeric plot values and titles, full history and na placement; no visual styling, drawings, realtime, or strategy equivalence claim",
+  "input_generator": "The first-party sine/cosine drift generator and its expected series, materialized once per bar count",
+  "bars": [
+    2000,
+    10000
+  ],
+  "smoke_bars": 500,
+  "workloads": [
+    "history",
+    "arithmetic",
+    "sma",
+    "control",
+    "persistent",
+    "collections",
+    "legacy-mixed"
+  ],
+  "diagnostic_workloads": [
+    "legacy-mixed"
+  ],
+  "lanes": [
+    "cold-process",
+    "cold-runtime",
+    "compile",
+    "cached",
+    "incremental-bar"
+  ],
+  "artifact_lane": "artifact-size",
+  "memory_lane": {
+    "id": "peak-memory",
+    "measured_boundary": "cold-process",
+    "samples": 30,
+    "sampler": "Operating-system process accounting via /usr/bin/time: -l on macOS, -v on Linux",
+    "cadence": "Kernel-maintained process high-water mark; no polling interval",
+    "platforms": {
+      "macos": {
+        "sampler": "/usr/bin/time -l",
+        "field": "maximum resident set size",
+        "bytes_per_unit": 1
+      },
+      "linux": {
+        "sampler": "/usr/bin/time -v",
+        "field": "Maximum resident set size (kbytes)",
+        "bytes_per_unit": 1024
+      }
+    },
+    "unsupported_platform_policy": "Record unavailable; never estimate or substitute a sampled process value"
+  },
+  "samples": 30,
+  "warmups": {
+    "cold-process": 0,
+    "cold-runtime": 0,
+    "compile": 10,
+    "cached": 10,
+    "incremental-bar": 200
+  },
+  "iterations": {
+    "cold-process": 1,
+    "cold-runtime": 1,
+    "compile": 100,
+    "cached": 10,
+    "incremental-bar": 2500
+  },
+  "timeout_seconds": 120,
+  "order_seed": 20260909,
+  "bootstrap_seed": 883109,
+  "bootstrap_resamples": 10000,
+  "absolute_tolerance": 1e-09,
+  "relative_tolerance": 1e-10,
+  "precision_floor_ms": 0.25,
+  "unimplemented_lanes": {
+    "js-wasm-binding": "The generated JavaScript/WebAssembly entry point is measured through a JavaScript host, which belongs to the adapter-driven cross-engine suite rather than this checkout-only tier.",
+    "hosted-aot": "No hosted ahead-of-time host is wired into this runner yet; an unmeasured tier is declared missing rather than approximated from another lane.",
+    "standalone-aot": "The standalone ahead-of-time module exposes a different projection, so it needs its own pre-registered comparison before it can be timed here."
+  },
+  "limitations": [
+    "This suite measures PineWASM alone. Nothing in it compares PineWASM with any other implementation, and no row may be quoted as a cross-engine result.",
+    "Boundaries are reported independently and are never added together. A cold-runtime row and a cached row measure different work on purpose.",
+    "The cold-process row is the harness's spawn-to-exit measurement of one optimized process, including binary load, source and input reads, compilation, execution, materialization, and the response write. The subject's own reading of the same work is kept as diagnostic context only.",
+    "Lanes whose single operation lands below the clock's usable resolution are repeated inside one measured block. The pre-registered inner iteration counts are fixed here before measurement, the precision floor applies to the measured block rather than to the quotient, and both numbers are reported.",
+    "The incremental row re-executes one forming bar through the session's own realtime rollback path. It is the declared bar index every repetition, not a walk through the feed. The measured block reads that bar's own per-plot sample and never materializes the visible history, so the row does not scale with the seeded prefix; the bar is committed once outside the timer so the full series can be checked against the same expected series the batch lanes use.",
+    "Artifact size is exact and deterministic rather than statistical. It is not a timing measurement and carries no interval.",
+    "Peak memory is the operating system's process high-water resident set for the complete cold-process source-to-result boundary. It includes binary load, source and input reads, compilation, execution, materialization, and response writing. It is sampled in separate processes after timing so the sampler wrapper cannot alter a timing row.",
+    "Peak-memory observations use the kernel-maintained high-water counter exposed by /usr/bin/time: bytes on macOS and KiB converted to bytes on Linux. There is no polling cadence that can miss a short allocation spike. Unregistered platforms remain visibly unavailable.",
+    "The EMA/MACD/SMA/RSI mixed workload stays untimed diagnostic context because its seeding is marked assumed in PineWASM's coverage matrix; its correctness is still checked either way.",
+    "Numerical comparison covers the declared numeric plot projection only. Styles, colors, fills, drawings, alerts, and strategy events are outside it.",
+    "Three of the nine boundaries in the methodology are declared unimplemented above rather than approximated.",
+    "Reproduction by a second operator on a dedicated quiet host remains a separate requirement. No performance result from this suite is final yet.",
+    "Timing is reported only from a host snapshot that states the host's OS, CPU, memory, logical CPU count, and power mode. A host that exposes no machine-readable power mode still has to state one, through PINEWASM_BENCHMARK_POWER_MODE."
+  ]
+}

@@ -1,0 +1,8 @@
+//@version=6
+indicator("Recursion")
+
+// Direct recursion is not supported (E0224): functions are inlined per call
+// site, so a self-call would expand forever.
+fact(n) => n * fact(n - 1)
+
+plot(fact(close))

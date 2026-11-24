@@ -1,0 +1,5 @@
+//@version=6
+indicator("Bad")
+// `bgcolor` is a pure effect: it produces no value, so binding it is an error.
+// (`plot`/`hline` DO produce a plot id, usable as a `fill()` endpoint.)
+x = bgcolor(color.red)

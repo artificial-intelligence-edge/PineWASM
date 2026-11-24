@@ -1,0 +1,4 @@
+//@version=6
+indicator("Reassign undeclared")
+y := 1
+plot(close)

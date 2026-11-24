@@ -1,0 +1,4 @@
+//@version=6
+indicator("nz type mismatch")
+up = close > open
+plot(nz(up, 1))

@@ -1,0 +1,6 @@
+# Miri and Rust's sanitizer flags are nightly-only. Pinning a dated nightly
+# makes local and CI diagnostics reproducible instead of silently changing
+# whenever `nightly` advances.
+[toolchain]
+channel = "nightly-2026-08-15"
+components = ["miri", "rust-src"]

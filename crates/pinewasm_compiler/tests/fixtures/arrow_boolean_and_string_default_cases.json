@@ -1,0 +1,538 @@
+{
+  "kind": "arrow-boolean-and-literal-string-default-cases",
+  "scope": "Regression expectations for PineWASM's compiler and runtime.",
+  "arrows": [
+    {
+      "id": "guard/false and close > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif false and close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "67775ad4943b6603e20e6ef76d7afe05ab5ae43180fd08aa38bfbc27e6f9c7ba",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/true or close > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif true or close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "9d68079c34c7a31c415e45bbefb7df8ddd33a11d9d7b726f22d6de101be4381f",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/true and close > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif true and close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "4c6b5b495a6d4de0e6a396ed4d3600d32ab97a549d5bcfa9351a7833be894250",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/false or close > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif false or close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "7cadf96725d7309ac79ece91ac6637fb7d2cef4285503f61ed0c2335be13c7dc",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/false and math.cos(0) > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif false and math.cos(0) > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "588ab7dbe1f10fda0e3da20adad481f3633731d0e5da3ac85848358757097f50",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/true or math.cos(0) > 0",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif true or math.cos(0) > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "e25474c73ed10d82652323ae60a46700a0943d3e504751f505d52244c4c407d9",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/false",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif false\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "b2b7f5e520fb23784ccb28e75112450b93a71fc50ed425af63673657c5a7990d",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guard/true",
+      "source": "//@version=6\nindicator(\"Arrow guard review\")\ncolor UP=color.new(#336699,70)\nif true\n    UP:=#669933\nplotarrow(close,colorup=UP)\n",
+      "sourceSha256": "9be6b35c7d106f0f618c3d6c73da6f8265f2deeaef1e24f364ff4c9334506b30",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "reverse-dynamic-and-false",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 and false\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "27b9724e6b0936dabde1a797d264376246683c912fe5bb07a6309f3556bf743c",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "reverse-dynamic-or-true",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 or true\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "4d46777be91d7d6c0e94abfd5f06ba2f42ddb28c68dbbef890399f2c18a04605",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "reverse-unsupported-and-false",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(close) > 0 and false\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "b42098093d69cd35399e9f54e379a1580b64158c8a0be1caedc0009b6f59a156",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "reverse-unsupported-or-true",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(close) > 0 or true\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "a2b89a2da2c8e78dc6f62d795cd5d58c6f71880e716eca1ba0659e6994d8ec4e",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-false-guard",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif (false and close > 0) or (true and false)\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "8c1945ce249e9961e219d2e1a877193b2277d059d34438ae0e64592ed3f926ad",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-true-guard",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif (true or close > 0) and (false or true)\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "eb78f90f29fd865268e5769dce7e7c42f481dd680d27c8a9a4e10f4f68a9ef1d",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-skipped-false",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif false and input.bool(true,\"guard input\")\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "ac3fdeb04a3a48c4c344d266f925bb46959a37350c7d3abaf3b788b601ea9596",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-skipped-true",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif true or input.bool(false,\"guard input\")\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "e61f69c7a1ed2bee65194053fb9fc4be6e4208213160011c4bb32c8423ff3d3a",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "down-skipped-false",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif false and close > 0\n    C:=#669933\nplotarrow(close,colordown=C)\n",
+      "sourceSha256": "424baf1a7fb259bd39b628167000ca47708f235d2e1d00f7d16bd6a16c60e2b9",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "rgba(51,102,153,0.3)"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "down-skipped-true",
+      "source": "//@version=6\nindicator(\"Arrow short circuit coverage\")\ncolor C=color.new(#336699,70)\nif true or close > 0\n    C:=#669933\nplotarrow(close,colordown=C)\n",
+      "sourceSha256": "6e6e9367b7337166ab3d8b4cbf2cf27f05dc62d182a376f6365e50da50758361",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#669933"
+      },
+      "expectedCompileSuccess": true
+    }
+  ],
+  "literalStringDefaults": [
+    {
+      "id": "assigned-literal-cast-input-string",
+      "source": "//@version=6\nindicator(\"String Cast Review\")\nsample=input.string(string(na), \"literal cast\")\nplot(close)\n",
+      "sourceSha256": "db0fb88c259a27d2eaab6c1522c1dff84c38d47e095852fd013c0a7e253d5b71",
+      "expectedInputs": [
+        {
+          "name": "literal cast",
+          "type": "text",
+          "defval": ""
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "assigned-literal-equals-empty-input-bool",
+      "source": "//@version=6\nindicator(\"String Cast Review\")\nflag=input.bool(string(na)==\"\", \"literal equals empty\")\nplot(close)\n",
+      "sourceSha256": "40a3bf7b62e21fc1d1dabc3f78023ab0ca1560d08fe9c0011b50fe10adb2ef4f",
+      "expectedInputs": [
+        {
+          "name": "literal equals empty",
+          "type": "bool",
+          "defval": true
+        }
+      ],
+      "expectedCompileSuccess": true
+    }
+  ]
+}

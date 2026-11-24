@@ -1,0 +1,12 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..16
+  Version <none>
+  Assign `x` @ 0..15
+    History @ 4..15
+      History @ 4..12
+        Ident `close` @ 4..9
+        Number 1 (int) @ 10..11
+      Number 2 (int) @ 13..14

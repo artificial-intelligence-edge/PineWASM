@@ -1,0 +1,105 @@
+//@version=5
+indicator("Trend Dashboard", overlay = true, max_labels_count = 50)
+
+// ---------------------------------------------------------------------------
+// Inputs
+// ---------------------------------------------------------------------------
+fastLen = input.int(9, "Fast Length", minval = 1)
+slowLen = input.int(21, "Slow Length", minval = 1)
+rsiLen = input.int(14, "RSI Length")
+atrLen = input.int(14, "ATR Length")
+showTable = input.bool(true, "Show Table")
+tablePos = input.string("Top Right", "Table Position", options = ["Top Right", "Bottom Right", "Bottom Left"])
+
+// Grid layout constants. The column split relies on integer division.
+ROWS = 6
+COLS = 3
+HALF_ROWS = ROWS / 2
+LAST_COL = COLS - 1
+MID_COL = COLS / 2
+
+// ---------------------------------------------------------------------------
+// Core series
+// ---------------------------------------------------------------------------
+fast = ta.ema(close, fastLen)
+slow = ta.ema(close, slowLen)
+rsi = ta.rsi(close, rsiLen)
+atr = ta.atr(atrLen)
+[macdLine, signalLine, hist] = ta.macd(close, 12, 26, 9)
+
+// Stateful calls on the right of `and` / `or` must keep updating every bar.
+bullTrend = fast > slow and ta.rising(fast, 3)
+bearTrend = fast < slow and ta.falling(fast, 3)
+momentumUp = rsi > 50 or ta.crossover(macdLine, signalLine)
+volumeSpike = volume > 0 and volume > ta.sma(volume, 20) * 1.5
+
+score = 0
+score += bullTrend ? 1 : 0
+score -= bearTrend ? 1 : 0
+score += momentumUp ? 1 : 0
+score += hist > 0 ? 1 : 0
+
+bool strongUp = na
+if score >= 3
+    strongUp := true
+else if score <= -1
+    strongUp := false
+
+// ---------------------------------------------------------------------------
+// Colors
+// ---------------------------------------------------------------------------
+upColor = color.teal
+downColor = color.red
+neutralColor = color.gray
+trendColor = bullTrend ? upColor : bearTrend ? downColor : neutralColor
+
+plot(fast, "Fast", color = color.teal, linewidth = 2)
+plot(slow, "Slow", color = color.red, linewidth = 2, transp = 20)
+bgcolor(volumeSpike ? color.yellow : na, transp = 85)
+plotshape(ta.crossover(fast, slow), "Cross Up", shape.triangleup, location.belowbar, color = color.teal, size = size.tiny)
+plotshape(ta.crossunder(fast, slow), "Cross Down", shape.triangledown, location.abovebar, color = color.red, size = size.tiny)
+
+// ---------------------------------------------------------------------------
+// Table
+// ---------------------------------------------------------------------------
+position() =>
+    switch tablePos
+        "Top Right" => position.top_right
+        "Bottom Right" => position.bottom_right
+        => position.bottom_left
+
+var table board = table.new(position(), COLS, ROWS, bgcolor = color.new(color.black, 20), border_width = 1)
+
+cellText(float value, int decimals) =>
+    str.tostring(math.round(value, decimals))
+
+rowColor(bool cond) =>
+    cond ? color.teal : color.red
+
+if showTable and barstate.islast
+    table.cell(board, 0, 0, "Metric", text_color = color.white)
+    table.cell(board, 1, 0, "Value", text_color = color.white)
+    table.cell(board, LAST_COL, 0, "State", text_color = color.white)
+    table.cell(board, 0, 1, "Fast / Slow")
+    table.cell(board, 1, 1, cellText(fast - slow, 2))
+    table.cell(board, LAST_COL, 1, bullTrend ? "Up" : bearTrend ? "Down" : "Flat", bgcolor = trendColor)
+    table.cell(board, 0, 2, "RSI")
+    table.cell(board, 1, 2, cellText(rsi, 1))
+    table.cell(board, LAST_COL, 2, momentumUp ? "Strong" : "Weak", bgcolor = rowColor(momentumUp))
+    table.cell(board, 0, 3, "ATR")
+    table.cell(board, 1, 3, cellText(atr, 2))
+    table.cell(board, LAST_COL, 3, "", bgcolor = neutralColor)
+    table.cell(board, 0, 4, "Score")
+    table.cell(board, MID_COL, 4, str.tostring(score))
+    table.cell(board, LAST_COL, 4, strongUp ? "Buy" : "Wait", bgcolor = rowColor(strongUp))
+    table.cell(board, 0, HALF_ROWS + 2, "Volume")
+    table.cell(board, 1, HALF_ROWS + 2, volumeSpike ? "Spike" : "Normal")
+
+// A running label on the last bar summarizes the score.
+var label summary = na
+if barstate.islast
+    label.delete(summary)
+    summary := label.new(bar_index, high + atr, "Score " + str.tostring(score), style = label.style_label_down, color = trendColor)
+
+alertcondition(ta.crossover(fast, slow), "Bullish Cross", "Fast crossed above slow")
+alertcondition(ta.crossunder(fast, slow), "Bearish Cross", "Fast crossed below slow")

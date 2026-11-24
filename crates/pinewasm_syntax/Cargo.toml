@@ -1,0 +1,16 @@
+[package]
+name = "pinewasm_syntax"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Token and AST definitions for the Pine Script® v6 source subset that PineWASM parses"
+publish.workspace = true
+
+[dependencies]
+pinewasm_span = { workspace = true }
+serde = { workspace = true }
+
+[lints]
+workspace = true

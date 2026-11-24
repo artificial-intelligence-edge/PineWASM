@@ -1,0 +1,26 @@
+[package]
+name = "pinewasm_parse"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Lexer and parser for source written in the Pine Script® language, version 6"
+publish.workspace = true
+
+[features]
+# Charon/Aeneas extraction roots (`aeneas_roots_*` modules). Never enabled by
+# production builds.
+aeneas = []
+
+[dependencies]
+pinewasm_span = { workspace = true }
+pinewasm_syntax = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+pretty_assertions = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true

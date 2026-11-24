@@ -1,0 +1,104 @@
+//@version=6
+indicator("Least Squares Channel Drawings", overlay = true, max_lines_count = 20, max_boxes_count = 20, max_polylines_count = 5)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+length = input.int(100, "Length", minval = 10, maxval = 500)
+devMult = input.float(2.0, "Deviation")
+curvePoints = input.int(40, "Curve Points", minval = 2)
+showBox = input.bool(true, "Show Range Box")
+showCurve = input.bool(true, "Show Moving Average Curve")
+widthIn = input.int(2, "Line Width")
+
+// Sample every other bar for the curve. Integer division truncates the step.
+SAMPLE_EVERY = int(5 / 2)
+
+// ---------------------------------------------------------------------------
+// Least squares fit on the last bar
+// ---------------------------------------------------------------------------
+fit(int len) =>
+    sumX = 0.0
+    sumY = 0.0
+    sumXY = 0.0
+    sumXX = 0.0
+    for i = 0 to len - 1 by 1
+        y = close[i]
+        sumX := sumX + i
+        sumY := sumY + y
+        sumXY := sumXY + i * y
+        sumXX := sumXX + i * i
+        sumXX
+    slope = (len * sumXY - sumX * sumY) / (len * sumXX - sumX * sumX)
+    intercept = (sumY - slope * sumX) / len
+    [slope, intercept]
+
+deviation(int len, float slope, float intercept) =>
+    sq = 0.0
+    for i = 0 to len - 1 by 1
+        e = close[i] - (intercept + slope * i)
+        sq := sq + e * e
+        sq
+    math.sqrt(sq / len)
+
+var line mid = na
+var line up = na
+var line dn = na
+var box range = na
+var polyline curve = na
+
+ma = ta.sma(close, 20)
+
+if barstate.islast
+    [slope, intercept] = fit(length)
+    dev = deviation(length, slope, intercept) * devMult
+    startY = intercept + slope * (length - 1)
+    endY = intercept
+    line.delete(mid)
+    line.delete(up)
+    line.delete(dn)
+    mid := line.new(bar_index - length + 1, startY, bar_index, endY, color = color.gray, width = widthIn, style = line.style_dashed)
+    up := line.new(bar_index - length + 1, startY + dev, bar_index, endY + dev, color = #00897B, width = widthIn)
+    dn := line.new(bar_index - length + 1, startY - dev, bar_index, endY - dev, color = #FF5252, width = widthIn)
+    linefill.new(up, dn, color.new(color.gray, 90))
+
+    if showBox
+        box.delete(range)
+        range := box.new(bar_index - length + 1, ta.highest(high, length), bar_index, ta.lowest(low, length), border_color = #FFEB3B, bgcolor = na, border_style = line.style_dotted)
+
+    if showCurve
+        polyline.delete(curve)
+        points = array.new<chart.point>()
+        n = math.min(curvePoints, length)
+        for i = 0 to n - 1 by 1
+            if i % SAMPLE_EVERY == 0
+                points.push(chart.point.from_index(bar_index - i, ma[i]))
+        curve := polyline.new(points, curved = true, line_color = color.orange, line_width = widthIn)
+
+    label.new(bar_index, endY, "slope " + str.tostring(slope, "#.####"), style = label.style_label_left, color = color.gray, textcolor = color.black)
+
+plot(ma, "Average", color = color.new(color.orange, 60), linewidth = 1)
+
+// ---------------------------------------------------------------------------
+// Channel position and breakouts, evaluated every bar against a rolling fit
+// ---------------------------------------------------------------------------
+rollLen = input.int(50, "Rolling Fit Length", minval = 5, maxval = 200)
+rollMid = ta.linreg(close, rollLen, 0)
+rollPrev = ta.linreg(close, rollLen, 1)
+rollSlope = rollMid - rollPrev
+rollDev = ta.stdev(close - rollMid, rollLen) * devMult
+rollUpper = rollMid + rollDev
+rollLower = rollMid - rollDev
+channelPos = rollDev == 0 ? 50 : (close - rollLower) / (rollUpper - rollLower) * 100
+
+breakUp = ta.crossover(close, rollUpper)
+breakDown = ta.crossunder(close, rollLower)
+slopeTurn = rollSlope > 0 and rollSlope[1] <= 0 or rollSlope < 0 and rollSlope[1] >= 0
+
+plot(rollUpper, "Rolling Upper", color = #00897B, linewidth = math.max(1, widthIn), display = display.none)
+plot(rollLower, "Rolling Lower", color = #FF5252, linewidth = math.max(1, widthIn), display = display.none)
+plotshape(breakUp, "Break Up", shape.triangleup, location.belowbar, #00897B, size = size.tiny)
+plotshape(breakDown, "Break Down", shape.triangledown, location.abovebar, #FF5252, size = size.tiny)
+plotchar(slopeTurn, "Slope Turn", "~", location.top, #FFEB3B)
+plot(channelPos, "Channel Position", display = display.data_window)
+alertcondition(breakUp or breakDown, "Channel Break", "Price left the rolling channel")

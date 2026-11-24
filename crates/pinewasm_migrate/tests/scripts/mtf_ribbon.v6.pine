@@ -1,0 +1,92 @@
+//@version=6
+indicator("Multi Timeframe Ribbon", "MTF Ribbon", overlay = true)
+// v5 spelled a multiplier of 1 without the number ("D", not "1D").
+__v6_timeframePeriodV5() =>
+    timeframe.multiplier != 1 ? timeframe.period : timeframe.isdaily ? "D" : timeframe.isweekly ? "W" : timeframe.ismonthly ? "M" : timeframe.isseconds ? "S" : timeframe.period
+
+// Higher timeframes to sample. Each one feeds a moving average band.
+tfA = input.timeframe("60", "First Timeframe")
+tfB = input.timeframe("240", "Second Timeframe")
+tfC = input.timeframe("D", "Third Timeframe")
+maLen = input.int(20, "Average Length", minval = 1)
+showLabels = input.bool(true, "Show Timeframe Labels")
+
+// Chart timeframe classification. Each comparison below tests the chart's
+// period string.
+isDaily = timeframe.period == "1D"
+isWeekly = timeframe.period == "1W"
+isMonthly = timeframe.period == "1M"
+isIntraday = not (isDaily or isWeekly or isMonthly)
+
+// Each band's expression is computed in the requested context, so its
+// averages advance on that timeframe's bars.
+bandA = request.security(syminfo.tickerid, tfA, ta.ema(close, maLen))
+bandB = request.security(syminfo.tickerid, tfB, ta.ema(close, maLen))
+bandC = request.security(syminfo.tickerid, tfC, ta.ema(close, maLen))
+dailyHigh = request.security(syminfo.tickerid, "D", high[1], lookahead = barmerge.lookahead_on)
+dailyLow = request.security(syminfo.tickerid, "D", low[1], lookahead = barmerge.lookahead_on)
+weeklyOpen = request.security(syminfo.tickerid, "W", open)
+
+// Trend agreement across the three bands.
+aboveAll = close > bandA and close > bandB and close > bandC
+belowAll = close < bandA and close < bandB and close < bandC
+agreement = aboveAll ? 1 : belowAll ? -1 : 0
+
+// The distance between the fastest and slowest band, in ATR units.
+atr = ta.atr(14)
+spread = math.abs(bandA - bandC) / atr
+__v6_1 = ta.sma(spread, 10) > 1
+wide = spread > 2 and __v6_1
+
+colorA = agreement == 1 ? #00897B : agreement == -1 ? #FF5252 : color.gray
+plot(bandA, "Band A", color = colorA, linewidth = 1)
+plot(bandB, "Band B", color = color.new(color.orange, 10), linewidth = 2)
+plot(bandC, "Band C", color = color.new(#FFEB3B, 30), linewidth = 3)
+plot(isIntraday ? dailyHigh : na, "Prior Day High", color = color.green, style = plot.style_linebr)
+plot(isIntraday ? dailyLow : na, "Prior Day Low", color = #FF5252, style = plot.style_linebr)
+plot(isWeekly ? na : weeklyOpen, "Week Open", color = color.purple, style = plot.style_circles)
+
+bgcolor(wide ? color.new(#00897B, 90) : na)
+
+// Label the bands with the timeframe text on the last bar.
+tfText(string tf) =>
+    tf == "" ? __v6_timeframePeriodV5() : tf
+
+var label la = na
+var label lb = na
+var label lc = na
+if showLabels and barstate.islast
+    label.delete(la)
+    label.delete(lb)
+    label.delete(lc)
+    la := label.new(bar_index + 2, bandA, tfText(tfA), style = label.style_label_left, color = #00897B, textcolor = color.black)
+    lb := label.new(bar_index + 2, bandB, tfText(tfB), style = label.style_label_left, color = color.orange, textcolor = color.black)
+    lc := label.new(bar_index + 2, bandC, tfText(tfC), style = label.style_label_left, color = #FFEB3B, textcolor = color.black)
+
+// Dashboard text with the chart timeframe.
+var table info = table.new(position.bottom_right, 2, 2)
+if barstate.islast
+    table.cell(info, 0, 0, "Chart", text_color = color.white, bgcolor = color.gray)
+    table.cell(info, 1, 0, __v6_timeframePeriodV5(), text_color = color.white, bgcolor = color.gray)
+    table.cell(info, 0, 1, "Agree", text_color = color.white, bgcolor = colorA)
+    table.cell(info, 1, 1, str.tostring(agreement), text_color = color.white, bgcolor = colorA)
+
+alertcondition(ta.change(agreement) != 0 and agreement != 0, "Agreement Change", "Bands now agree")
+
+// ---------------------------------------------------------------------------
+// Ribbon fill and the higher timeframe candle
+// ---------------------------------------------------------------------------
+pA = plot(bandA, display = display.none, editable = false)
+pC = plot(bandC, display = display.none, editable = false)
+fill(pA, pC, color = color.new(bandA > bandC ? #00897B : #FF5252, 88))
+
+[htfOpen, htfHigh, htfLow] = request.security(syminfo.tickerid, tfC, [open, high, low])
+var box htfBox = na
+if barstate.islast and isIntraday
+    box.delete(htfBox)
+    htfBox := box.new(bar_index - 10, htfHigh, bar_index, htfLow, border_color = color.gray, bgcolor = close >= htfOpen ? color.new(#00897B, 90) : color.new(#FF5252, 90))
+
+crossUpA = ta.crossover(close, bandA)
+crossDownA = ta.crossunder(close, bandA)
+plotshape(crossUpA and aboveAll, "Aligned Cross Up", shape.triangleup, location.belowbar, #00897B, size = size.tiny)
+plotshape(crossDownA and belowAll, "Aligned Cross Down", shape.triangledown, location.abovebar, #FF5252, size = size.tiny)

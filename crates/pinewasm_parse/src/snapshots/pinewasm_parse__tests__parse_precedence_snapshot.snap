@@ -1,0 +1,29 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..68
+  Version <none>
+  Assign `y` @ 0..28
+    Binary `-` @ 4..28
+      Binary `+` @ 4..13
+        Number 1 (int) @ 4..5
+        Binary `*` @ 8..13
+          Number 2 (int) @ 8..9
+          Number 3 (int) @ 12..13
+      Binary `/` @ 16..28
+        Unary `-` @ 16..18
+          Number 4 (int) @ 17..18
+        Group @ 21..28
+          Binary `-` @ 22..27
+            Number 5 (int) @ 22..23
+            Number 6 (int) @ 26..27
+  Assign `b` @ 29..67
+    Binary `or` @ 33..67
+      Binary `and` @ 33..58
+        Unary `not` @ 33..49
+          Binary `>` @ 37..49
+            Ident `close` @ 37..42
+            Ident `open` @ 45..49
+        Bool true @ 54..58
+      Bool false @ 62..67

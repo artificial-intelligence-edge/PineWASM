@@ -1,0 +1,6 @@
+# Names `clippy::doc_markdown` would otherwise want wrapped in backticks.
+# These are product and algorithm names, not code identifiers: rendering them
+# as inline code in prose is worse, not better. `..` keeps clippy's own
+# default list (WebAssembly, JavaScript, OpenGL, and friends) rather than
+# replacing it.
+doc-valid-idents = ["PineWASM", "SplitMix64", ".."]

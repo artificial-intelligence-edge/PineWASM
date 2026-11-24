@@ -1,0 +1,106 @@
+//@version=5
+indicator("Volume Profile Fixture", overlay = true, max_boxes_count = 200, max_lines_count = 10)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+rowCount = input.int(24, "Rows", minval = 4, maxval = 100)
+lookback = input.int(150, "Bars In Profile", minval = 10)
+valueAreaPct = input.float(70.0, "Value Area Percent")
+widthBars = input.int(40, "Profile Width In Bars")
+upVolColor = input.color(color.teal, "Up Volume")
+downVolColor = input.color(color.red, "Down Volume")
+
+// Bucket helpers. The midpoint row is truncated to a whole number.
+DEFAULT_ROWS = 24
+MID_ROW = DEFAULT_ROWS / 2
+
+var float[] upVolume = array.new_float(0)
+var float[] downVolume = array.new_float(0)
+var box[] boxes = array.new_box()
+var line pocLine = na
+
+// Resize the buckets when the row input changes.
+if array.size(upVolume) != rowCount
+    array.clear(upVolume)
+    array.clear(downVolume)
+    for i = 0 to rowCount - 1
+        array.push(upVolume, 0.0)
+        array.push(downVolume, 0.0)
+
+bucketOf(float price, float lo, float step) =>
+    step == 0 ? 0 : math.min(rowCount - 1, math.max(0, int(math.floor((price - lo) / step))))
+
+if barstate.islast
+    top = ta.highest(high, lookback)
+    bottom = ta.lowest(low, lookback)
+    step = (top - bottom) / rowCount
+
+    for i = 0 to array.size(upVolume) - 1
+        array.set(upVolume, i, 0.0)
+        array.set(downVolume, i, 0.0)
+
+    // Distribute each bar's volume into the bucket of its close.
+    for offset = 0 to lookback - 1
+        b = bucketOf(close[offset], bottom, step)
+        if close[offset] >= open[offset]
+            array.set(upVolume, b, array.get(upVolume, b) + volume[offset])
+        else
+            array.set(downVolume, b, array.get(downVolume, b) + volume[offset])
+
+    // Remove the previous drawing. The loop bound shrinks while the body
+    // pops, because the loop end is fixed when the loop starts.
+    for i = 0 to array.size(boxes) - 1
+        box.delete(array.pop(boxes))
+
+    total = array.sum(upVolume) + array.sum(downVolume)
+    maxRow = 0.0
+    poc = 0
+    for i = 0 to rowCount - 1
+        rowTotal = array.get(upVolume, i) + array.get(downVolume, i)
+        if rowTotal > maxRow
+            maxRow := rowTotal
+            poc := i
+
+    // Grow the value area outward from the point of control.
+    covered = array.get(upVolume, poc) + array.get(downVolume, poc)
+    vaLow = poc
+    vaHigh = poc
+    while covered < total * valueAreaPct / 100 and (vaLow > 0 or vaHigh < rowCount - 1)
+        below = vaLow > 0 ? array.get(upVolume, vaLow - 1) + array.get(downVolume, vaLow - 1) : -1.0
+        above = vaHigh < rowCount - 1 ? array.get(upVolume, vaHigh + 1) + array.get(downVolume, vaHigh + 1) : -1.0
+        if above >= below
+            vaHigh += 1
+            covered += above
+        else
+            vaLow -= 1
+            covered += below
+
+    for i = 0 to rowCount - 1
+        rowTotal = array.get(upVolume, i) + array.get(downVolume, i)
+        len = maxRow == 0 ? 0 : int(math.round(rowTotal / maxRow * widthBars))
+        upLen = rowTotal == 0 ? 0 : int(math.round(len * array.get(upVolume, i) / rowTotal))
+        inValue = i >= vaLow and i <= vaHigh
+        lo = bottom + step * i
+        hi = lo + step
+        array.push(boxes, box.new(bar_index - len, hi, bar_index - len + upLen, lo, border_color = na, bgcolor = color.new(upVolColor, inValue ? 30 : 70)))
+        array.push(boxes, box.new(bar_index - len + upLen, hi, bar_index, lo, border_color = na, bgcolor = color.new(downVolColor, inValue ? 30 : 70)))
+
+    pocPrice = bottom + step * (poc + 0.5)
+    line.delete(pocLine)
+    pocLine := line.new(bar_index - lookback, pocPrice, bar_index, pocPrice, color = color.yellow, width = 2)
+    label.new(bar_index + 1, pocPrice, "POC", style = label.style_label_left, color = color.yellow, size = size.small)
+    if MID_ROW > poc
+        label.new(bar_index + 1, bottom, "Low heavy", style = label.style_label_left, color = color.gray)
+
+plot(ta.vwap(hlc3), "VWAP", color = color.orange, transp = 10)
+
+// The developing point of control moves with each session's heaviest bar.
+var float sessionMaxVol = 0.0
+var float developingPoc = na
+if ta.change(time("D")) != 0
+    sessionMaxVol := 0.0
+if volume > sessionMaxVol
+    sessionMaxVol := volume
+    developingPoc := hlc3
+plot(developingPoc, "Developing POC", color = color.yellow, style = plot.style_stepline, transp = 40)

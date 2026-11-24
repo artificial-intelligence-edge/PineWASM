@@ -1,0 +1,4 @@
+//@version=6
+indicator("Titles")
+plot(close, "Close")
+plot(open, "Open")

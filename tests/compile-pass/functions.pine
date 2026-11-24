@@ -1,0 +1,35 @@
+//@version=6
+indicator("Functions")
+
+// Single-line function.
+add(a, b) => a + b
+
+// Default parameter.
+scale(x, factor = 2) => x * factor
+
+// Multi-line function with a local and history on the local.
+delta(src) =>
+    prev = src
+    src - prev[1]
+
+// A function containing a var counter: each call site gets its own counter.
+counter(step) =>
+    var c = 0
+    c := c + step
+    c
+
+// A function containing a stateful ta.* call: each call site is independent.
+smooth(src) => ta.sma(src, 2)
+
+// Deep (acyclic) call chain within the instantiation guard.
+f1(x) => add(x, 1)
+f2(x) => scale(f1(x), 3)
+
+plot(add(close, 1))
+plot(scale(close))
+plot(delta(close))
+plot(counter(1))
+plot(counter(2))
+plot(smooth(close))
+plot(smooth(open))
+plot(f2(close))

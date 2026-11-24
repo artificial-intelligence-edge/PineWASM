@@ -1,0 +1,17 @@
+//@version=6
+indicator("Golden Cross", overlay=true)
+
+// A fast/slow moving-average crossover. Literal lengths keep this fixture's
+// output independent of host input overrides; the separate
+// golden_cross_input_lengths.pine fixture verifies supported input-derived
+// window lengths.
+fast = ta.ema(close, 9)
+slow = ta.sma(close, 50)
+
+bull = ta.crossover(fast, slow)
+bear = ta.crossunder(fast, slow)
+
+plot(fast, "Fast EMA")
+plot(slow, "Slow SMA")
+plotshape(bull, "Golden cross")
+plotshape(bear, "Death cross")

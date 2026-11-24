@@ -1,0 +1,12 @@
+//@version=6
+// Regression fixture: `ta.pivot_point_levels` evaluated through the interpreter
+// host call path, with the anchor and the developing flag as run-time
+// operands. It contains no integer division, so the call reaches the host as
+// written.
+indicator("Pivot point levels")
+weekly = bar_index % 7 == 0
+traditional = ta.pivot_point_levels("Traditional", weekly)
+fibonacci = ta.pivot_point_levels("Fibonacci", bar_index % 5 == 0, true)
+plot(array.size(traditional), "Traditional levels")
+plot(array.get(traditional, 0), "Traditional P")
+plot(array.get(fibonacci, 1) - array.get(fibonacci, 2), "Fibonacci R1 - S1")

@@ -1,0 +1,105 @@
+//@version=5
+strategy("ATR Trailing Stop Strategy", shorttitle = "ATR Trail", overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 25, margin_short = 30)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+atrLen = input.int(10, "ATR Length")
+atrMult = input.float(3.0, "ATR Multiplier", step = 0.1)
+confirmBars = input.int(2, "Confirmation Bars", minval = 1)
+takeProfitR = input.float(2.5, "Take Profit (R)")
+sideName = input.string("Both", "Sides", options = ["Long", "Short", "Both", "None"])
+breakEvenTicks = input.int(-50, "Break Even Offset Ticks")
+
+// ---------------------------------------------------------------------------
+// Trailing line
+// ---------------------------------------------------------------------------
+atr = ta.atr(atrLen)
+var float trail = na
+var int dir = 1
+longStop = close - atr * atrMult
+shortStop = close + atr * atrMult
+
+if dir == 1
+    trail := na(trail) ? longStop : math.max(trail, longStop)
+    if close < trail
+        dir := -1
+        trail := shortStop
+else
+    trail := na(trail) ? shortStop : math.min(trail, shortStop)
+    if close > trail
+        dir := 1
+        trail := longStop
+
+flipUp = dir == 1 and dir[1] == -1
+flipDown = dir == -1 and dir[1] == 1
+
+// Require the flip to hold for a few bars before trading it.
+confirmedUp = flipUp[confirmBars - 1] and ta.barssince(flipDown) >= confirmBars or false
+confirmedDown = flipDown[confirmBars - 1] and ta.barssince(flipUp) >= confirmBars
+
+// The allowed side. "None" leaves the direction unset.
+side = switch sideName
+    "Long" => strategy.direction.long
+    "Short" => strategy.direction.short
+    "Both" => strategy.direction.all
+strategy.risk.allow_entry_in(side)
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+risk = atr * atrMult
+strategy.entry("Long", strategy.long, when = confirmedUp)
+strategy.entry("Short", strategy.short, when = confirmedDown)
+
+// The stop follows the trailing line; the target is a multiple of the
+// initial risk. A negative trail offset moves the stop past break even.
+strategy.exit("Long Exit", "Long", stop = trail, loss = risk / syminfo.mintick, limit = strategy.position_avg_price + risk * takeProfitR)
+strategy.exit("Short Exit", "Short", stop = trail, limit = strategy.position_avg_price - risk * takeProfitR, profit = risk * takeProfitR / syminfo.mintick)
+strategy.exit("Break Even", "Long", trail_points = -10, trail_offset = breakEvenTicks)
+
+// ---------------------------------------------------------------------------
+// Visuals
+// ---------------------------------------------------------------------------
+trailColor = dir == 1 ? color.teal : color.red
+plot(trail, "Trail", color = trailColor, linewidth = 2, style = plot.style_linebr)
+plotshape(flipUp, "Flip Up", shape.labelup, location.belowbar, color.teal, text = "Up", textcolor = color.white, transp = 10)
+plotshape(flipDown, "Flip Down", shape.labeldown, location.abovebar, color.red, text = "Down", textcolor = color.white, transp = 10)
+barcolor(strategy.position_size > 0 ? color.teal : strategy.position_size < 0 ? color.red : na)
+
+// ---------------------------------------------------------------------------
+// Session filter and trade journal
+// ---------------------------------------------------------------------------
+sessionText = input.session("0930-1600", "Trading Session")
+inSession = not na(time(timeframe.period, sessionText))
+flatOutside = input.bool(false, "Flatten Outside Session")
+strategy.close_all(when = flatOutside and not inSession, comment = "session end")
+
+// Label each fill with its direction and price.
+var int lastTradeCount = 0
+if strategy.opentrades + strategy.closedtrades > lastTradeCount
+    lastTradeCount := strategy.opentrades + strategy.closedtrades
+    isLong = strategy.position_size > 0
+    label.new(bar_index, isLong ? low : high, (isLong ? "L " : "S ") + str.tostring(close, format.mintick), style = isLong ? label.style_label_up : label.style_label_down, color = isLong ? color.teal : color.red, size = size.tiny)
+
+// Profit factor and win rate from the closed trades.
+grossProfit = 0.0
+grossLoss = 0.0
+if barstate.islast and strategy.closedtrades > 0
+    for i = 0 to strategy.closedtrades - 1
+        p = strategy.closedtrades.profit(i)
+        if p > 0
+            grossProfit += p
+        else
+            grossLoss -= p
+
+var table stats = table.new(position.bottom_right, 2, 3, border_width = 1)
+if barstate.islast
+    pf = grossLoss == 0 ? na : grossProfit / grossLoss
+    table.cell(stats, 0, 0, "Trades", text_color = color.white, bgcolor = color.gray)
+    table.cell(stats, 1, 0, str.tostring(strategy.closedtrades), text_color = color.white)
+    table.cell(stats, 0, 1, "Profit Factor", text_color = color.white, bgcolor = color.gray)
+    table.cell(stats, 1, 1, na(pf) ? "-" : str.tostring(pf, "#.##"), text_color = color.white)
+    table.cell(stats, 0, 2, "Win Rate", text_color = color.white, bgcolor = color.gray)
+    table.cell(stats, 1, 2, str.tostring(strategy.wintrades / math.max(1, strategy.closedtrades) * 100, "#.#") + "%", text_color = color.white)
+bgcolor(inSession ? na : color.gray, transp = 92)

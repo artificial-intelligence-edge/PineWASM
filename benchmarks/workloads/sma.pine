@@ -1,0 +1,4 @@
+//@version=6
+indicator("Moving windows", overlay=false)
+plot(ta.sma(close, 10), "SMA 10")
+plot(ta.sma(close, 50), "SMA 50")

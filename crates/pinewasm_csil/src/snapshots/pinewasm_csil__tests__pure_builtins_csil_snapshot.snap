@@ -1,0 +1,32 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+assertion_line: 1098
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "Pure"
+PLOT_SLOT 0
+PLOT_SLOT 1
+PLOT_SLOT 2
+PLOT_SLOT 3
+
+FUNC main (max_stack 2)
+  0000 READ_BUILTIN CLOSE 0             ; 33..38
+  0001 CALL_PURE math.sqrt 1            ; 23..39
+  0002 PUSH_COLOR #2196F3               ; 18..40
+  0003 PLOT_STYLED_F64 0 1              ; 18..40
+  0004 READ_BUILTIN CLOSE 1             ; 49..57
+  0005 PUSH_F64 0                       ; 46..58
+  0006 CALL_PURE nz 2                   ; 46..58
+  0007 PUSH_COLOR #2196F3               ; 41..59
+  0008 PLOT_STYLED_F64 1 1              ; 41..59
+  0009 PUSH_F64 0                       ; 65..78
+  0010 PUSH_F64 1                       ; 65..78
+  0011 CALL_PURE math.random 2          ; 65..78
+  0012 PUSH_COLOR #2196F3               ; 60..79
+  0013 PLOT_STYLED_F64 2 1              ; 60..79
+  0014 PUSH_F64 3.141592653589793       ; 85..92
+  0015 PUSH_COLOR #2196F3               ; 80..93
+  0016 PLOT_STYLED_F64 3 1              ; 80..93
+  0017 RETURN                           ; 80..93
+END

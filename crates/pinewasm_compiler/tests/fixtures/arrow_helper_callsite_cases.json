@@ -1,0 +1,802 @@
+{
+  "kind": "helper-callsite-metadata-cases",
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "arrows": [
+    {
+      "id": "false-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "0d1ea180b07ed239bf123a170df3f2e8d03cd5fc5915c615d8833c462aef074e",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "true-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true or flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "0c8eaf4a17f43a69e21413ab9debc94eea41c5400a8c7add69472afcc40b1aa6",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-and-false",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag and false)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "94a13daa32a31f9c30aa8d0a1099c1ab8bdfdca5bd956e0029c525bd42466024",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-or-true",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag or true)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "58e431baa7b41f6e6cff918c894a980d4bc137258ea915f5a3e026a593cca480",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "true-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true and flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "e307c3214cfae64b608bbf3714a6ba0d8941a7b05a697ace2229c8be79837882",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "false-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false or flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "d639547a8ece5040a4408e5b8b140ed7dec5289d8528ca91d7729c7f6551c9ee",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "literal-argument-with-unrelated-mutable-global",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(true),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "ef64f2cdc24b71e4bd34072b2ce2a11ffb0fa343c5c39a75c1a778cd9a4afe89",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "unchanged-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\n",
+      "sourceSha256": "09bd65d1e6c9e9a1bf0a624ed6ea9a4ff234af7f4d121151642ebe170cfb47f7",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "zero-argument-global-false-and",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\nvar bool FLAG=true\npick()=>(false and FLAG)?#336699:#669933\nplotarrow(close,colorup=pick(),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "f9e63ac3a6b6c3841af0d84d5bbab72bb1d407796c28d3a97814e1e719058240",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "false-and-persistent-down-role",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=#993366,colordown=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "7c69842902d834474111839534e82f71c79767879d5a676572c99c8734ac1b1e",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": true
+          },
+          "static": {
+            "up": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            },
+            "down": {
+              "r": 255,
+              "g": 0,
+              "b": 0,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "absorbing-callsite-and",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>flag?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(false and FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "ef8ea5011ffa965d9ba2a0a10c9ef4c10180b9dabb344ce0d94377025edc1416",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "absorbing-callsite-or",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>flag?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(true or FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "a5ee6aeb24a32f60592ec06e6affadb43105d1a6a8c4fcbf85a10cafd944b623",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 51,
+              "g": 102,
+              "b": 153,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "formal-local-alias",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>\n    bool local=flag\n    (false and local)?#336699:#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "38435fa1fb85208732e4dea3c789d93d2ebd28e2f5b931cd1e13260d23a7026f",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "unused-formal",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "0a0f0e3fc1c650a793f07d91ba8dee1c8458898619a5b03ecb258674f1f020bf",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "formal-in-dead-ternary",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>false?(flag?#336699:#993366):#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "8676f35c240b0c4bd548e5ebfad0bf8f27e5f87a55c7020c9959a33aee90d4b0",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-formal",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\ninner(bool flag)=>(false and flag)?#336699:#669933\nouter(bool flag)=>inner(flag)\nvar bool FLAG=true\nplotarrow(close,colorup=outer(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "fcd4dc6e9c020ecc0eb6d74144984543713be7005f777f95f14b22ce28442e25",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "boolean-result-formal",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\npick(bool flag)=>false and flag\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG)?#336699:#669933,colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "7e876e342539486dfda5cee0ec14cfa41d082e4e7a2e51c1f7b91ca8700eeccc",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "zeroarg-global-alias",
+      "source": "//@version=6\nindicator(\"helper Boolean boundary\")\nvar bool FLAG=true\nbool ALIAS=FLAG\npick()=>(false and ALIAS)?#336699:#669933\nplotarrow(close,colorup=pick(),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "53a431761f74127b3d30a0ab84815168a528aee543f5898f617a063a3ac5ab42",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-literal-then-mutable",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(true),colordown=#993366)\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "326f9e08bc6beca7c2d8cf95529613d2a73383678a7a7c1c88a21edbed277cb3",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        },
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_1"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-mutable-then-literal",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=#993366)\nplotarrow(close,colorup=pick(true),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "9e31fc9c3a75ffd4ac676f20147b31e549bd4ab8f11a6753427d16b6b4566992",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        },
+        {
+          "bindings": {
+            "up": false,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_2"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-role-literal-mutable",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(true),colordown=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "9ab65b2b20fc95af54cac04a6205cf30b372965666c20815d1830039b2ba70ca",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": true
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 255,
+              "g": 0,
+              "b": 0,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-role-mutable-literal",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=pick(FLAG),colordown=pick(true))\nFLAG:=false\n",
+      "sourceSha256": "47a906f5d6656daf257d38026c3a20b5e2d44c59eba214ea7c7fdea9357cb451",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-same-helper-literal-mutable",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\ninner(bool flag)=>#669933\nouter(bool flag)=>inner(flag)\nvar bool FLAG=true\nplotarrow(close,colorup=outer(true),colordown=outer(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "2cbaf4475312cb047d7891823a381cfdcb06a271a512345c68ec112c7fc69ed8",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": true
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 255,
+              "g": 0,
+              "b": 0,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-same-helper-mutable-literal",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\ninner(bool flag)=>#669933\nouter(bool flag)=>inner(flag)\nvar bool FLAG=true\nplotarrow(close,colorup=outer(FLAG),colordown=outer(true))\nFLAG:=false\n",
+      "sourceSha256": "d8ed3ad774a7a8a057f79783a52fffce023e73198e6111ebef596c2d5f5b2431",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-same-expression-pair",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\nplotarrow(close,colorup=bar_index>0?pick(true):pick(FLAG),colordown=#993366)\nFLAG:=false\n",
+      "sourceSha256": "e7ca08e13f8567eb5f831475bc4268a5c6238bf96819eeed87519cb1e92a6e81",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": true,
+            "down": false
+          },
+          "static": {
+            "up": {
+              "r": 0,
+              "g": 255,
+              "b": 0,
+              "t": 0
+            },
+            "down": {
+              "r": 153,
+              "g": 51,
+              "b": 102,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "same-helper-snapshot-alias",
+      "source": "//@version=6\nindicator(\"helper repeated callsites\")\npick(bool flag)=>#669933\nvar bool FLAG=true\ncolor FIXED=pick(true)\ncolor DYNAMIC=pick(FLAG)\nplotarrow(close,colorup=FIXED,colordown=DYNAMIC)\nFLAG:=false\n",
+      "sourceSha256": "7d4c2b9ef9e8f2c2933fc70293e42b3fcbf09484803e74fd48caa78059ed611e",
+      "expectedPlots": [
+        {
+          "bindings": {
+            "up": false,
+            "down": true
+          },
+          "static": {
+            "up": {
+              "r": 102,
+              "g": 153,
+              "b": 51,
+              "t": 0
+            },
+            "down": {
+              "r": 255,
+              "g": 0,
+              "b": 0,
+              "t": 0
+            }
+          },
+          "plotId": "plot_0"
+        }
+      ],
+      "expectedCompileSuccess": true
+    }
+  ]
+}

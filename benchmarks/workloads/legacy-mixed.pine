@@ -1,0 +1,12 @@
+//@version=6
+indicator("Backend speed reference", overlay=false)
+fast = ta.ema(close, 12)
+slow = ta.ema(close, 26)
+macd = fast - slow
+signal = ta.ema(macd, 9)
+basis = ta.sma(close, 50)
+momentum = ta.rsi(close, 14)
+plot(macd, "MACD")
+plot(signal, "Signal")
+plot(basis, "SMA 50")
+plot(momentum, "RSI")

@@ -1,0 +1,16 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 63
+expression: dump
+---
+HirProgram indicator="Example"
+  symbol 0 `x`: series float (slot 0)
+  plot slot 0 title="<none>"
+  Assign `x` (sym 0)
+    Binary `-` : series float
+      ReadBuiltin close[0] : series float
+      ReadBuiltin close[1] : series float
+  Plot slot 0
+    ReadVar `x`[0] (sym 0) : series float
+    Color Color
+      ConstColor #2196F3 : const color

@@ -1,0 +1,8 @@
+//@version=6
+indicator("Ternary")
+up = close > open
+picked = up ? close : open
+score = up ? 1 : 0
+plot(picked, "picked")
+plot(close > 1000 ? na : score, "score")
+plot(up ? close : close > 5 ? open : na, "chained")

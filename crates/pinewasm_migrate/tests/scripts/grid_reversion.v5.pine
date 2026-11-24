@@ -1,0 +1,90 @@
+//@version=5
+strategy("Grid Mean Reversion", overlay = true, pyramiding = 5, default_qty_type = strategy.fixed, default_qty_value = 1, initial_capital = 25000, close_entries_rule = "ANY")
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+anchorLen = input.int(50, "Anchor Length")
+gridLevels = input.int(5, "Grid Levels", minval = 1, maxval = 5)
+gridStepPct = input.float(0.75, "Grid Step Percent")
+exitAtAnchor = input.bool(true, "Exit At Anchor")
+maxHoldBars = input.int(40, "Maximum Holding Bars")
+directionName = input.string("Long", "Direction", options = ["Long", "Short", "Both"])
+
+// ---------------------------------------------------------------------------
+// Grid
+// ---------------------------------------------------------------------------
+anchor = ta.ema(close, anchorLen)
+step = anchor * gridStepPct / 100
+
+allowLong = directionName != "Short"
+allowShort = directionName != "Long"
+tradeDirection = directionName == "Long" ? strategy.direction.long : directionName == "Short" ? strategy.direction.short : strategy.direction.all
+strategy.risk.allow_entry_in(tradeDirection)
+
+var float[] buyLevels = array.new_float(0)
+var float[] sellLevels = array.new_float(0)
+array.clear(buyLevels)
+array.clear(sellLevels)
+for i = 1 to gridLevels
+    array.push(buyLevels, anchor - step * i)
+    array.push(sellLevels, anchor + step * i)
+
+// The holding clock counts bars since the position opened.
+var int heldBars = 0
+heldBars := strategy.position_size != 0 ? heldBars + 1 : 0
+tooLong = heldBars > maxHoldBars
+
+// ---------------------------------------------------------------------------
+// Resting limit orders. A level whose order already filled is skipped.
+// ---------------------------------------------------------------------------
+for i = 0 to gridLevels - 1
+    buyId = "Buy " + str.tostring(i)
+    sellId = "Sell " + str.tostring(i)
+    buyPrice = array.get(buyLevels, i)
+    sellPrice = array.get(sellLevels, i)
+    strategy.entry(buyId, strategy.long, limit = buyPrice, when = allowLong and strategy.position_size >= 0)
+    strategy.entry(sellId, strategy.short, limit = sellPrice, when = allowShort and strategy.position_size <= 0)
+    strategy.cancel(buyId, not allowLong)
+
+// Exits: back at the anchor, or too long in the trade.
+strategy.exit("Long Target", limit = exitAtAnchor ? anchor : na, profit = 500, loss = 1500)
+strategy.exit("Short Target", limit = exitAtAnchor ? anchor : na, profit = 500, loss = 1500, stop = anchor + step * (gridLevels + 1))
+strategy.close_all(when = tooLong, comment = "time stop")
+
+// ---------------------------------------------------------------------------
+// Visuals
+// ---------------------------------------------------------------------------
+plot(anchor, "Anchor", color = color.yellow, linewidth = 2)
+plot(array.get(buyLevels, 0), "First Buy", color = color.teal, style = plot.style_stepline, transp = 40)
+plot(array.get(sellLevels, 0), "First Sell", color = color.red, style = plot.style_stepline, transp = 40)
+plot(array.get(buyLevels, gridLevels - 1), "Last Buy", color = color.teal, style = plot.style_stepline, transp = 70)
+plot(array.get(sellLevels, gridLevels - 1), "Last Sell", color = color.red, style = plot.style_stepline, transp = 70)
+bgcolor(tooLong ? color.red : na, transp = 90)
+plot(heldBars, "Held Bars", display = display.data_window)
+
+// ---------------------------------------------------------------------------
+// Grid drawing on the last bar
+// ---------------------------------------------------------------------------
+var line[] gridLines = array.new_line()
+if barstate.islast
+    while array.size(gridLines) > 0
+        line.delete(array.pop(gridLines))
+    for i = 0 to gridLevels - 1
+        b = array.get(buyLevels, i)
+        s = array.get(sellLevels, i)
+        array.push(gridLines, line.new(bar_index - 20, b, bar_index + 5, b, color = color.teal, style = line.style_dotted))
+        array.push(gridLines, line.new(bar_index - 20, s, bar_index + 5, s, color = color.red, style = line.style_dotted))
+    label.new(bar_index + 5, anchor, "Anchor " + str.tostring(anchor, format.mintick), style = label.style_label_left, color = color.yellow)
+
+// Open grid entries, listed from the most recent.
+openIds = ""
+if strategy.opentrades > 0
+    for i = strategy.opentrades - 1 to 0
+        openIds += strategy.opentrades.entry_id(i) + " "
+
+var table t = table.new(position.bottom_right, 1, 2)
+if barstate.islast
+    table.cell(t, 0, 0, "Open: " + str.tostring(strategy.opentrades), text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 0, 1, openIds, text_color = color.gray)
+alertcondition(tooLong, "Time Stop", "Grid position held too long")

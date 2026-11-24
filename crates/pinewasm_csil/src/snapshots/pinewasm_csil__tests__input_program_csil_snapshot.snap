@@ -1,0 +1,24 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+assertion_line: 1958
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "Inputs"
+SERIES_SLOT 0 "len"
+SERIES_SLOT 1 "src"
+PLOT_SLOT 0
+INPUT 0 input.int title="Length" defval=14
+INPUT 1 input.source title="Source" defval=close
+
+FUNC main (max_stack 2)
+  0000 READ_INPUT 0                     ; 39..73
+  0001 STORE_USER_SLOT_CURRENT 0        ; 33..73
+  0002 READ_INPUT 1                     ; 80..109
+  0003 READ_USER_SLOT 0 0               ; 121..124
+  0004 INT_TO_F64                       ; 121..124
+  0005 F64_ADD                          ; 115..124
+  0006 PUSH_COLOR #2196F3               ; 110..125
+  0007 PLOT_STYLED_F64 0 1              ; 110..125
+  0008 RETURN                           ; 110..125
+END

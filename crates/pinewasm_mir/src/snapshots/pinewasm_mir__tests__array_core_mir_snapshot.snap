@@ -1,0 +1,23 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"C\\\")\\na = array.new_float(0)\\narray.push(a, 1.0)\\nplot(array.size(a))\\n\")"
+---
+MirBody title="C" slots=1 plots=1 values=10
+  slot 0 `a`
+  plot 0 title="<none>"
+bb0:
+  v0 = const 0
+  v1 = const na
+  v2 = call_collection array.new_float v0, v1
+  store_user_current slot0, v2
+  v3 = read_user slot0[0]
+  v4 = const 1
+  v5 = call_collection array.push v3, v4
+  discard v5
+  v6 = read_user slot0[0]
+  v7 = call_collection array.size v6
+  v8 = int_to_float v7
+  v9 = const #2196F3
+  plot p0, v8
+    color Color v9
+  return

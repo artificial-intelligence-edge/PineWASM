@@ -1,0 +1,48 @@
+[package]
+name = "pinewasm_bindings"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebAssembly bindings for the PineWASM compiler, runtime, language services, and AOT APIs"
+readme = "README.md"
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# `migrate` adds `migrateToV6`, the Pine v5 → v6 source migration, to the
+# JavaScript API. It is off by default so the standard package stays the
+# compiler and runtime only.
+[features]
+migrate = ["dep:pinewasm_migrate"]
+
+[dependencies]
+pinewasm_compiler = { workspace = true }
+pinewasm_migrate = { workspace = true, optional = true }
+pinewasm_vm = { workspace = true }
+pinewasm_aot = { workspace = true }
+pinewasm_num = { workspace = true }
+# Analysis layer only (no Language Server Protocol transport) — powers the Outline symbols.
+# Direct path dep: `default-features = false` is ignored when inherited from
+# the workspace table (which keeps the default `server` feature for the bin).
+pinewasm_lsp = { path = "../pinewasm_lsp", default-features = false }
+# Ripgrep's engine over in-memory files — the browser workspaces' Search.
+pinewasm_search = { path = "../pinewasm_search" }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+console_error_panic_hook = { workspace = true }
+js-sys = "0.3"
+# `compileStandaloneWasmProgram` returns the artifact identity (`moduleSha256`) alongside
+# the bytes, so a host never has to hash them itself to compare two builds.
+sha2.workspace = true
+
+[dev-dependencies]
+pinewasm_csil = { workspace = true }
+proptest = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+schema = 1
+# Only narrative documents with no executable/packaged consumers belong here.
+prose = [
+  "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "SECURITY.md",
+  "docs/architecture.md", "docs/execution-explained.md", "docs/fuzzing.md",
+  "docs/ci.md", "tests/README.md",
+  "docs/README.md",
+]
+safety_test_prefixes = ["crates/pinewasm_num/tests/", "crates/pinewasm_ta/tests/"]
+runtime_packages = ["pinewasm_num", "pinewasm_ta", "pinewasm_broker", "pinewasm_tz"]
+# These are read at run time; Cargo metadata cannot discover the edges.
+fixture_prefixes = ["tests/compile-pass/", "tests/compile-fail/", "tests/regression/", "benchmarks/workloads/"]
+fixture_consumers = ["pinewasm_compiler", "pinewasm_aot", "pinewasm_csil", "pinewasm_migrate", "pinewasm_xtask"]
+
+[fixture_groups]

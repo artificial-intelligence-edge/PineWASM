@@ -1,0 +1,6 @@
+//@version=6
+indicator("Compound history")
+d = (close - open)[1]
+nested = close[1][2]
+plot(d)
+plot(nested)

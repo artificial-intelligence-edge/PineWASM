@@ -1,0 +1,63 @@
+# Dependency policy for the complete native, WebAssembly, and development graph.
+# CI runs all four cargo-deny checks; an exception must name the exact crate and
+# explain why it is safe before it can land here.
+
+[graph]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+  "wasm32-unknown-unknown",
+]
+all-features = true
+
+[advisories]
+ignore = []
+
+[licenses]
+# Third-party dependencies only: every workspace crate is `publish = false`,
+# so `private.ignore` below excludes the project's own AGPL-3.0-only
+# grant from this check. Keeping the dependency allow list permissive-only
+# ensures a future copyleft third-party dependency fails this check instead of
+# slipping through unnoticed.
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.8
+exceptions = []
+# One policy is applied to both the complete workspace and the much smaller
+# standalone AOT-runtime graph. A license used by only one graph is therefore
+# expected to be absent from the other; unused entries are reviewed by lockfile
+# changes instead of reported once per graph.
+unused-allowed-license = "allow"
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+# Internal path dependencies inherit their version from the unpublished
+# workspace and appear as wildcards to cargo-deny. External dependencies are
+# versioned in Cargo.toml and locked in Cargo.lock.
+wildcards = "allow"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+skip = [
+  # lsp-types still depends on bitflags 1.x while the rest of the workspace
+  # uses 2.x. The major versions cannot be unified by a lockfile update.
+  { crate = "bitflags@1.3.2", reason = "required by lsp-types 0.95" },
+  # wasm-bindgen and url/ICU proc-macro stacks use syn 2 while current serde
+  # derives use syn 3. Both are active graphs with incompatible major APIs.
+  { crate = "syn@2.0.119", reason = "required by wasm-bindgen and URL macro tooling" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

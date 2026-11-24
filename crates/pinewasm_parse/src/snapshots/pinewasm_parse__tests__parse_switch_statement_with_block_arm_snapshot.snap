@@ -1,0 +1,23 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..75
+  Version <none>
+  SwitchStmt @ 0..74
+    Subject
+      Ident `bar_index` @ 7..16
+    Arm @ 21..55
+      Label
+        Number 0 (int) @ 21..22
+      Body
+        Assign `x` @ 34..39
+          Number 1 (int) @ 38..39
+        ExprStmt @ 48..55
+          Call `plot` @ 48..55
+            Ident `x` @ 53..54
+    Default @ 60..74
+      Body
+        ExprStmt @ 63..74
+          Call `plot` @ 63..74
+            Ident `close` @ 68..73

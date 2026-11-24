@@ -1,0 +1,308 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/pinewasm_num",
+    "crates/pinewasm_ta",
+    "crates/pinewasm_broker",
+    "crates/pinewasm_tz",
+    "crates/pinewasm_span",
+    "crates/pinewasm_syntax",
+    "crates/pinewasm_parse",
+    "crates/pinewasm_hir",
+    "crates/pinewasm_semantics",
+    "crates/pinewasm_mir",
+    "crates/pinewasm_csil",
+    "crates/pinewasm_vm",
+    "crates/pinewasm_compiler",
+    "crates/pinewasm_lsp",
+    "crates/pinewasm_migrate",
+    "crates/pinewasm_search",
+    "crates/pinewasm_bindings",
+    "crates/pinewasm_aot",
+    "crates/pinewasm_xtask",
+]
+# The AOT runtime module builds for wasm32 under its own profile and produces
+# a checked-in binary, not a library this workspace links. `cargo xtask
+# aot-runtime-all` builds it.
+exclude = ["crates/pinewasm_aot/runtime"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+# The implementation is available under AGPL-3.0-only; separate commercial
+# terms are described in docs/licensing.md.
+license = "AGPL-3.0-only"
+# Every crate here is internal to this workspace. Inheriting `publish = false`
+# means a stray `cargo publish` fails loudly rather than pushing a compiler
+# internal to crates.io under a name we do not own.
+publish = false
+repository = "https://github.com/artificial-intelligence-edge/PineWASM"
+
+[workspace.lints.rust]
+warnings = { level = "deny", priority = -1 }
+# `charon` and `charon_glue` are set only by the Aeneas-extraction build
+# (`--rustc-arg=--cfg=charon`, `--rustc-arg=--cfg=charon_glue`), for
+# `charon::rename` attributes in `pinewasm_semantics::binder` and
+# `pinewasm_vm::vm_charge`.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(charon)', 'cfg(charon_glue)'] }
+
+[workspace.lints.clippy]
+# The zero-warning policy used to live only in CI, so `cargo clippy` in an
+# editor saw different rules than the gate did. Keeping it here makes the two
+# agree, and makes every decision below reviewable in one place instead of
+# implied by a command line.
+#
+# Note what this does NOT fix: the per-site
+# `#[allow(clippy::too_many_lines)]` attributes in the tree stay inert because
+# `too_many_lines` is allowed below. They were inert before this table and they
+# are inert after it. The difference is that this is now a written decision
+# rather than an accident.
+pedantic = { level = "warn", priority = -1 }
+
+# Every crate forbids unsafe code at its root, including the wasm-bindgen adapter.
+# Exact float equality is load-bearing, not an oversight. Deterministic numeric
+# baselines and cross-backend tests pin result bits; an epsilon comparison
+# would silently accept the regressions those tests exist to catch.
+float_cmp = "allow"
+
+# Golden fixtures, opcode tables, and test constants are full of long
+# numeric literals that read worse chunked than whole.
+unreadable_literal = "allow"
+
+# `usize` <-> `u32` index conversion is pervasive across the IRs and bounded
+# by construction (slot counts, bar indices, opcode operands). Warning on every
+# such conversion obscures the sites that need individual review.
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+cast_lossless = "allow"
+
+# Several hundred small accessors do not become safer for being annotated.
+must_use_candidate = "allow"
+
+# Exhaustive matches over the opcode and builtin enums spell out every arm on
+# purpose, including ones that currently share a body, so that adding a
+# variant is a compile error instead of a silent fallthrough.
+match_same_arms = "allow"
+
+# The crate-per-phase layout makes `pinewasm_hir::HirExpr` read naturally;
+# renaming to satisfy this lint would make the re-exports worse.
+module_name_repetitions = "allow"
+
+# Known debt, not a style preference: the compiler and runtime contain long
+# phase passes. Splitting them is real refactoring work that belongs in its own
+# change, so the lint is off rather than suppressed throughout those passes.
+#
+# Consequence worth stating plainly: this keeps the existing
+# `#[allow(clippy::too_many_lines)]` attributes inert. They are left in place
+# as markers of the worst offenders, not because they do anything. Turning
+# this lint on (or setting `too-many-lines-threshold` in clippy.toml high
+# enough to catch only the extremes) is the follow-up that would make them
+# real.
+too_many_lines = "allow"
+
+# `match` on an enum stays readable even when one arm dominates; converting
+# these dispatches to `if let ... else` would obscure which type is being
+# dispatched on, which is most of what these functions are doing.
+single_match_else = "allow"
+
+# Doc debt rather than a rule we disagree with. Worth doing, too large to
+# bundle with a lint-enablement change.
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+# Passing IR nodes and configs by value is how the pipeline is built; changing
+# those signatures to references would ripple through their callers for no
+# measured gain.
+needless_pass_by_value = "allow"
+
+# Fires on methods kept `&self` for symmetry inside a trait-shaped impl.
+unused_self = "allow"
+
+# False-positive heavy on the deliberate pairs this codebase is full of:
+# `lhs`/`rhs`, `hi`/`lo`, `src`/`dst`.
+similar_names = "allow"
+many_single_char_names = "allow"
+
+# Config and capability structs legitimately carry several independent flags.
+struct_excessive_bools = "allow"
+
+# Deliberate on the hot numeric paths; the AOT and VM inner loops are measured.
+inline_always = "allow"
+
+# Builder-style methods returning `Self` are chained, not discarded.
+return_self_not_must_use = "allow"
+
+# Nested helper `fn`s declared next to their use site read better than hoisting
+# them above unrelated statements.
+items_after_statements = "allow"
+
+# Changing a function's return type to drop the wrapper is an API change, not
+# a lint fix.
+unnecessary_wraps = "allow"
+
+# `use crate::*` is how the `pinewasm_semantics` module split works: the
+# submodules are one `impl Analyzer` block each, not independent units, and
+# enumerating the parent's names in nine files would be pure churn.
+# `pinewasm_lsp` re-exports the whole `lsp_types` protocol surface for the
+# same reason. Note `cargo clippy --fix` gets this one wrong: expanding
+# `use lsp_types::*` dropped five types only named in test code and broke the
+# build, which is why it is off rather than fixed.
+wildcard_imports = "allow"
+
+# `let ... else` is nicer, but converting existing sites means rewriting control
+# flow through the lexer, parser, and semantic analyser in a change whose whole
+# point is that it does not alter behavior. Worth doing on its own.
+manual_let_else = "allow"
+
+# `impl<'r> Analyzer<'r>` is spelled consistently across the analyzer impl blocks;
+# `impl Analyzer<'_>` is shorter but says less about what the borrow is.
+elidable_lifetime_names = "allow"
+
+# Both want `write!`/`fold` in place of `push_str(&format!(..))`, which means
+# importing `std::fmt::Write` and handling a `Result` that cannot fail, in
+# what are almost all test-fixture string builders.
+format_push_string = "allow"
+format_collect = "allow"
+
+# Wants the `bytecount` crate. Two `.filter(..).count()` calls in test
+# assertions are not worth a dependency.
+naive_bytecount = "allow"
+
+# The `continue` arms here are one arm of a `match` inside a loop, where the
+# alternative is an `if let` that hides which variant is being handled.
+needless_continue = "allow"
+
+# `if !x { .. } else { .. }` keeps the success path first in these guards;
+# inverting them puts the error branch above the thing being guarded.
+if_not_else = "allow"
+
+[workspace.dependencies]
+# External infrastructure dependencies (kept deliberately small; language
+# semantics are owned by this workspace, not delegated to libraries).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+rustix = { version = "1.1.4", features = ["fs", "process"] }
+sha2 = "0.11"
+toml = "0.8"
+quote = "1"
+proc-macro2 = { version = "=1.0.107", features = ["span-locations"] }
+syn = { version = "=2.0.119", features = ["full", "visit"] }
+thiserror = "2"
+fancy-regex = "0.19"
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+# `lsp-server` 0.10.0 uses edition 2024, which is supported at the measured Rust
+# 1.86 floor. It remains protocol-compatible with the independently pinned
+# `lsp-types` 0.95 API below.
+lsp-server = "=0.10.0"
+lsp-types = "=0.95.1"
+# 2.5.8 includes the IDNA security fix tracked as RUSTSEC-2024-0421. The
+# expanded Unicode graph still builds at the workspace's measured Rust 1.86
+# floor; CI verifies that floor against the committed lockfile.
+url = "=2.5.9"
+
+# Dev dependencies
+insta = "1"
+pretty_assertions = "1"
+proptest = "1"
+
+# Internal crates
+pinewasm_num = { path = "crates/pinewasm_num" }
+pinewasm_ta = { path = "crates/pinewasm_ta" }
+pinewasm_broker = { path = "crates/pinewasm_broker" }
+pinewasm_tz = { path = "crates/pinewasm_tz" }
+pinewasm_span = { path = "crates/pinewasm_span" }
+pinewasm_syntax = { path = "crates/pinewasm_syntax" }
+pinewasm_parse = { path = "crates/pinewasm_parse" }
+pinewasm_hir = { path = "crates/pinewasm_hir" }
+pinewasm_semantics = { path = "crates/pinewasm_semantics" }
+pinewasm_migrate = { path = "crates/pinewasm_migrate" }
+pinewasm_mir = { path = "crates/pinewasm_mir" }
+pinewasm_csil = { path = "crates/pinewasm_csil" }
+pinewasm_vm = { path = "crates/pinewasm_vm" }
+pinewasm_compiler = { path = "crates/pinewasm_compiler" }
+pinewasm_lsp = { path = "crates/pinewasm_lsp" }
+pinewasm_aot = { path = "crates/pinewasm_aot" }
+
+# `wasmi` is a dev-only dependency (the differential harnesses execute
+# emitted modules with it). Left at the debug default it runs a
+# broker-bearing strategy standalone WebAssembly module unnecessarily slow. Optimizing only the
+# executor family keeps the synthetic differential suite routinely runnable;
+# it changes no semantics, and nothing shipped links wasmi.
+[profile.dev.package.wasmi]
+opt-level = 3
+
+[profile.dev.package.wasmi_core]
+opt-level = 3
+
+[profile.dev.package.wasmi_ir]
+opt-level = 3
+
+[profile.dev.package.wasmi_collections]
+opt-level = 3
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+# The interpreter dispatch loop is the one place raw codegen quality beats
+# binary size: loop-heavy scripts can execute hundreds of millions of CSIL
+# instructions per run, and `-Os` materially slows the dispatch loop. Speed-
+# optimize just the VM and the Value type it dispatches over; everything else
+# stays size-optimized for the wasm artifact.
+[profile.release.package.pinewasm_vm]
+opt-level = 3
+overflow-checks = true
+
+[profile.release.package.pinewasm_mir]
+opt-level = 3
+overflow-checks = true
+
+# Broker accounting and stateful indicator updates execute on every bar.
+# Favor runtime speed for these kernels while retaining the package size policy.
+[profile.release.package.pinewasm_broker]
+opt-level = 3
+
+[profile.release.package.pinewasm_ta]
+opt-level = 3
+overflow-checks = true
+
+# Release overflow checks for the crates written in an Aeneas-extractable
+# style. Arithmetic in these crates panics on overflow in debug builds; with
+# this setting, code compiled in these crates also panics on overflow in
+# release builds instead of wrapping silently. The setting follows the crate
+# that *codegens* the function: generic, `#[inline]` and small (automatically
+# cross-crate-inlinable) functions of these crates keep wrapping when they are
+# instantiated or inlined into a crate without the setting (for example
+# `pinewasm_compiler`, `pinewasm_hir`, `pinewasm_bindings`).
+# The wasm32 AOT runtime (`crates/pinewasm_aot/runtime`) has its own profile
+# and is not affected. `pinewasm_vm`, `pinewasm_mir` and `pinewasm_ta` carry
+# the same setting in their opt-level tables above.
+[profile.release.package.pinewasm_span]
+overflow-checks = true
+
+[profile.release.package.pinewasm_parse]
+overflow-checks = true
+
+[profile.release.package.pinewasm_semantics]
+overflow-checks = true
+
+[profile.release.package.pinewasm_csil]
+overflow-checks = true
+
+[profile.release.package.pinewasm_aot]
+overflow-checks = true
+
+# `release` codegen with symbols kept, for native profiling of the exact
+# optimization level the wasm artifact ships with:
+#   cargo build --profile profiling -p pinewasm_compiler --bin pinewasm-profile
+#   samply record ./target/profiling/pinewasm-profile ...
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false

@@ -1,0 +1,33 @@
+[package]
+name = "pinewasm_tz"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "IANA time zone rules, shared by the interpreter and every emitted artifact"
+publish.workspace = true
+
+[features]
+default = []
+# The IANA Time Zone Database, embedded: `resolve` by name. The interpreter
+# and the compiler enable it. The artifact runtime does not: it
+# links only the fixed-offset and session readers, so no zone data rides
+# along in an emitted module.
+bundled = ["dep:jiff-tzdb"]
+
+[dependencies]
+# The pinned release of the IANA Time Zone Database, compiled to TZif by its
+# publisher (rearguard, slim) and embedded verbatim. `no_std`, no
+# dependencies, Unlicense OR MIT. Pinned exactly: the release it carries is
+# part of what a compiler version computes (`TZDATA_VERSION`), so a new
+# release is a reviewed change of this line, not a lockfile refresh.
+jiff-tzdb = { version = "=0.1.9", optional = true }
+
+[dev-dependencies]
+# A dev-only crate that reads the same TZif bytes, used by the tests of this
+# crate's reader and POSIX rule arithmetic. Tests only.
+jiff = { version = "=0.2.38", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

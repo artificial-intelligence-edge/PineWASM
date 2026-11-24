@@ -1,0 +1,4 @@
+//@version=6
+indicator("Annotation mismatch")
+int n = 1.5
+plot(close)

@@ -1,0 +1,19 @@
+[package]
+name = "pinewasm_search"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Ripgrep-compatible regex search over bounded in-memory workspace files, wasm-safe"
+
+[dependencies]
+# BurntSushi's matcher libraries provide ripgrep's regex dialect and matching
+# semantics without filesystem, mmap, or platform-specific search paths.
+grep-regex = "0.1"
+grep-matcher = "0.1"
+serde = { workspace = true }
+
+[lints]
+workspace = true

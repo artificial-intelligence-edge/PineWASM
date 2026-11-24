@@ -1,0 +1,26 @@
+[package]
+name = "pinewasm_hir"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Typed, resolved high-level IR for Pine Script® v6 source"
+publish.workspace = true
+
+[dependencies]
+pinewasm_span = { workspace = true }
+# `TaFunc` and its operand/result/param-rule tables live with the engine that
+# executes them; this crate re-exports them at the path callers already use.
+pinewasm_ta = { workspace = true, features = ["serde"] }
+# The broker crate consumes the `strategy(...)` declaration through its
+# `StrategyProperties` trait; `StrategyInfo` implements it here so both the
+# interpreter and the AOT emitter construct brokers from the same metadata.
+pinewasm_broker = { workspace = true }
+serde = { workspace = true }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = { workspace = true }

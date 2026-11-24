@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 982
+expression: dump
+---
+HirProgram indicator="TA"
+  symbol 0 `%h0`: series float (slot 0, synthetic)
+  symbol 1 `c`: series float (slot 1)
+  symbol 2 `%h1`: series float (slot 2, synthetic)
+  symbol 3 `s`: series float (slot 3)
+  plot slot 0 title="<none>"
+  plot slot 1 title="<none>"
+  Assign `c` (sym 1)
+    TaCall ta.change slot0 len=1 : series float
+      ReadBuiltin close[0] : series float
+  Assign `s` (sym 3)
+    TaCall ta.sma slot2 len=2 : series float
+      ReadBuiltin close[0] : series float
+  Plot slot 0
+    ReadVar `c`[0] (sym 1) : series float
+    Color Color
+      ConstColor #2196F3 : const color
+  Plot slot 1
+    ReadVar `s`[0] (sym 3) : series float
+    Color Color
+      ConstColor #2196F3 : const color

@@ -1,0 +1,47 @@
+# The strategy broker emulator is shared by the interpreter and
+# the AOT runtime blob so the two tiers execute one implementation. A second
+# broker compiled into artifacts would
+# drift from the interpreter one fill at a time, and the drift would surface
+# as a mismatch between the two tiers' fill results.
+[package]
+name = "pinewasm_broker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Strategy broker emulator shared by the interpreter and AOT artifacts"
+publish.workspace = true
+
+[features]
+default = ["std"]
+# `std` adds nothing to broker semantics; it only unlocks `std::error::Error`
+# for [`BrokerError`]. The AOT runtime blob builds with
+# `--no-default-features` and gets the identical fill model.
+std = []
+# The public wire types (`StrategyTrade` and the report aggregates) are part
+# of the public host protocol, so embedding applications need them serializable. The
+# artifact build must not: `serde`'s derive machinery drags rodata (field and
+# variant name strings) into data segments the runtime-blob splice keeps
+# verbatim. Same decision as `pinewasm_ta`'s `serde` feature.
+serde = ["dep:serde"]
+# Miri cannot execute libm's target-specific inline assembly. This is a
+# non-default validation feature and does not alter shipped builds.
+miri = ["libm/force-soft-floats"]
+# Compiles the generic numeric twins of the broker kernels (`src/num.rs`) and
+# their Charon/Aeneas extraction roots (`aeneas_roots_broker`). Extraction
+# only; shipped builds never enable it and compile none of that code.
+aeneas = []
+
+[dependencies]
+# `sqrt`/`floor`/`ceil`/`round` are std-only methods on `f64`. All four are
+# routed through the same pinned software implementation in native and
+# `no_std` builds so the broker's numeric path cannot vary by target.
+libm = "=0.2.16"
+serde = { version = "1", default-features = false, features = ["derive", "alloc"], optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

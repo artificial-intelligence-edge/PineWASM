@@ -1,0 +1,30 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+assertion_line: 346
+expression: "lower_source(\"indicator(\\\"Pure\\\")\\nplot(math.min(1, 2, close))\\nplot(nz(close + na))\\nplot(math.pi)\\n\")"
+---
+MirBody title="Pure" slots=0 plots=3 values=13
+  plot 0 title="<none>"
+  plot 1 title="<none>"
+  plot 2 title="<none>"
+bb0:
+  v0 = const 1
+  v1 = const 2
+  v2 = read_builtin close[0]
+  v3 = call_pure math.min v0, v1, v2
+  v4 = const #2196F3
+  plot p0, v3
+    color Color v4
+  v5 = read_builtin close[0]
+  v6 = const na
+  v7 = binary `+` v5, v6
+  v8 = const 0
+  v9 = call_pure nz v7, v8
+  v10 = const #2196F3
+  plot p1, v9
+    color Color v10
+  v11 = const 3.141592653589793
+  v12 = const #2196F3
+  plot p2, v11
+    color Color v12
+  return

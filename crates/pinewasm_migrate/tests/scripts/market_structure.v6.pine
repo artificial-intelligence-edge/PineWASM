@@ -1,0 +1,116 @@
+//@version=6
+indicator("Market Structure Tracker", overlay = true, max_lines_count = 300, max_labels_count = 300)
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+type Point
+    float price
+    int bar
+    string kind
+
+type Structure
+    Point lastHigh
+    Point lastLow
+    int trend = 0
+    bool broke = false
+    int breaks = 0
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+swingLen = input.int(5, "Swing Length", minval = 1)
+showLabels = input.bool(true, "Show Structure Labels")
+bullColor = input.color(#00897B, "Bullish Color")
+bearColor = input.color(#FF5252, "Bearish Color")
+
+// ---------------------------------------------------------------------------
+// Methods
+// ---------------------------------------------------------------------------
+method isHigher(Point self, Point other) =>
+    na(other) ? false : self.price > other.price
+
+method describe(Point self) =>
+    self.kind + " @ " + str.tostring(self.price, format.mintick)
+
+method update(Structure self, Point p) =>
+    if p.kind == "H"
+        self.broke := false
+        if not na(self.lastHigh) and p.isHigher(self.lastHigh)
+            self.trend := 1
+        self.lastHigh := p
+    else
+        if not na(self.lastLow) and not p.isHigher(self.lastLow)
+            self.trend := -1
+        self.lastLow := p
+    self
+
+// ---------------------------------------------------------------------------
+// Swings
+// ---------------------------------------------------------------------------
+var Structure ms = Structure.new()
+ph = ta.pivothigh(high, swingLen, swingLen)
+pl = ta.pivotlow(low, swingLen, swingLen)
+
+if not na(ph)
+    ms.update(Point.new(ph, bar_index - swingLen, "H"))
+if not na(pl)
+    ms.update(Point.new(pl, bar_index - swingLen, "L"))
+
+// A fresh snapshot each bar lets later code compare with yesterday's.
+snap = Point.new(close, bar_index, "C")
+__v6_1 = snap[1]
+closeChange = snap.price - __v6_1.price
+
+// Break of structure: close through the most recent opposite swing.
+bosUp = not na(ms.lastHigh) and close > ms.lastHigh.price and ms.trend <= 0
+bosDown = not na(ms.lastLow) and close < ms.lastLow.price and ms.trend >= 0
+if bosUp or bosDown
+    ms.breaks := ms.breaks + 1
+    ms.broke := true
+
+// Persistent structure fields are read one bar back through a temporary.
+__v6_2 = ms.trend
+trendChanged = ms.trend != __v6_2[1]
+
+// ---------------------------------------------------------------------------
+// Drawing
+// ---------------------------------------------------------------------------
+if bosUp and showLabels
+    line.new(ms.lastHigh.bar, ms.lastHigh.price, bar_index, ms.lastHigh.price, color = bullColor, style = line.style_dashed)
+    label.new(bar_index, ms.lastHigh.price, "BOS", style = label.style_label_down, color = color.new(bullColor, 20), size = size.tiny, textcolor = color.black)
+if bosDown and showLabels
+    line.new(ms.lastLow.bar, ms.lastLow.price, bar_index, ms.lastLow.price, color = bearColor, style = line.style_dashed)
+    label.new(bar_index, ms.lastLow.price, "BOS", style = label.style_label_up, color = color.new(bearColor, 20), size = size.tiny, textcolor = color.black)
+
+trendColor = ms.trend == 1 ? bullColor : ms.trend == -1 ? bearColor : color.gray
+plot(na(ms.lastHigh) ? na : ms.lastHigh.price, "Swing High", color = bearColor, style = plot.style_stepline)
+plot(na(ms.lastLow) ? na : ms.lastLow.price, "Swing Low", color = bullColor, style = plot.style_stepline)
+barcolor(trendChanged ? #FFEB3B : na)
+plot(closeChange, "Close Change", display = display.data_window)
+
+var table t = table.new(position.top_right, 1, 2)
+if barstate.islast
+    top = ms.lastHigh
+    table.cell(t, 0, 0, "Breaks: " + str.tostring(ms.breaks), bgcolor = trendColor, text_color = color.white)
+    table.cell(t, 0, 1, na(top) ? "none" : top.describe(), text_color = color.gray)
+
+// ---------------------------------------------------------------------------
+// Order blocks: the last opposite candle before a break of structure
+// ---------------------------------------------------------------------------
+var box[] blocks = array.new_box()
+maxBlocks = input.int(5, "Order Blocks To Keep")
+if bosUp
+    idx = 1
+    while idx < 20 and close[idx] >= open[idx]
+        idx := idx + 1
+        idx
+    array.push(blocks, box.new(bar_index - idx, high[idx], bar_index + 10, low[idx], border_color = na, bgcolor = color.new(bullColor, 80)))
+if bosDown
+    idx = 1
+    while idx < 20 and close[idx] <= open[idx]
+        idx := idx + 1
+        idx
+    array.push(blocks, box.new(bar_index - idx, high[idx], bar_index + 10, low[idx], border_color = na, bgcolor = color.new(bearColor, 80)))
+while array.size(blocks) > maxBlocks
+    box.delete(array.shift(blocks))

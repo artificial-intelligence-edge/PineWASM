@@ -1,0 +1,16 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+assertion_line: 1642
+expression: dump_program(&result.program)
+---
+Program @ 0..113
+  Version 6 @ 0..12
+  IndicatorDecl @ 13..27
+    Str "U" @ 23..26
+  TypeDef `Point` @ 28..112
+    Field `x` : float @ 43..50
+    Field `y` : int @ 55..64
+      Number 5 (int) @ 63..64
+    Field `s` : string @ 69..77
+    Field `next` : Point @ 82..92
+    Field `xs` : array<float> @ 97..112

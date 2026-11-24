@@ -1,0 +1,25 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 101
+expression: dump
+---
+HirProgram indicator="Branch"
+  symbol 0 `value`: series float (slot 0)
+  plot slot 0 title="<none>"
+  Assign `value` (sym 0)
+    ConstFloat 0 : const float
+  If
+    Cond
+      Binary `>` : series bool
+        ReadBuiltin close[0] : series float
+        ReadBuiltin open[0] : series float
+    Then
+      Reassign `value` (sym 0)
+        ReadBuiltin close[0] : series float
+    Else
+      Reassign `value` (sym 0)
+        ReadBuiltin open[0] : series float
+  Plot slot 0
+    ReadVar `value`[0] (sym 0) : series float
+    Color Color
+      ConstColor #2196F3 : const color

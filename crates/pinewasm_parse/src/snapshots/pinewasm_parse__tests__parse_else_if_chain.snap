@@ -1,0 +1,29 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..64
+  Version <none>
+  If @ 0..63
+    Cond
+      Binary `>` @ 3..8
+        Ident `a` @ 3..4
+        Number 1 (int) @ 7..8
+    Then
+      ExprStmt @ 13..20
+        Call `plot` @ 13..20
+          Ident `a` @ 18..19
+    Else
+      If @ 26..63
+        Cond
+          Binary `>` @ 29..34
+            Ident `a` @ 29..30
+            Number 0 (int) @ 33..34
+        Then
+          ExprStmt @ 39..46
+            Call `plot` @ 39..46
+              Ident `b` @ 44..45
+        Else
+          ExprStmt @ 56..63
+            Call `plot` @ 56..63
+              Ident `c` @ 61..62

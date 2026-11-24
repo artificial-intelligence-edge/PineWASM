@@ -1,0 +1,95 @@
+{
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "plotcandle:hex8",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(#33669980)\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "ea258be482b372234c742d6cc7700a02603399a88966900a4d5466ec901bcc11",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:fractional-rgb",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(color.rgb(51,102,153,49.80392156862745))\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "9e392bdbc722db2528694dc2118559fa3b26d87199e13ce3a6bf3fc73f0f8daf",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:fractional-new",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(color.new(#336699,70.5))\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "6a3c579c007db016951e6415b18f6c6fa10bd9d797a0954bf61568e0cf7259ed",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:hex8",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(#33669980)\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "a5d1e249d1efc2573eed0d9ffd8885fc0bb65a83504e5a16698d8d0439585e71",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 50
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:fractional-rgb",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(color.rgb(51,102,153,49.80392156862745))\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "1847f8389760fa80d9210de4c1b0fdd3ef95b18f842d38a61c97532521ced478",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 50
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:fractional-new",
+      "source": "//@version=6\nindicator(\"own input color alpha\")\nc=input.color(color.new(#336699,70.5))\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "14c4deb96a315eae1a19f6f587f43fe7775972bbf6469afe3285550cc4c002c6",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70
+        },
+        "runtimeColorer": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "L"
+SERIES_SLOT 0 "s" var
+SERIES_SLOT 1 "%h0"
+SERIES_SLOT 2 "%h1"
+SERIES_SLOT 3 "i"
+PLOT_SLOT 0
+
+FUNC main (max_stack 4)
+  0000 JUMP_IF_SLOT_WRITTEN 0 0003      ; 15..24
+  0001 PUSH_I64 0                       ; 23..24
+  0002 STORE_USER_SLOT_CURRENT 0        ; 15..24
+  0003 PUSH_I64 0                       ; 30..31
+  0004 STORE_USER_SLOT_CURRENT 0        ; 25..31
+  0005 PUSH_I64 1                       ; 40..41
+  0006 STORE_USER_SLOT_CURRENT 3        ; 32..62
+  0007 PUSH_I64 10                      ; 45..47
+  0008 STORE_USER_SLOT_CURRENT 1        ; 32..62
+  0009 READ_USER_SLOT 3 0               ; 32..62
+  0010 READ_USER_SLOT 1 0               ; 32..62
+  0011 CMP_LE                           ; 32..62
+  0012 PUSH_I64 1                       ; 32..62
+  0013 PUSH_I64 -1                      ; 32..62
+  0014 SELECT                           ; 32..62
+  0015 STORE_USER_SLOT_CURRENT 2        ; 32..62
+  0016 PUSH_I64 10                      ; 45..47
+  0017 STORE_USER_SLOT_CURRENT 1        ; 32..62
+  0018 READ_USER_SLOT 2 0               ; 32..62
+  0019 PUSH_I64 0                       ; 32..62
+  0020 CMP_GE                           ; 32..62
+  0021 READ_USER_SLOT 3 0               ; 32..62
+  0022 READ_USER_SLOT 1 0               ; 32..62
+  0023 CMP_LE                           ; 32..62
+  0024 READ_USER_SLOT 3 0               ; 32..62
+  0025 READ_USER_SLOT 1 0               ; 32..62
+  0026 CMP_GE                           ; 32..62
+  0027 SELECT                           ; 32..62
+  0028 JUMP_IF_FALSE 0038               ; 32..62
+  0029 READ_USER_SLOT 0 0               ; 57..58
+  0030 READ_USER_SLOT 3 0               ; 61..62
+  0031 INT_ADD                          ; 57..62
+  0032 STORE_USER_SLOT_CURRENT 0        ; 52..62
+  0033 READ_USER_SLOT 3 0               ; 32..62
+  0034 READ_USER_SLOT 2 0               ; 32..62
+  0035 INT_ADD                          ; 32..62
+  0036 STORE_USER_SLOT_CURRENT 3        ; 32..62
+  0037 JUMP 0016                        ; 32..62
+  0038 READ_USER_SLOT 0 0               ; 68..69
+  0039 INT_TO_F64                       ; 68..69
+  0040 PUSH_COLOR #2196F3               ; 63..70
+  0041 PLOT_STYLED_F64 0 1              ; 63..70
+  0042 RETURN                           ; 63..70
+END

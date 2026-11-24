@@ -1,0 +1,59 @@
+//@version=6
+indicator("Collections Syntax")
+
+// Generic-constructor sugar: `array.new<T>()`, `matrix.new<T>(r, c)`,
+// `map.new<K, V>()` desugar to the typed constructors. `<`/`>` remain
+// comparison operators everywhere else.
+prices = array.new<float>(0)
+grid = matrix.new<int>(2, 2, 0)
+scores = map.new<string, float>()
+
+// Method-call syntax: `value.method(args)` on a collection receiver desugars
+// to the namespace form (`prices.push(x)` == `array.push(prices, x)`), with
+// the receiver becoming the first argument.
+prices.push(4.0)
+prices.push(2.0)
+prices.push(9.0)
+prices.push(2.0)
+
+// `for element in arr` iterates each element in turn.
+total = 0.0
+for x in prices
+    total := total + x
+plot(total, "sum via for…in")
+
+// `for [index, element] in arr` exposes both the position and the value.
+// Weight each price by its index.
+weighted = 0.0
+for [i, price] in prices
+    weighted := weighted + i * price
+plot(weighted, "index-weighted sum")
+
+// break / continue work inside a for…in loop. Sum only the elements strictly
+// before the first value >= 9.
+capped = 0.0
+for p in prices
+    if p >= 9.0
+        break
+    capped := capped + p
+plot(capped, "sum until first >= 9")
+
+// Method calls compose with the namespace form and read back the same values.
+n = prices.size()
+first = prices.get(0)
+plot(n + first, "size + first via methods")
+
+// Matrix and map method calls.
+grid.set(0, 0, 7)
+plot(grid.get(0, 0) + grid.rows() + grid.columns(), "matrix methods")
+
+put0 = scores.put("a", 3.0)
+put1 = scores.put("b", 4.0)
+plot(scores.get("a") + scores.get("b") + scores.size(), "map methods")
+
+// Nested for…in: the product sum over all ordered pairs.
+mesh = 0.0
+for a in prices
+    for b in prices
+        mesh := mesh + a * b
+plot(mesh, "nested for…in product sum")

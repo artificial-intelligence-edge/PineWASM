@@ -1,0 +1,108 @@
+//@version=6
+// PineWASM numeric runtime regression fixture.
+//
+// Every argument is derived from bar_index, so the same bar count exercises
+// the same inputs locally without market data or network access. The fixture
+// records source expressions only; expected behavior is asserted by PineWASM's
+// Rust tests.
+//
+// The value columns expose normal finite results. The `is_na_*` columns expose
+// domain and overflow normalization as 1.0/0.0 so missing values do not become
+// ambiguous when results pass through a tabular format.
+//
+indicator("PineWASM Numeric Runtime Regression", overlay = false)
+
+i = bar_index
+
+is_na(v) =>
+    na(v) ? 1.0 : 0.0
+
+// Bounded, periodic input families. Power-of-two divisors keep the argument
+// construction exact; the remaining divides are deterministic IEEE 754
+// operations and do not depend on chart values.
+unit = ((i % 2001) - 1000) / 1000.0
+signed = ((i % 2001) - 1000) / 500.0
+positive_small = ((i % 4096) + 1) / 4096.0
+positive_large = (i % 4096) + 1
+angle = ((i % 2001) - 1000) / 8.0
+exp_input = ((i % 641) - 320) / 8.0
+
+plot(i, "bar_index")
+plot(math.exp(exp_input), "exp")
+plot(math.log(positive_small), "log_small")
+plot(math.log(positive_large), "log_large")
+plot(math.log10(positive_small), "log10")
+plot(math.sin(angle), "sin")
+plot(math.cos(angle), "cos")
+plot(math.tan(angle), "tan")
+plot(math.asin(unit), "asin")
+plot(math.acos(unit), "acos")
+plot(math.atan(angle), "atan")
+plot(math.sqrt(positive_large), "sqrt")
+
+// Coprime periods close the full two-argument grids within a bounded history.
+pow_base = ((i % 71) + 1) / 8.0
+pow_exponent = ((i % 72) - 36) / 8.0
+plot(math.pow(pow_base, pow_exponent), "pow_grid")
+
+pow_wide_base = ((i % 73) + 1) / 4.0
+pow_wide_exponent = ((i % 74) - 37) * 2.0
+plot(math.pow(pow_wide_base, pow_wide_exponent), "pow_wide")
+
+// Consecutive representable inputs around reduction and domain boundaries.
+tan_pole = 1.5707963267948966 + ((i % 41) - 20) * 2.220446049250313e-16
+log_near_one = 1.0 + ((i % 41) - 20) * 2.220446049250313e-16
+asin_near_one = 1.0 - (i % 31) * 1.1102230246251565e-16
+plot(math.tan(tan_pole), "tan_near_pi_over_two")
+plot(math.log(log_near_one), "log_near_one")
+plot(math.asin(asin_near_one), "asin_near_one")
+
+// Large-argument range reduction. At 1e18 the spacing between adjacent f64
+// values is 128, so this walks distinct representable inputs.
+huge = 1.0e18 + (i % 1009) * 128.0
+plot(math.sin(huge), "sin_huge")
+plot(math.cos(huge), "cos_huge")
+
+// Exact half steps show the rounding rule directly, with no expected data needed.
+half = ((i % 4001) - 2000) / 2.0
+plot(math.round(half), "round_half")
+plot(math.ceil(half), "ceil_half")
+plot(math.floor(half), "floor_half")
+plot(math.sign(half), "sign_half")
+plot(math.round(half, 0), "round_half_precision_zero")
+
+round_input = ((i % 661) + 1) / 997.0 * 1000.0
+plot(math.round(round_input, i % 5), "round_precision")
+// The negative precision is runtime-derived. PineWASM clamps it to zero;
+// statically known out-of-range precision remains a compile-time error.
+plot(math.round(round_input, -1 - (i % 4)), "round_negative_precision")
+
+// Remainder operands straddle zero to expose truncating-remainder sign rules.
+rem_a = ((i % 479) - 239) / 7.0
+rem_b = ((i % 13) + 1) / 2.0
+plot(rem_a % rem_b, "remainder")
+
+degrees = ((i % 3601) - 1800) / 10.0
+plot(math.toradians(degrees), "to_radians")
+plot(math.todegrees(unit), "to_degrees")
+
+// Parser fidelity for values near precision and magnitude boundaries. Values
+// are literal constants chosen to test IEEE 754 boundary cases.
+literal_selector = i % 12
+literal = literal_selector == 0 ? 0.1 : literal_selector == 1 ? 0.3 : literal_selector == 2 ? 1.0e23 : literal_selector == 3 ? 9007199254740993.0 : literal_selector == 4 ? 1.0000000000000002 : literal_selector == 5 ? 0.9999999999999999 : literal_selector == 6 ? 2.2250738585072011e-308 : literal_selector == 7 ? 2.2250738585072014e-308 : literal_selector == 8 ? 4.9406564584124654e-324 : literal_selector == 9 ? 1.2345678901234567e-17 : literal_selector == 10 ? 3.1415926535897932384626433832795 : 2.2204460492503131e-16
+plot(literal, "literal")
+
+// Domain and non-finite normalization. Inputs remain runtime expressions so
+// these checks exercise execution rather than only constant validation.
+plot(is_na(math.asin(signed)), "is_na_asin")
+plot(is_na(math.log(signed)), "is_na_log")
+plot(is_na(math.sqrt(signed)), "is_na_sqrt")
+plot(is_na(math.pow(signed, 0.5)), "is_na_pow")
+
+wide = (i % 1601) - 800
+plot(is_na(math.exp(wide)), "is_na_exp")
+
+ratio = ((i % 3) - 1) * 1.0 / (((i % 5) - 2) * 1.0)
+plot(is_na(ratio), "is_na_division")
+plot(is_na(math.max(math.sqrt(signed), 1.0)), "is_na_max")
+plot(is_na(math.min(1.0, math.sqrt(signed))), "is_na_min")

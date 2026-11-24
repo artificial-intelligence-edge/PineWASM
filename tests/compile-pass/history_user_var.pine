@@ -1,0 +1,5 @@
+//@version=6
+indicator("History")
+x = (close - open) / open
+y = x[1]
+plot(y)

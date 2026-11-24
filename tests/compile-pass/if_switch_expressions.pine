@@ -1,0 +1,60 @@
+//@version=6
+indicator("If and switch expressions")
+
+// if used as a value (both branches supply the value)
+picked = if close > open
+    close
+else
+    open
+
+// missing else yields na of the then-branch type
+high_only = if close > 11
+    close
+
+// nested if-expression
+tier = if close > open
+    if close > 11.5
+        1.0
+    else
+        2.0
+else
+    3.0
+
+// multi-statement value branch (leading statements, trailing value)
+scaled = if close > open
+    doubled = close * 2
+    doubled + 1
+else
+    0.0
+
+// switch with a subject, inline arms and a default
+label = switch bar_index
+    0 => 100.0
+    1 => 200.0
+    => 999.0
+
+// switch with a subject but no default: unmatched yields na
+sparse = switch bar_index
+    0 => 100.0
+    1 => 200.0
+
+// subjectless switch (arms are boolean conditions)
+sign = switch
+    close > open => 1.0
+    close < open => -1.0
+    => 0.0
+
+// switch as a statement (arm bodies are effect statements)
+var float acc = 0.0
+switch bar_index
+    0 => acc := 5.0
+    => acc := 9.0
+
+plot(picked, "picked")
+plot(high_only, "high only")
+plot(tier, "tier")
+plot(scaled, "scaled")
+plot(label, "label")
+plot(sparse, "sparse")
+plot(sign, "sign")
+plot(acc, "acc")

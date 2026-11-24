@@ -1,0 +1,856 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "arrows": [
+    {
+      "id": "statement_00",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif bool(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "20173db7e6eeeef4c1f5c21569838cdec18706af23908b55bc5b053d92d11c43",
+      "guard": "bool(na)",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_01",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "b22491558b37643d57a1bf4e129192a3bd4c224a189ad7c9701d6cd4e39df88f",
+      "guard": "float(na) > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_02",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) < 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "dcdb1d171ba65ebb305905cccf3396c81f316e5b46db792806e6522345e10ce1",
+      "guard": "float(na) < 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_03",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) == 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "4d6323285f6dcb6640d2055b634a2af80e863a476f710e90d95ae9f50d227951",
+      "guard": "float(na) == 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_04",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) != 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "e1fd72706c71ddd3f38324b2d085484e0884a17165162b802a3cc90866aaf8c7",
+      "guard": "float(na) != 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_05",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif not bool(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "3af1b9c38af6e56711a86a58044f485f94ab5a6dc84b641da7a0c276ebd4deb5",
+      "guard": "not bool(na)",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_06",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) == float(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "3f8574a59cd083f001082534c193cbedbae91f4b9f0176a5f2666bb3a942a2db",
+      "guard": "float(na) == float(na)",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_07",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif float(na) != float(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "4687f5dace8dc106a6289dd18752c9e12bbe9d62ae4fe8acd172b0869c2b8403",
+      "guard": "float(na) != float(na)",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_08",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif bool(na) and close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "98a76912d2b88f2e13fd65922973246938322be0f2ca4018abacdfbed0b90df3",
+      "guard": "bool(na) and close > 0",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_09",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif bool(na) or close > 0\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "a723328bc97decb709def1be26ad9eaae26ebd8393b864dd074ed9d2e74d6750",
+      "guard": "bool(na) or close > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_10",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif close > 0 and bool(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "05bb596375838a0f913076f422ae7f407a3b65500b39d068991584acca3b770f",
+      "guard": "close > 0 and bool(na)",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "statement_11",
+      "source": "//@version=6\nindicator(\"Arrow missing guards\")\ncolor UP=color.new(#336699,70)\nif close > 0 or bool(na)\n    UP:=#669933\nplotarrow(close,colorup=UP)",
+      "sourceSha256": "23492c063c4190898d7bc3c0c3ef3477ef640a173444753e1ec40c8d30f90b61",
+      "guard": "close > 0 or bool(na)",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_00",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = bool(na) ? #336699 : #669933)",
+      "sourceSha256": "7f1b560e91362344772f34fd2083dd088f76183b3d2f38a5db5836ec49b1c169",
+      "guard": "bool(na)",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_01",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = not bool(na) ? #336699 : #669933)",
+      "sourceSha256": "31785e50890473508c85db3bfb6679e2fc18e6eb3fabaf0f8f64049a0373c374",
+      "guard": "not bool(na)",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_02",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = float(na) > 0 ? #336699 : #669933)",
+      "sourceSha256": "5d23326cdbd135030c701d1eb1d8f6df487f029898b96417efc220fd20d5899a",
+      "guard": "float(na) > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_03",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = float(na) != 0 ? #336699 : #669933)",
+      "sourceSha256": "945b900e852aec00607952378bae5d84b8f3ff05cc0ceee6a1da7e9a4fae5eca",
+      "guard": "float(na) != 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_04",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = bool(na) and close > 0 ? #336699 : #669933)",
+      "sourceSha256": "e0f8b9f6bb64231054f8c1593afa2605858b0e2297e1118c2de0c867bd85fbda",
+      "guard": "bool(na) and close > 0",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ternary_05",
+      "source": "//@version=6\nindicator(\"Arrow missing ternary guards\")\nplotarrow(close, colorup = bool(na) or close > 0 ? #336699 : #669933)",
+      "sourceSha256": "416c4ecaa72d670d30e86f5c44789d509b2689c4febd47ea27a242c03826b458",
+      "guard": "bool(na) or close > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_00",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=bool(float(na))?#336699:#669933)",
+      "sourceSha256": "9b667300ce065f851fd6ade6063d526acb0fed73bbdf488acb054bfe4c877a3c",
+      "guard": "bool(float(na))",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_01",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=not bool(float(na))?#336699:#669933)",
+      "sourceSha256": "f30592c00f0dfb2f0e362f2519f4ea1895bcdab3cdd43041fadf8e688897b71b",
+      "guard": "not bool(float(na))",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_02",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=bool(int(na))?#336699:#669933)",
+      "sourceSha256": "49e51a75280463a573b2c45c3c6cfda2b5bb24590a6e60473ed1d89e4e3db56f",
+      "guard": "bool(int(na))",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_03",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=int(na) > 0?#336699:#669933)",
+      "sourceSha256": "18e8ca29a468c03bd42a45b71be383d9ab578331a378dd13ae0f0dcb1b07efd6",
+      "guard": "int(na) > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_04",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=int(na) == int(na)?#336699:#669933)",
+      "sourceSha256": "61dead4f3e8b7df70e7f323126f1d840f1501c6176c4d692189707df61079839",
+      "guard": "int(na) == int(na)",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_05",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=float(na) > 0 and false?#336699:#669933)",
+      "sourceSha256": "cc53aaa3087f1902bc63dd6a2c9557ee4d55058e9763ef249396d24b4d07f46b",
+      "guard": "float(na) > 0 and false",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_06",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=false and float(na) > 0?#336699:#669933)",
+      "sourceSha256": "f417e50881d70a595043efcc8b48704ee36540c6422ea3bb9a1dde43b15a83f9",
+      "guard": "false and float(na) > 0",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_07",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=float(na) > 0 or true?#336699:#669933)",
+      "sourceSha256": "22483e320e83609c01990ccd825d06eaf71a15b46cf81e29025fd8ef61e2ae3b",
+      "guard": "float(na) > 0 or true",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_08",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=float(na) > 0 and close > 0?#336699:#669933)",
+      "sourceSha256": "cb8e54a2d07633883c7171fc6e6c08b581377f2947dee9eadfd1bbd8544c7b29",
+      "guard": "float(na) > 0 and close > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested_09",
+      "source": "//@version=6\nindicator(\"Arrow nested missing guards\")\nplotarrow(close,colorup=(float(na)+1) > 0?#336699:#669933)",
+      "sourceSha256": "e8da11361611eafa587c91a86c520a98d60e6922f17d19cb6d5b35c98062e04f",
+      "guard": "(float(na)+1) > 0",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_00",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nfloat X=na\nplotarrow(close,colorup=bool(X)?#336699:#669933)",
+      "sourceSha256": "8d3ad6569013e12a98d3b4593911d8b3c894ba029cce5fdcd4bd49f9ed83fdde",
+      "guard": "float-direct-na",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_01",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nfloat X=float(na)\nplotarrow(close,colorup=bool(X)?#336699:#669933)",
+      "sourceSha256": "c96a3b7ba6fd0411271dc852a2a14597d2f4903bd82e0c50a89c1f169e554ac3",
+      "guard": "float-explicit-na",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_02",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nint X=na\nplotarrow(close,colorup=bool(X)?#336699:#669933)",
+      "sourceSha256": "5648cd7156dfd506648c8a37b435e361441f9aa4563e8ebef73567304dbb0bba",
+      "guard": "int-direct-na",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_03",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nint X=int(na)\nplotarrow(close,colorup=bool(X)?#336699:#669933)",
+      "sourceSha256": "cc7692edd80641ff54e87948b93ffe58000145f1c60b1b47d8efaf70b4a0fe41",
+      "guard": "int-explicit-na",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_04",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nbool X=bool(na)\nplotarrow(close,colorup=X?#336699:#669933)",
+      "sourceSha256": "f8c5d8364647be998060fae6a6e60a1d4d019da1b4e8d242cf3b60eba354e2de",
+      "guard": "bool-direct-cast",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias_05",
+      "source": "//@version=6\nindicator(\"Arrow missing alias guards\")\nvar float X=na\nplotarrow(close,colorup=bool(X)?#336699:#669933)",
+      "sourceSha256": "be5df1a19adb59c39898dd62dbe6a2d1390ec734e46a0a099dc042df4205dacf",
+      "guard": "float-persistent-na",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedCompileSuccess": true
+    }
+  ]
+}

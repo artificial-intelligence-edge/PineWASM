@@ -1,0 +1,16 @@
+# The toolchain every PineWASM build uses, CI and local alike.
+#
+# This pin and PINEWASM_RUST_VERSION in .github/workflows/ci.yml are two
+# spellings of one decision and must move together — CI installs its version
+# explicitly, while `pinewasm_xtask` rejects a mismatched
+# PINEWASM_RUST_VERSION before launching a child tool. The workspace denies the
+# whole `warnings` group (see the `[workspace.lints]` table in Cargo.toml), so
+# keeping this a single reviewed pin also prevents local and hosted lint sets
+# from drifting.
+[toolchain]
+channel = "1.97.1"
+
+# rustfmt and clippy back `cargo xtask check`; wasm32-unknown-unknown is what
+# `cargo xtask wasm` builds the programmatic JavaScript package directly.
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]

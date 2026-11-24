@@ -1,0 +1,27 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+assertion_line: 135
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "TA"
+SERIES_SLOT 0 "%h0"
+SERIES_SLOT 1 "%h1"
+PLOT_SLOT 0
+PLOT_SLOT 1
+
+FUNC main (max_stack 2)
+  0000 READ_BUILTIN CLOSE 0             ; 31..36
+  0001 STORE_USER_SLOT_CURRENT 0        ; 21..37
+  0002 READ_USER_SLOT 0 0               ; 21..37
+  0003 READ_USER_SLOT 0 1               ; 21..37
+  0004 F64_SUB                          ; 21..37
+  0005 PUSH_COLOR #2196F3               ; 16..38
+  0006 PLOT_STYLED_F64 0 1              ; 16..38
+  0007 READ_BUILTIN CLOSE 0             ; 51..56
+  0008 STORE_USER_SLOT_CURRENT 1        ; 44..60
+  0009 WINDOW_MEAN 1 2                  ; 44..60
+  0010 PUSH_COLOR #2196F3               ; 39..61
+  0011 PLOT_STYLED_F64 1 1              ; 39..61
+  0012 RETURN                           ; 39..61
+END

@@ -1,0 +1,111 @@
+//@version=6
+// @description Reusable helpers for bands, pivots and position sizing.
+library("ToolkitLibrary", overlay = true)
+
+// @type A swing point with the bar it formed on.
+// @field price The swing price.
+// @field bar The bar index of the swing.
+// @field confirmed Whether enough bars have passed to confirm it.
+export type Swing
+    float price
+    int bar
+    bool confirmed = false
+
+// @type A rolling band.
+export type Band
+    float upper
+    float lower
+    float basis
+
+// Bars in a half window of a centered average; integer division truncates it.
+export halfWindow(simple int len) =>
+    len / 2
+
+// Fixed geometry used by the helpers below.
+STEPS = 10
+QUARTER = int(STEPS / 4)
+
+// @function Percent rank of the latest value inside its window.
+export rankOf(float src, int len) =>
+    float lowest = ta.lowest(src, len)
+    float highest = ta.highest(src, len)
+    highest == lowest ? 50.0 : (src - lowest) / (highest - lowest) * 100
+
+// @function A band around a basis average.
+export band(float src, simple int len, float mult) =>
+    basis = ta.sma(src, len)
+    dev = ta.stdev(src, len) * mult
+    Band.new(basis + dev, basis - dev, basis)
+
+// @function Whether a source is rising and the band is widening.
+export expanding(Band b, float src) =>
+    width = b.upper - b.lower
+    __v6_1 = ta.change(width) > 0
+    src > b.basis and __v6_1
+
+// @function The width of a band relative to its basis.
+export method widthPercent(Band self) =>
+    self.basis == 0 ? na : (self.upper - self.lower) / self.basis * 100
+
+// @function Record a swing high if one formed `right` bars ago.
+export swingHigh(simple int left, simple int right) =>
+    ph = ta.pivothigh(high, left, right)
+    Swing s = na
+    if not na(ph)
+        s := Swing.new(ph, bar_index - right, true)
+    s
+
+// @function Position size for a fixed fractional risk.
+export sizeFor(float equity, float riskPct, float stopDistance) =>
+    stopDistance <= 0 ? 0.0 : math.floor(equity * riskPct / 100 / stopDistance)
+
+// @function A signal that is true on the first bar of a streak.
+export streakStart(bool cond) =>
+    cond and not cond[1]
+
+// @function Distance steps between two prices, in quarter units.
+export quarterSteps(float a, float b) =>
+    math.round(math.abs(a - b) / QUARTER)
+
+// @function A label color that stays readable on a dark background.
+export labelColor(bool up) =>
+    up ? #00897B : #FF5252
+
+// Demonstration plots for the library page.
+b = band(close, 20, 2.0)
+plot(b.upper, "Upper", color = #00897B)
+plot(b.lower, "Lower", color = #FF5252)
+plot(b.basis, "Basis", color = color.new(color.gray, 40))
+plotshape(expanding(b, close), "Expanding", shape.circle, location.top, color = labelColor(close > open))
+
+// @function Mean of the last `n` values of an array, skipping `na`.
+export tailMean(float[] values, int n) =>
+    size = array.size(values)
+    total = 0.0
+    count = 0
+    for i = math.max(0, size - n) to size - 1 by 1
+        v = array.get(values, i)
+        if not na(v)
+            total := total + v
+            count := count + 1
+            count
+    count == 0 ? na : total / count
+
+// @function The midpoint bucket of an evenly split range.
+export bucketMid(float lo, float hi) =>
+    BUCKETS = 8
+    step = (hi - lo) / BUCKETS
+    lo + step * int(BUCKETS / 2)
+
+// @function Whether a swing is still valid, reading the price one bar back.
+export method holds(Swing self) =>
+    bool __v6_2 = if na(self)
+        false
+    else
+        __v6_3 = ta.cross(close, self.price)
+        close[1] >= self.price * 0.99 or __v6_3
+    __v6_2
+
+// @function Default color for an optional highlight.
+export highlight(bool on = false) =>
+    on ? #FFEB3B : na

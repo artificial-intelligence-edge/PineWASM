@@ -1,0 +1,8 @@
+//@version=6
+indicator("na and nz")
+change = close - close[1]
+missing = na(change)
+plot(missing ? nz(change) : na)
+plot(missing ? na : nz(change, -1.0))
+x = close + na
+plot(nz(x[1]))

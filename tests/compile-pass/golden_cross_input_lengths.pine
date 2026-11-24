@@ -1,0 +1,16 @@
+//@version=6
+indicator("Golden Cross", overlay=true)
+
+fastLen = input.int(9, "Fast length")
+slowLen = input.int(50, "Slow length")
+
+fast = ta.ema(close, fastLen)
+slow = ta.sma(close, slowLen)
+
+bull = ta.crossover(fast, slow)
+bear = ta.crossunder(fast, slow)
+
+plot(fast, "Fast EMA")
+plot(slow, "Slow SMA")
+plotshape(bull, "Golden cross")
+plotshape(bear, "Death cross")

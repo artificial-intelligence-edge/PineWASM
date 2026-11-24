@@ -1,0 +1,30 @@
+[package]
+name = "pinewasm_mir"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Mid-level IR with explicit control flow and explicit effects"
+publish.workspace = true
+
+[features]
+# Extraction roots for Charon/Aeneas; never enabled in production builds.
+aeneas = []
+# Opt-in current derived-Clone producer; existing aeneas extraction targets keep their names.
+aeneas-color-clone = ["aeneas"]
+
+[dependencies]
+pinewasm_span = { workspace = true }
+pinewasm_hir = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+pinewasm_parse = { workspace = true }
+pinewasm_semantics = { workspace = true }
+serde_json = { workspace = true }
+insta = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true

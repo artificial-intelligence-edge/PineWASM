@@ -1,0 +1,32 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 2482
+expression: dump
+---
+HirProgram indicator="L"
+  symbol 0 `s`: series int (slot 0, var)
+  symbol 1 `%h0`: series int (slot 1, synthetic)
+  symbol 2 `%h1`: series int (slot 2, synthetic)
+  symbol 3 `i`: series int (slot 3)
+  plot slot 0 title="<none>"
+  VarAssign `s` (sym 0)
+    ConstInt 0 : const int
+  Reassign `s` (sym 0)
+    ConstInt 0 : const int
+  For `i` (sym 3) int end_slot1 step_slot2 implicit
+    Start
+      ConstInt 1 : const int
+    End
+      ConstInt 10 : const int
+    Step
+      ConstInt 1 : const int
+    Body
+      Reassign `s` (sym 0)
+        Binary `+` : series int
+          ReadVar `s`[0] (sym 0) : series int
+          ReadVar `i`[0] (sym 3) : series int
+  Plot slot 0
+    IntToFloat : series float
+      ReadVar `s`[0] (sym 0) : series int
+    Color Color
+      ConstColor #2196F3 : const color

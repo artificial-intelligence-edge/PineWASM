@@ -1,0 +1,28 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 1285
+expression: dump
+---
+HirProgram indicator="M"
+  plot slot 0 title="<none>"
+  plot slot 1 title="<none>"
+  plot slot 2 title="<none>"
+  Plot slot 0
+    CallPure math.sqrt argc=1 : series float
+      ReadBuiltin close[0] : series float
+    Color Color
+      ConstColor #2196F3 : const color
+  Plot slot 1
+    IntToFloat : series float
+      CallPure math.min argc=3 : series int
+        ConstInt 1 : const int
+        ConstInt 2 : const int
+        ReadBuiltin bar_index[0] : series int
+    Color Color
+      ConstColor #2196F3 : const color
+  Plot slot 2
+    CallPure nz argc=2 : series float
+      ReadBuiltin close[1] : series float
+      ConstFloat 0 : const float
+    Color Color
+      ConstColor #2196F3 : const color

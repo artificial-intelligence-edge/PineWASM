@@ -1,0 +1,93 @@
+{
+  "kind": "plotchar-character-cases",
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "title": "direct-na",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"direct-na\",char=na,text=\"T\")\n",
+      "sourceSha256": "848156bf613d32d9eb8ec2bc9a08a1cb41552852dad8cd99d5884c59ca428736",
+      "expected": "n",
+      "plotId": "plot_0",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "literal-na",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"literal-na\",char=\"na\",text=\"T\")\n",
+      "sourceSha256": "cd5851c833527d6ffcdfada83addff9dd83248ff3d2aa6813c1c41ebda9bd4a2",
+      "expected": "n",
+      "plotId": "plot_1",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "literal-NaN",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"literal-NaN\",char=\"NaN\",text=\"T\")\n",
+      "sourceSha256": "a6dc55205f222c68ba70d88b72951aa7e74de6380328f6bedf93f9a4839b47d8",
+      "expected": "N",
+      "plotId": "plot_2",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "literal-long",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"literal-long\",char=\"abc\",text=\"T\")\n",
+      "sourceSha256": "da60384f422f40857a2fcdb3b95938bc2adba016695db5bbc9d6b8cda0e4ba2b",
+      "expected": "a",
+      "plotId": "plot_3",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "unicode-pair",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"unicode-pair\",char=\"🠅Z\",text=\"T\")\n",
+      "sourceSha256": "d79b947a3891bf4e6974bf81570ffa8af93bf35574790f1115c4417540a108d8",
+      "expected": "🠅",
+      "plotId": "plot_4",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "combining",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"combining\",char=\"éZ\",text=\"T\")\n",
+      "sourceSha256": "2d57e1357bdfd9910bbc6b4cd7eed2ad289df26a61233faf216f94ac6c95a1d3",
+      "expected": "e",
+      "plotId": "plot_5",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "cast-na",
+      "source": "//@version=6\nindicator(\"Char rules\",overlay=true)\nplotchar(true,title=\"cast-na\",char=string(na),text=\"T\")\n",
+      "sourceSha256": "22be883718244738c25b25e70e66ee50f1e2790abbbac63233ae3f9dda8c265d",
+      "expected": "",
+      "plotId": "plot_0",
+      "sourceRelation": "standalone-inline-plotchar-call",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "implicit-alias",
+      "source": "//@version=6\nindicator(\"owned alias check\")\nglyph=\"éZ\"\nplotchar(true, \"Check\", char=glyph,text=\"T\")",
+      "sourceSha256": "1d4671e4c3ddcf3ccb9f52e567cb13b495e225741d6da5bdd9e364ab2f883ebf",
+      "expected": "e",
+      "plotId": "plot_0",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "explicit-const-alias",
+      "source": "//@version=6\nindicator(\"owned alias check\")\nconst string glyph=\"éZ\"\nplotchar(true, \"Check\", char=glyph,text=\"T\")",
+      "sourceSha256": "8b2c94bb764ce8cd1d78f2c25ff4bf68958135f75cf7379bb75809f85560a877",
+      "expected": "e",
+      "plotId": "plot_0",
+      "expectedCompileSuccess": true
+    },
+    {
+      "title": "input-alias",
+      "source": "//@version=6\nindicator(\"owned alias check\")\nglyph=input.string(\"éZ\")\nplotchar(true, \"Check\", char=glyph,text=\"T\")",
+      "sourceSha256": "4915a7bdd0746f3ec59baf37bf02601dd46ae1feb6bbb1904787daeb89807fa0",
+      "expected": "éZ",
+      "plotId": "plot_0",
+      "expectedCompileSuccess": true
+    }
+  ]
+}

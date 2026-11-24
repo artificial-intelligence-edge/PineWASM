@@ -1,0 +1,33 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+assertion_line: 99
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "Lazy"
+SERIES_SLOT 0 "signal"
+PLOT_SLOT 0
+
+FUNC main (max_stack 4)
+  0000 READ_BUILTIN CLOSE 0             ; 27..32
+  0001 READ_BUILTIN OPEN 0              ; 35..39
+  0002 CMP_GT                           ; 27..39
+  0003 DUP                              ; 27..84
+  0004 JUMP_IF_EXACT_FALSE 0015         ; 27..84
+  0005 READ_BUILTIN CLOSE 0             ; 45..50
+  0006 READ_BUILTIN CLOSE 1             ; 53..61
+  0007 CMP_GT                           ; 45..61
+  0008 DUP                              ; 45..83
+  0009 JUMP_IF_EXACT_TRUE 0014          ; 45..83
+  0010 READ_BUILTIN VOLUME 0            ; 65..71
+  0011 READ_BUILTIN VOLUME 1            ; 74..83
+  0012 CMP_GT                           ; 65..83
+  0013 BOOL_OR                          ; 45..83
+  0014 BOOL_AND                         ; 27..84
+  0015 PUSH_F64 1                       ; 99..102
+  0016 PUSH_F64 0                       ; 105..108
+  0017 SELECT                           ; 90..108
+  0018 PUSH_COLOR #2196F3               ; 85..109
+  0019 PLOT_STYLED_F64 0 1              ; 85..109
+  0020 RETURN                           ; 85..109
+END

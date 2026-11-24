@@ -1,0 +1,28 @@
+//@version=6
+indicator("Arrays Search and Stats")
+
+// Binary search over a sorted array. The array must be sorted ascending;
+// `binary_search` returns the index of a present value or -1 when absent, while
+// the leftmost/rightmost variants always land on a valid index.
+sorted = array.from(1.0, 2.0, 2.0, 5.0, 9.0)
+hit = array.binary_search(sorted, 5.0)
+miss = array.binary_search(sorted, 4.0)
+plot(hit + miss, "binary_search hit/miss")
+
+// Method-call form resolves to the same builtin.
+left = sorted.binary_search_leftmost(2.0)
+right = sorted.binary_search_rightmost(2.0)
+plot(left + right, "leftmost/rightmost on duplicates")
+
+// covariance of two numeric arrays; the biased (population) estimator is the
+// default, and an explicit `false` selects the unbiased (sample) one.
+xs = array.from(1.0, 2.0, 3.0)
+ys = array.from(2.0, 4.0, 6.0)
+plot(array.covariance(xs, ys), "biased covariance")
+plot(array.covariance(xs, ys, false), "sample covariance")
+
+// The percentile / rank family over a numeric array.
+data = array.from(10.0, 20.0, 30.0, 40.0, 50.0)
+plot(array.percentrank(data, 2), "percentrank at index 2")
+plot(array.percentile_nearest_rank(data, 40.0), "nearest-rank percentile")
+plot(array.percentile_linear_interpolation(data, 50.0), "interpolated median")

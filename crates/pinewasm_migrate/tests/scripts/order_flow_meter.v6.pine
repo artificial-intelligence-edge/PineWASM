@@ -1,0 +1,116 @@
+//@version=6
+indicator("Order Flow Meter", overlay = false)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+windowLen = input.int(20, "Window")
+imbalanceRatio = input.float(3.0, "Imbalance Ratio")
+maxLookback = input.int(50, "Maximum Streak Lookback")
+signalLen = input.int(9, "Signal Length")
+
+// ---------------------------------------------------------------------------
+// Estimated buy and sell volume from the bar's shape
+// ---------------------------------------------------------------------------
+barRange = high - low
+buyVol = barRange == 0 ? volume / 2 : volume * (close - low) / barRange
+sellVol = volume - buyVol
+delta = buyVol - sellVol
+
+var float cumDelta = 0.0
+cumDelta := cumDelta + delta
+
+// Realtime ticks within the current bar are counted separately.
+varip int ticks = 0
+varip float lastPrice = na
+if barstate.isnew
+    ticks := 0
+if not na(lastPrice) and close != lastPrice
+    ticks := ticks + 1
+lastPrice := close
+
+// ---------------------------------------------------------------------------
+// Streaks. The loop condition includes an average that must update every
+// bar, so it is evaluated on every iteration.
+// ---------------------------------------------------------------------------
+streak = 0
+while true
+    __v6_1 = ta.sma(delta, 3) > -1.0e20
+    if not (streak < maxLookback and delta[streak] > 0 and __v6_1)
+        break
+    streak := streak + 1
+    streak
+
+// Imbalance classes: the first matching case wins.
+imbalance = if buyVol > sellVol * imbalanceRatio
+    2
+else if sellVol > buyVol * imbalanceRatio
+    -2
+else
+    __v6_3 = ta.rising(cumDelta, 3)
+    if delta > 0 and __v6_3
+        1
+    else
+        __v6_4 = ta.falling(cumDelta, 3)
+        if delta < 0 and __v6_4
+            -1
+        else
+            0
+
+// Absorption: heavy volume with a small body, confirmed by the average.
+bodySize = math.abs(close - open)
+absorption = false
+if volume > ta.sma(volume, windowLen) * 2
+    absorption := true
+else
+    __v6_2 = ta.percentrank(volume, windowLen) > 80
+    if bodySize < barRange * 0.2 and __v6_2
+        absorption := true
+
+signal = ta.ema(delta, signalLen)
+normDelta = delta / math.max(ta.sma(volume, windowLen), 1)
+highlight = imbalance != 0 ? (imbalance > 0 ? #00897B : #FF5252) : na
+
+// ---------------------------------------------------------------------------
+// Plots
+// ---------------------------------------------------------------------------
+plot(delta, "Delta", color = color.new(delta >= 0 ? #00897B : #FF5252, 40), style = plot.style_columns)
+plot(signal, "Signal", color = #FFEB3B, linewidth = 2)
+plot(cumDelta, "Cumulative Delta", color = color.gray, display = display.data_window)
+plot(streak, "Streak", color = color.orange, display = display.data_window)
+plot(normDelta, "Normalized Delta", display = display.data_window)
+plot(ticks, "Ticks This Bar", display = display.data_window)
+bgcolor(highlight)
+plotshape(absorption, "Absorption", shape.circle, location.top, #FFEB3B, size = size.tiny)
+hline(0, "Zero", color = color.gray)
+alertcondition(imbalance == 2, "Buy Imbalance", "Strong buying imbalance")
+alertcondition(imbalance == -2, "Sell Imbalance", "Strong selling imbalance")
+
+// ---------------------------------------------------------------------------
+// Session delta and price divergence
+// ---------------------------------------------------------------------------
+newSession = ta.change(time("D")) != 0
+var float sessionDelta = 0.0
+var float sessionHigh = na
+var float deltaAtHigh = na
+if newSession
+    sessionDelta := 0.0
+    sessionHigh := high
+    deltaAtHigh := 0.0
+sessionDelta := sessionDelta + delta
+if high > sessionHigh
+    sessionHigh := high
+    deltaAtHigh := sessionDelta
+
+// A new session high on weaker cumulative delta than the previous high.
+weakHigh = high == sessionHigh and sessionDelta < deltaAtHigh[1] and not newSession
+plotshape(weakHigh, "Weak High", shape.triangledown, location.top, color.orange, size = size.tiny)
+
+var table t = table.new(position.top_right, 2, 3, border_width = 1)
+if barstate.islast
+    table.cell(t, 0, 0, "Session Delta", text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 1, 0, str.tostring(sessionDelta, format.volume), text_color = sessionDelta >= 0 ? #00897B : #FF5252)
+    table.cell(t, 0, 1, "Streak", text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 1, 1, str.tostring(streak), text_color = color.white)
+    table.cell(t, 0, 2, "Imbalance", text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 1, 2, str.tostring(imbalance), text_color = color.white)

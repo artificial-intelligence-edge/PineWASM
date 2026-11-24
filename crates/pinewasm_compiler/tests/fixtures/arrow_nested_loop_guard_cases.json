@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "nested-constant-false-under-dynamic",
+      "source": "//@version=6\nindicator(\"guard rule\")\ncolor UP=color.new(#336699,70)\nif bar_index > 0\n    if math.sin(0) < 0\n        UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "4494a101a00a03840db2a75c0c665d8b211b4288c2d9c77df3983713a46d84ef",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-constant-true-under-dynamic",
+      "source": "//@version=6\nindicator(\"guard rule\")\ncolor UP=color.new(#336699,70)\nif bar_index > 0\n    if math.sin(0) == 0\n        UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "e712966d16b35f21236665322e609f8218a7f3467666470c91840a847e93977b",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "constant-false-while",
+      "source": "//@version=6\nindicator(\"guard rule\")\ncolor UP=color.new(#336699,70)\nwhile math.sin(0) < 0\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "9297ba9277c9d63e5ef93cbc0e8a88976e1949fdc02ff1682d91838e9c96de38",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nested-input-under-dynamic",
+      "source": "//@version=6\nindicator(\"guard rule\")\ncolor UP=color.new(#336699,70)\nif bar_index > 0\n    if math.sin(input.float(0)) < 0\n        UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "18c4acff430c566762456d495c4dcd9257bd1ee1e6a5be708769c5febaea7553",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "literal-false-while",
+      "source": "//@version=6\nindicator(\"loop rule\")\ncolor UP=color.new(#336699,70)\nwhile false\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "5d8af35efe5551ac2cbc03e0d97c30a5f45624ca524d93fb688e06e10d86da00",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "alias-false-while",
+      "source": "//@version=6\nindicator(\"loop rule\")\ncolor UP=color.new(#336699,70)\nconst bool NO=false\nwhile NO\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "9642bba58b51f5bc540d58b41ec3913cb1473812739493b9ac0cc701553fda5c",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "folded-abs-false-while",
+      "source": "//@version=6\nindicator(\"loop rule\")\ncolor UP=color.new(#336699,70)\nwhile math.abs(-1)<0\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "95028002600fdadff0ded2afadde7da30603eafa7088766eb178ee666b7572ef",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "literal-false-if",
+      "source": "//@version=6\nindicator(\"loop rule\")\ncolor UP=color.new(#336699,70)\nif false\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "5e5a61673ad65b4bccea6dcefc8bb41a0ca8e5a073016f730c2de5d447b048c7",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "guarded-false-for",
+      "source": "//@version=6\nindicator(\"loop rule\")\ncolor UP=color.new(#336699,70)\nfor i=0 to -1\n    UP := color.new(#336699,70)\nplotarrow(bar_index%2==0?1:-1,colorup=UP,colordown=#993366)\n",
+      "sourceSha256": "edd5f73c5bb21c55adc71d29493f0ed0f6bdd06e708cffd47a499c185adfcb1c",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    }
+  ]
+}

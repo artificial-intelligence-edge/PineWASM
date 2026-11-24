@@ -1,0 +1,83 @@
+//@version=6
+//
+// PineWASM supported-language regression fixture: library() declaration.
+//
+// Covers library-only features that cannot appear in an indicator() or
+// strategy() script, because a library() declaration cannot be combined
+// with those declarations.
+//
+// Features exercised here:
+//   Directives and declarations
+//     - `library()` declaration                       (Title const string + optional overlay bool)
+//     - `//@description`, `//@function`, `//@param`,
+//       `//@returns`, `//@type`, `//@field` annotations
+//   User-defined functions
+//     - `export` (library functions/types)
+//     - Library independent-compilation (namespace isolation)
+//
+//@description PineWASMRegressionLib exercises supported library-only behavior:
+//@description exported single-line and multi-line functions, exported defaults,
+//@description an exported user-defined type, an exported method, and a private
+//@description helper that must stay invisible to importers.
+
+// --- `library()` declaration -------------------------------------------------
+// Title is a const string; `overlay` is type-checked but carries no runtime
+// effect. Only inside a library may a definition carry `export`.
+library("PineWASMRegressionLib", true)
+
+// --- Library-private global --------------------------------------------------
+// Namespace isolation: an exported function reading this global must see the
+// library's value, never a same-named global in the importer.
+surflib_scale = 2.0
+
+// --- Private (non-exported) helper -------------------------------------------
+// Usable inside the library; reaching it through an import alias is not allowed.
+// This is the private half of the exported/private distinction that the
+// namespace-isolation test is about.
+surflib_half(x) =>
+    x / 2
+
+//@function Doubles a value. Single-line exported function body.
+//@param x The value to double.
+//@returns Twice `x`.
+export surflib_double(float x) => x * 2
+
+//@function Multi-line exported function that calls a private helper and reads
+//          a library-private global, proving independent compilation.
+//@param x The value to fold.
+//@returns The scaled half of `x`.
+export surflib_fold(float x) =>
+    h = surflib_half(x)
+    s = h * surflib_scale
+    s
+
+//@function Exported function with default parameter values and a qualified,
+//          typed parameter list. The qualifier is dropped, the type recorded.
+//@param src The series to smooth.
+//@param len The smoothing length.
+//@param weight Blend weight between the raw and smoothed value.
+//@returns The blended value.
+export surflib_blend(series float src, simple int len = 14, simple float weight = 0.5) =>
+    smoothed = ta.sma(src, len)
+    src * (1.0 - weight) + smoothed * weight
+
+//@function Exported function calling an exported sibling, not a private one.
+//@param x The value to quadruple.
+//@returns Four times `x`.
+export surflib_quad(float x) =>
+    surflib_double(surflib_double(x))
+
+//@type An exported user-defined type carrying a labelled measurement.
+//@field name Human readable name of the measurement.
+//@field value The measured value.
+//@field weight Relative weight of the measurement.
+export type SurflibPoint
+    string name = "unnamed"
+    float  value = 0.0
+    float  weight = 1.0
+
+//@function Exported method on the exported type.
+//@param this The point to weigh.
+//@returns The value scaled by the point's weight.
+export method surflib_weighted(SurflibPoint this) =>
+    this.value * this.weight

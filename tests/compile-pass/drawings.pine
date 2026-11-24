@@ -1,0 +1,123 @@
+//@version=6
+indicator("Drawings")
+
+// Drawing-style constant namespaces. These opaque string-token constants
+// are the foundation the drawing-object model (line.new/label.new/box.new,
+// heap GC, RunResult drawings — exercised below) consumes. Each also resolves
+// to a distinct string value usable as an ordinary const string.
+
+xl = xloc.bar_index
+yl = yloc.abovebar
+ex = extend.both
+ls = line.style_dashed
+hs = hline.style_dotted
+lb = label.style_label_up
+sz = size.large
+ta = text.align_center
+tw = text.wrap_auto
+
+// Make the tokens observable end-to-end: their combined length is a stable,
+// non-na number derived from every namespace above.
+total = str.length(xl) + str.length(yl) + str.length(ex) + str.length(ls) + str.length(hs) + str.length(lb) + str.length(sz) + str.length(ta) + str.length(tw)
+plot(total)
+
+// A style constant compares equal to its own token and differs from a sibling.
+same = ls == "line.style_dashed"
+diff = ls == "line.style_solid"
+plot(same ? 1.0 : 0.0)
+plot(diff ? 1.0 : 0.0)
+
+// Drawing objects: heap reference objects with a live registry + GC.
+// chart.point coordinate objects (reference objects, not GC-tracked).
+p1 = chart.point.from_index(0, close)
+p2 = chart.point.new(time = na, index = 1, price = close + 1.0)
+p3 = chart.point.from_time(1000, close)
+p4 = chart.point.now(close)
+p5 = chart.point.copy(p1)
+
+// line.* — create, mutate via every scalar setter, read via getters.
+ln = line.new(0, close, 1, close + 1.0, color = color.red, width = 2)
+line.set_x1(ln, 1)
+line.set_y1(ln, close)
+line.set_x2(ln, 5)
+line.set_y2(ln, close + 2.0)
+line.set_width(ln, 3)
+line.set_style(ln, line.style_dashed)
+line.set_color(ln, color.blue)
+line.set_extend(ln, extend.both)
+line.set_xloc(ln, bar_index - 5, bar_index, xloc.bar_index)
+x2 = line.get_x2(ln)
+lc = line.copy(ln)
+y1 = line.get_y1(lc) + line.get_y2(lc) + line.get_x1(lc)
+
+// label.* — text from str.format, style constants, conditional creation, and
+// the scalar setters/getters.
+lbl = label.new(bar_index, close, str.format("close={0}", close), style = label.style_label_up, textcolor = color.white)
+label.set_text(lbl, "updated")
+label.set_x(lbl, 2)
+label.set_y(lbl, close)
+label.set_color(lbl, color.green)
+label.set_size(lbl, size.large)
+label.set_style(lbl, label.style_label_down)
+label.set_textcolor(lbl, color.red)
+label.set_textalign(lbl, text.align_left)
+label.set_xloc(lbl, bar_index, xloc.bar_index)
+label.set_yloc(lbl, yloc.abovebar)
+lt = label.get_text(label.copy(lbl))
+lx = label.get_x(lbl) + label.get_y(lbl)
+
+// box.* — create, mutate via every scalar setter, read, copy, delete.
+bx = box.new(0, close + 2.0, 4, close, border_color = color.blue, bgcolor = color.green)
+box.set_left(bx, 1)
+box.set_top(bx, close + 3.0)
+box.set_right(bx, 8)
+box.set_bottom(bx, close)
+box.set_border_color(bx, color.red)
+box.set_border_width(bx, 2)
+box.set_border_style(bx, line.style_dotted)
+box.set_bgcolor(bx, color.blue)
+br = box.get_right(bx) + box.get_left(bx) + box.get_top(bx) + box.get_bottom(bx)
+bc = box.copy(bx)
+box.delete(bx)
+
+// table.* — table-level attributes via new + every field setter.
+tbl = table.new(position.bottom_right, 2, 3, bgcolor = color.blue, frame_width = 1)
+table.set_position(tbl, position.top_left)
+table.set_bgcolor(tbl, color.green)
+table.set_frame_color(tbl, color.red)
+table.set_frame_width(tbl, 2)
+table.set_border_color(tbl, color.gray)
+table.set_border_width(tbl, 1)
+
+// polyline.* — a path over an array<chart.point>.
+pts = array.new<chart.point>()
+array.push(pts, chart.point.from_index(0, close))
+array.push(pts, chart.point.from_index(1, close + 1.0))
+pl = polyline.new(pts, closed = true, line_width = 2, line_color = color.orange)
+plc = polyline.get_closed(pl)
+
+// linefill.* — a fill between two lines, with getters/setter.
+la = line.new(0, close, 1, close + 1.0)
+lbn = line.new(0, close + 2.0, 1, close + 3.0)
+lf = linefill.new(la, lbn, color.red)
+linefill.set_color(lf, color.blue)
+lf1 = linefill.get_line1(lf)
+lfc = linefill.get_color(lf)
+
+// Drawing-typed variable annotations: the drawing type names (and the dotted
+// `chart.point`) are usable as explicit declaration types. A `na`-init adopts
+// the type; a `:=` from the matching constructor type-checks.
+line tl = na
+tl := line.new(0, close, 3, close + 1.0)
+box tb = box.new(1, close + 2.0, 4, close)
+chart.point tp = chart.point.from_index(2, close)
+tx = line.get_x2(tl) + box.get_right(tb) + tp.price
+
+// Named drawing-array constructors: fresh empty array<drawing>, then push.
+lines = array.new_line()
+array.push(lines, line.new(0, close, 1, close + 1.0))
+labels = array.new_label()
+array.push(labels, label.new(0, close, "hi"))
+nlines = array.size(lines) + array.size(labels)
+
+plot(x2 + y1 + lx + br + p1.price + p2.price + p3.price + p4.price + p5.price + tx + nlines)

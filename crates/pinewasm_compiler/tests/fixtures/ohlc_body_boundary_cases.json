@@ -1,0 +1,357 @@
+{
+  "kind": "standalone-OHLC-body-boundary",
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "plotcandle:input-alias-dead-before",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nif false\n    c:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "6b0302d9f4f61a8e1f90f22c42cc9f59fca6415c48048a5a3a10ed54323ad4e8",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:input-alias-dead-before",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nif false\n    c:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "d55e1f4c03a8186649c159e696f0ec179f5cfb09e0599bd83d7875f55ecd4444",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:input-alias-dead-after",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\nif false\n    c:=#669933\n",
+      "sourceSha256": "b393f1b0aa7632e9550c1cff4dccfce21d9b61abd0f06a44639221c3a536ee3e",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:input-alias-dead-after",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\nif false\n    c:=#669933\n",
+      "sourceSha256": "08a9834fcbc0a745935f141f417c4231c70ef5bb36a6094c478a25e4a7617b32",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:input-self-assignment",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nc:=c\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "f8de6aa842d08c7ce599246fb321f16061bc6e4b8534c1f6eebcd3b13bb96f4a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:input-self-assignment",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\nc:=c\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "e5853c2465f497e7ec285dd85875c470848b9601ba407f93b2074da2c6528ef0",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:simple-qualifier-input",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nsimple color c=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "7572dcc9d4102c58f8d5d6fb9cef8757418ae0d747a853d1f4dde1580c1324ff",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:simple-qualifier-input",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nsimple color c=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "abe670fe21bf833e19b9f5469936d5bbc815813d2fb5c72a0b6e31e9e337df68",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:series-qualifier-literal",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nseries color c=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "063f978a9fcf176dd9d9fda643730be5c74f694191a227c6cbe02a2041bae123",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:series-qualifier-literal",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nseries color c=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "6540d2b6d3eb6432223710eb02bee5ec6432c5650c0893ac2406996c84070940",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotcandle:series-qualifier-missing",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nseries color c=na\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "f81dcc5cda759e5fa96eb5fdf2fb4b34f1adbe59ce86995e81eb1e418f5d8461",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:series-qualifier-missing",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nseries color c=na\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "ccd122eebf1bdca73c45ae0f67e034cf8709420b29949bb32868d82849f8f4f5",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotcandle:input-guard-identical",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=input.bool(true) ? #336699 : #336699)\n",
+      "sourceSha256": "a6191f4365e80429185bb765d068b7f17bc90be1cb394e12eac35a49a292311d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:input-guard-identical",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=input.bool(true) ? #336699 : #336699)\n",
+      "sourceSha256": "5b9aa8c52b91ea5e837ef0d5c06abc41dd90a822b71bbae5c228e82807b9c62a",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:series-guard-identical",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=close>open ? #336699 : #336699)\n",
+      "sourceSha256": "a341aa9985acfad3f14aca8393e7add30b9c3e53b902c4042062edf9588fa286",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:series-guard-identical",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=close>open ? #336699 : #336699)\n",
+      "sourceSha256": "814f5b1e23438bd282e2d4e7f7463030d7c35b4f9d2aa6bff132a3ff7695f2e6",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:known-guard-input-arm",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=true ? input.color(#336699) : #669933)\n",
+      "sourceSha256": "335797a3db74d2b2aaa7862e7381f7aa0d233442ebac8b06a8ad321bba06bcff",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:known-guard-input-arm",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=true ? input.color(#336699) : #669933)\n",
+      "sourceSha256": "36b29ee94cfb1bbead5af15908b585ce4949272b4333c4ec7cdf880738aa9ca6",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:input-transformed-alias",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\ncolor d=color.new(c, 70.5)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=d)\n",
+      "sourceSha256": "0229946525973618956916503c3a36f3ecd79d50fc0df5a6747520bf1b6640b0",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:input-transformed-alias",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ncolor c=input.color(#336699)\ncolor d=color.new(c, 70.5)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=d)\n",
+      "sourceSha256": "e7d806dc9b88c55ac9a5b23ee7e079a95290f75618197ac4e1d798ed72cf8ba8",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:persistent-constant-alias",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nvar color c=#336699\ncolor d=c\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=d)\n",
+      "sourceSha256": "2ee43c629a2c61fab3bd46da602eee5af8fbbf95a49be42197e3374daa9fc9f6",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:persistent-constant-alias",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\nvar color c=#336699\ncolor d=c\nplotbar(open,high,low,close,title=\"OHLC contract\",color=d)\n",
+      "sourceSha256": "b029e7eae1420be77f883506203508b94c32811edb4e60c9e2da69ff9831609a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    }
+  ],
+  "rejectedCases": [
+    {
+      "id": "plotcandle:input-qualifier-direct",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ninput color c=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "bd17bc8a1dd978bea308971fd1a68031be1ee97a72a282d7441491a64101a8e6"
+    },
+    {
+      "id": "plotbar:input-qualifier-direct",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC boundary rules\")\ninput color c=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "6d3179ba38cea6a3ac7f0bdc26a291ed845b1dc067295bca9e8584f6af92138e"
+    }
+  ]
+}

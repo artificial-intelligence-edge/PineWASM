@@ -1,0 +1,50 @@
+//@version=6
+indicator("Arrays Core")
+
+// A `var` array persists across bars: pushing `close` each bar grows it, so
+// its size equals the (1-based) bar count. This exercises var-persistence and
+// handle carry-forward.
+var prices = array.new_float(0)
+array.push(prices, close)
+plot(array.size(prices), "running count")
+
+// Handle aliasing: `alias` refers to the same heap object, so a mutation
+// through one handle is visible through the other.
+built = array.from(1.0, 2.0, 3.0)
+alias = built
+array.push(alias, 4.0)
+plot(array.size(built), "aliased size")
+
+// The read/write core: set overwrites, get reads, first/last address the ends.
+work = array.new_float(3, 0.0)
+array.set(work, 0, 10.0)
+array.set(work, 2, 30.0)
+plot(array.get(work, 0) + array.last(work), "set/get/last")
+
+// Structural moves: insert/remove/shift/unshift keep the array well-formed.
+moves = array.from(1.0, 3.0)
+array.insert(moves, 1, 2.0)
+array.unshift(moves, 0.0)
+removed = array.remove(moves, 0)
+plot(removed + array.size(moves), "insert/remove/shift")
+
+// Shallow copies: slice and copy produce independent arrays; mutating a copy
+// leaves the source untouched.
+source = array.from(5.0, 6.0, 7.0, 8.0)
+window = array.slice(source, 1, 3)
+array.set(window, 0, 99.0)
+plot(array.get(source, 1) + array.size(window), "slice is a copy")
+
+// Search + reverse + fill over a fresh array each bar.
+search = array.from(4.0, 9.0, 4.0)
+array.reverse(search)
+filled = array.new_float(2, 0.0)
+array.fill(filled, 1.0)
+plot(array.indexof(search, 4.0) + array.get(filled, 1), "search/reverse/fill")
+
+// concat mutates and returns its receiver; includes is a membership test.
+left = array.from(1.0, 2.0)
+right = array.from(3.0, 4.0)
+joined = array.concat(left, right)
+present = array.includes(joined, 3.0) ? 1.0 : 0.0
+plot(array.size(joined) + present, "concat/includes")

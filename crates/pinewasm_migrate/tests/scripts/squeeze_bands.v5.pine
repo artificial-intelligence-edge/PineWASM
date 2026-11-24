@@ -1,0 +1,102 @@
+//@version=5
+indicator("Squeeze Bands", overlay = true)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+length = input.int(20, "Length", minval = 1)
+bbMult = input.float(2.0, "Band Multiplier")
+kcMult = input.float(1.5, "Channel Multiplier")
+includeGaps = input.bool(true, "Include Gaps in Range")
+lineWidth = input.int(1, "Line Width", minval = 0, maxval = 4)
+fillTransp = input.int(85, "Fill Transparency", minval = 0, maxval = 100)
+basisStyle = input.string("Line", "Basis Style", options = ["Line", "Circles", "Cross"])
+
+// ---------------------------------------------------------------------------
+// Bands and channels
+// ---------------------------------------------------------------------------
+basis = ta.sma(close, length)
+bandHalf = bbMult * ta.stdev(close, length)
+upperBB = basis + bandHalf
+lowerBB = basis - bandHalf
+
+barRange = includeGaps ? ta.tr : high - low
+channelHalf = kcMult * ta.sma(barRange, length)
+upperKC = basis + channelHalf
+lowerKC = basis - channelHalf
+
+// The bands and the channel share a basis, so comparing half-widths is enough:
+// a ratio under one means the bands sit inside the channel.
+tightness = channelHalf > 0 ? bandHalf / channelHalf : na
+squeezeOn = tightness < 1
+
+// Momentum: distance from the basis in channel half-widths, lightly smoothed.
+drift = channelHalf > 0 ? (close - basis) / channelHalf : 0.0
+momentum = ta.ema(drift, 5)
+rising = momentum > momentum[1]
+
+// Count consecutive squeeze bars; the count resets when it releases.
+var int squeezeBars = 0
+squeezeBars := squeezeOn ? squeezeBars + 1 : 0
+released = squeezeOn[1] and not squeezeOn
+
+// Release strength is a fraction of the squeeze length in whole steps.
+STRENGTH_STEPS = 4
+stepSize = 20 / STRENGTH_STEPS
+strength = math.min(STRENGTH_STEPS, squeezeBars[1] / stepSize)
+
+// ---------------------------------------------------------------------------
+// Style selection
+// ---------------------------------------------------------------------------
+style = switch basisStyle
+    "Circles" => plot.style_circles
+    "Cross" => plot.style_cross
+    => plot.style_line
+
+momColor = momentum > 0 ? (rising ? color.teal : color.olive) : (rising ? color.orange : color.red)
+dotColor = na(tightness) ? color.silver : squeezeOn ? color.navy : color.gray
+
+pBasis = plot(basis, "Basis", color = color.orange, style = style, linewidth = lineWidth)
+pUpper = plot(upperBB, "Upper Band", color = color.teal, linewidth = lineWidth)
+pLower = plot(lowerBB, "Lower Band", color = color.teal, linewidth = lineWidth)
+fill(pUpper, pLower, color = squeezeOn ? color.red : color.teal, transp = 85)
+plot(upperKC, "Upper Channel", color = color.new(color.gray, 50), style = plot.style_line, linewidth = 1, display = display.none)
+plot(lowerKC, "Lower Channel", color = color.new(color.gray, 50), style = plot.style_line, linewidth = 1, display = display.none)
+
+plotshape(released, "Release", shape.diamond, location.belowbar, color = momColor, transp = 0, size = size.small)
+plotchar(squeezeOn, "Squeeze", "•", location.bottom, dotColor)
+barcolor(released ? momColor : na)
+bgcolor(squeezeOn ? color.yellow : na, transp = fillTransp)
+
+plot(strength, "Release Strength", display = display.data_window)
+alertcondition(released and momentum > 0, "Bullish Release", "Squeeze released upward")
+alertcondition(released and momentum < 0, "Bearish Release", "Squeeze released downward")
+
+// ---------------------------------------------------------------------------
+// Squeeze history: length of each completed squeeze and what followed it
+// ---------------------------------------------------------------------------
+var int[] lengths = array.new_int(0)
+var float[] moves = array.new_float(0)
+var float releasePrice = na
+var int pendingBars = 0
+if released
+    array.push(lengths, squeezeBars[1])
+    releasePrice := close
+    pendingBars := 10
+if pendingBars > 0
+    pendingBars -= 1
+    if pendingBars == 0 and not na(releasePrice)
+        array.push(moves, (close - releasePrice) / releasePrice * 100)
+
+avgLength = array.size(lengths) > 0 ? array.avg(lengths) : na
+avgMove = array.size(moves) > 0 ? array.avg(moves) : na
+
+if released
+    label.new(bar_index, low, str.tostring(squeezeBars[1]) + " bars", style = label.style_label_up, color = momentum > 0 ? color.teal : color.red, size = size.tiny)
+
+var table t = table.new(position.bottom_right, 2, 2, border_width = 1)
+if barstate.islast
+    table.cell(t, 0, 0, "Average Squeeze", text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 1, 0, na(avgLength) ? "-" : str.tostring(avgLength, "#.#"), text_color = color.white)
+    table.cell(t, 0, 1, "Average Move", text_color = color.white, bgcolor = color.gray)
+    table.cell(t, 1, 1, na(avgMove) ? "-" : str.tostring(avgMove, "#.##") + "%", text_color = color.white)

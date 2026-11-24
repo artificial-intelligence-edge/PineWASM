@@ -1,0 +1,4 @@
+//@version=6
+indicator(title = "Named Args")
+s = ta.sma(close, length = 3)
+plot(s, title = "SMA")

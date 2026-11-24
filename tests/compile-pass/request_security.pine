@@ -1,0 +1,28 @@
+//@version=6
+indicator("Request Security")
+
+// request.security(): the honest same-feed higher-timeframe model. This
+// network-free VM has no second data feed, so request.security AGGREGATES the
+// chart's own bars into higher-timeframe buckets along the shared time axis
+// (see docs/runtime.md, "secondary contexts") and maps the result back per
+// chart bar honoring the barmerge.* gaps/lookahead modes.
+//
+// The symbol must be the chart's own feed (syminfo.tickerid / syminfo.ticker);
+// the timeframe must be >= the chart timeframe. Both plain price series and
+// supported compound expressions execute in the resampled context; this
+// focused fixture uses plain expressions while the surface and VM suites cover
+// stateful examples such as ta.sma(close, 2).
+
+// Weekly close, defaults (gaps_off, lookahead_off): each chart bar shows the
+// last COMPLETED weekly close, repeated.
+wclose = request.security(syminfo.tickerid, "1W", close)
+plot(wclose)
+
+// gaps_on: a value appears only on the bar that closes a weekly bucket.
+wgaps = request.security(syminfo.tickerid, "1W", close, gaps=barmerge.gaps_on)
+plot(wgaps)
+
+// lookahead_on repaints: the forming bucket's close leaks onto its earlier
+// chart bars. syminfo.ticker is accepted as an alias for the feed symbol.
+whl2 = request.security(syminfo.ticker, "1W", hl2, lookahead=barmerge.lookahead_on)
+plot(whl2)

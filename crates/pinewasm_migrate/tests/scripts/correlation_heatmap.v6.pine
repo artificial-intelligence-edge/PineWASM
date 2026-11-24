@@ -1,0 +1,88 @@
+//@version=6
+indicator("Return Correlation Heatmap", overlay = false)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+windowLen = input.int(30, "Correlation Window", minval = 5)
+lagCount = input.int(4, "Lags", minval = 2, maxval = 6)
+cellSize = input.string("Small", "Cell Size", options = ["Tiny", "Small", "Normal"])
+highColor = #00897B
+lowColor = #FF5252
+
+// Returns at several lags form the rows of a matrix; each column is a bar.
+MAX_LAGS = 6
+HALF_LAGS = int(MAX_LAGS / 2)
+
+ret = ta.change(close) / close[1]
+var returns = matrix.new<float>(MAX_LAGS, 0)
+var stats = map.new<string, float>()
+
+column = array.new_float(0)
+for lag = 0 to MAX_LAGS - 1 by 1
+    array.push(column, nz(ret[lag]))
+matrix.add_col(returns, matrix.columns(returns), column)
+if matrix.columns(returns) > windowLen
+    matrix.remove_col(returns, 0)
+
+// Pearson correlation of two rows.
+corr(m, int a, int b) =>
+    xs = matrix.row(m, a)
+    ys = matrix.row(m, b)
+    n = array.size(xs)
+    mx = array.avg(xs)
+    my = array.avg(ys)
+    sxy = 0.0
+    sxx = 0.0
+    syy = 0.0
+    for i = 0 to n - 1 by 1
+        dx = array.get(xs, i) - mx
+        dy = array.get(ys, i) - my
+        sxy := sxy + dx * dy
+        sxx := sxx + dx * dx
+        syy := syy + dy * dy
+        syy
+    sxx == 0 or syy == 0 ? 0.0 : sxy / math.sqrt(sxx * syy)
+
+var table grid = table.new(position.middle_right, MAX_LAGS + 1, MAX_LAGS + 1, border_width = 1)
+textSize = switch cellSize
+    "Tiny" => size.tiny
+    "Small" => size.small
+    => size.normal
+
+cellColor(float c) =>
+    color.from_gradient(c, -1, 1, lowColor, highColor)
+
+if barstate.islast and matrix.columns(returns) >= windowLen
+    correlations = matrix.new<float>(lagCount, lagCount, 0.0)
+    for r = 0 to lagCount - 1 by 1
+        for c = 0 to lagCount - 1 by 1
+            matrix.set(correlations, r, c, r == c ? 1.0 : corr(returns, r, c))
+    map.put(stats, "avg", matrix.avg(correlations))
+    map.put(stats, "max", matrix.max(correlations))
+    map.put(stats, "det", matrix.det(correlations))
+    for i = 0 to lagCount - 1 by 1
+        table.cell(grid, i + 1, 0, "L" + str.tostring(i), text_size = textSize, text_color = color.gray)
+        table.cell(grid, 0, i + 1, "L" + str.tostring(i), text_size = textSize, text_color = color.gray)
+        for j = 0 to lagCount - 1 by 1
+            v = matrix.get(correlations, i, j)
+            table.cell(grid, j + 1, i + 1, str.tostring(v, "#.##"), bgcolor = cellColor(v), text_color = color.white, text_size = textSize)
+
+avgCorr = map.contains(stats, "avg") ? map.get(stats, "avg") : na
+plot(avgCorr, "Average Correlation", color = #FFEB3B, linewidth = 2)
+plot(map.contains(stats, "det") ? map.get(stats, "det") : na, "Determinant", color = color.gray, display = display.data_window)
+plot(ret * 100, "Return Percent", color = color.new(ret >= 0 ? #00897B : #FF5252, 50), style = plot.style_columns)
+hline(0, "Zero", color = color.gray)
+hline(HALF_LAGS, "Half Lags", color = color.gray, linestyle = hline.style_dotted, display = display.none)
+
+// ---------------------------------------------------------------------------
+// Autocorrelation regime: persistent or mean reverting
+// ---------------------------------------------------------------------------
+lag1 = map.contains(stats, "avg") ? corr(returns, 0, 1) : na
+persistent = lag1 > 0.2
+reverting = lag1 < -0.2
+bgcolor(persistent ? color.new(#00897B, 90) : reverting ? color.new(#FF5252, 90) : na)
+plotchar(ta.change(persistent ? 1 : reverting ? -1 : 0) != 0, "Regime Change", "*", location.top, #FFEB3B)
+if barstate.islast and not na(lag1)
+    label.new(bar_index, avgCorr, "lag 1: " + str.tostring(lag1, "#.##"), style = label.style_label_left, color = persistent ? #00897B : reverting ? #FF5252 : color.gray, textcolor = color.black)
+alertcondition(persistent and not persistent[1], "Persistent Returns", "Lag one correlation turned positive")

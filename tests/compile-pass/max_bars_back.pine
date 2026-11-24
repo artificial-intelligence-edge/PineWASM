@@ -1,0 +1,5 @@
+//@version=6
+indicator("Max Bars Back", max_bars_back=1000)
+max_bars_back(close, 1500)
+x = close - close[3]
+plot(x)

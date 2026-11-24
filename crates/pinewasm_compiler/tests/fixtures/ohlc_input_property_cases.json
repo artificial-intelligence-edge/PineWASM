@@ -1,0 +1,189 @@
+{
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "candle-direct-input:pine-ex-false:#123456",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "f54b2159b4841be03965b95d37b6ec5b69b6fcae970954f171c75a309ae6a681",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 0.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": false,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "candle-direct-input:pine-ex-false:rgba(18,52,86,0.42)",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "f54b2159b4841be03965b95d37b6ec5b69b6fcae970954f171c75a309ae6a681",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 58.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": false,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "candle-direct-input:pine-ex-false:#12345680",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "f54b2159b4841be03965b95d37b6ec5b69b6fcae970954f171c75a309ae6a681",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 50.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": false,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "candle-direct-input:pine-ex-false:rgba(18,52,86,0)",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,color=c)\n",
+      "sourceSha256": "f54b2159b4841be03965b95d37b6ec5b69b6fcae970954f171c75a309ae6a681",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 100.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": false,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "bar-direct-input:pine-ex-false:#123456",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "b2238f05f34c4219a9908fe1fec6f3cf45c94b9307d7fda7a395e0f36883f9d4",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 0.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": true,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 18,
+          "g": 52,
+          "b": 86,
+          "t": 0.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "bar-direct-input:pine-ex-false:rgba(18,52,86,0.42)",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "b2238f05f34c4219a9908fe1fec6f3cf45c94b9307d7fda7a395e0f36883f9d4",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 58.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": true,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 18,
+          "g": 52,
+          "b": 86,
+          "t": 58.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "bar-direct-input:pine-ex-false:#12345680",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "b2238f05f34c4219a9908fe1fec6f3cf45c94b9307d7fda7a395e0f36883f9d4",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 50.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": true,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 18,
+          "g": 52,
+          "b": 86,
+          "t": 50.0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "bar-direct-input:pine-ex-false:rgba(18,52,86,0)",
+      "source": "//@version=6\nindicator(\"own OHLC property expressions\")\nc=input.color(#336699)\nplotbar(open,high,low,close,color=c)\n",
+      "sourceSha256": "b2238f05f34c4219a9908fe1fec6f3cf45c94b9307d7fda7a395e0f36883f9d4",
+      "structuredPropertyInput": {
+        "r": 18,
+        "g": 52,
+        "b": 86,
+        "t": 100.0
+      },
+      "expectedInputId": 0,
+      "expectedBodyBinding": true,
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 18,
+          "g": 52,
+          "b": 86,
+          "t": 100.0
+        },
+        "runtimeColorer": true
+      }
+    }
+  ]
+}

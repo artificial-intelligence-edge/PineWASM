@@ -1,0 +1,13 @@
+//@version=6
+indicator("Inputs")
+length = input.int(14, "Length", 1, 100, 1)
+mult = input.float(2.0, "Multiplier", 0.5, 10.0, 0.5)
+enabled = input.bool(true, "Enabled")
+src = input.source(close, "Source")
+label = input.string("SMA", "Label")
+tint = input.color(#2196F3, "Tint")
+avg = ta.sma(src, 14)
+band = avg + mult * ta.stdev(src, 14)
+value = enabled ? band : avg
+plot(value)
+plot(close + length)

@@ -1,0 +1,17 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"//@version=6\\nindicator(\\\"Example\\\")\\nx = close - close[1]\\nplot(x)\\n\")"
+---
+MirBody title="Example" slots=1 plots=1 values=5
+  slot 0 `x`
+  plot 0 title="<none>"
+bb0:
+  v0 = read_builtin close[0]
+  v1 = read_builtin close[1]
+  v2 = binary `-` v0, v1
+  store_user_current slot0, v2
+  v3 = read_user slot0[0]
+  v4 = const #2196F3
+  plot p0, v3
+    color Color v4
+  return

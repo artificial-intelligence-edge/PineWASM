@@ -1,0 +1,31 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 2118
+expression: dump
+---
+HirProgram indicator="Engine"
+  plot slot 0 title="<none>"
+  plot slot 1 title="<none>"
+  plot slot 2 title="<none>"
+  ta state 0 ta.ema params=[9]
+  ta state 1 ta.valuewhen params=[1]
+  ta state 2 ta.highestbars params=[5]
+  Plot slot 0
+    CallTaState ta.ema state0 params=[9] : series float
+      ReadBuiltin close[0] : series float
+    Color Color
+      ConstColor #2196F3 : const color
+  Plot slot 1
+    CallTaState ta.valuewhen state1 params=[1] : series float
+      Binary `>` : series bool
+        ReadBuiltin close[0] : series float
+        ReadBuiltin open[0] : series float
+      ReadBuiltin close[0] : series float
+    Color Color
+      ConstColor #2196F3 : const color
+  Plot slot 2
+    IntToFloat : series float
+      CallTaState ta.highestbars state2 params=[5] : series int
+        ReadBuiltin close[0] : series float
+    Color Color
+      ConstColor #2196F3 : const color

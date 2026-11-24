@@ -1,0 +1,66 @@
+// Ordered distance-scan regression on synthetic, bounded features.
+// AGPL-3.0-only. Inputs are generated inside the script.
+//@version=6
+indicator("Ordered distance scan")
+type SearchSettings
+    int neighborsCount
+    int featureCount
+type FeatureSeries
+    float f1
+    float f2
+    float f3
+    float f4
+    float f5
+type FeatureArrays
+    array<float> f1
+    array<float> f2
+    array<float> f3
+    array<float> f4
+    array<float> f5
+distance_at(int cursor, int dimensions, FeatureSeries query, FeatureArrays columns) =>
+    switch dimensions
+        5 => math.log(1 + math.abs(query.f1 - array.get(columns.f1, cursor))) + math.log(1 + math.abs(query.f2 - array.get(columns.f2, cursor))) + math.log(1 + math.abs(query.f3 - array.get(columns.f3, cursor))) + math.log(1 + math.abs(query.f4 - array.get(columns.f4, cursor))) + math.log(1 + math.abs(query.f5 - array.get(columns.f5, cursor)))
+        4 => math.log(1 + math.abs(query.f1 - array.get(columns.f1, cursor))) + math.log(1 + math.abs(query.f2 - array.get(columns.f2, cursor))) + math.log(1 + math.abs(query.f3 - array.get(columns.f3, cursor))) + math.log(1 + math.abs(query.f4 - array.get(columns.f4, cursor)))
+        3 => math.log(1 + math.abs(query.f1 - array.get(columns.f1, cursor))) + math.log(1 + math.abs(query.f2 - array.get(columns.f2, cursor))) + math.log(1 + math.abs(query.f3 - array.get(columns.f3, cursor)))
+        2 => math.log(1 + math.abs(query.f1 - array.get(columns.f1, cursor))) + math.log(1 + math.abs(query.f2 - array.get(columns.f2, cursor)))
+
+k = input.int(8, "Neighbors")
+f = input.int(5, "Features")
+start = input.int(0, "Start")
+lookback = input.int(40000, "Lookback")
+src = input.source(close, "Source")
+settings = SearchSettings.new(k, f)
+x = bar_index < 31 ? float(na) : 0.5 + 0.45 * math.sin(bar_index * 0.023)
+featureSeries = FeatureSeries.new(x, x*0.9, x*0.8, x*0.7, x*0.6)
+var values_1 = array.new_float()
+var values_2 = array.new_float()
+var values_3 = array.new_float()
+var values_4 = array.new_float()
+var values_5 = array.new_float()
+array.push(values_1, featureSeries.f1)
+array.push(values_2, featureSeries.f2)
+array.push(values_3, featureSeries.f3)
+array.push(values_4, featureSeries.f4)
+array.push(values_5, featureSeries.f5)
+featureArrays = FeatureArrays.new(values_1, values_2, values_3, values_4, values_5)
+var y_train_array = array.new_int()
+array.push(y_train_array, src[4] < src ? -1 : src[4] > src ? 1 : 0)
+var predictions = array.new_float()
+var distances = array.new_float()
+lastDistance = -1.0
+sizeLoop = math.min(lookback - 1, bar_index)
+if bar_index >= start
+    for i = start to sizeLoop
+        d = distance_at(i, settings.featureCount, featureSeries, featureArrays)
+        if d >= lastDistance and i % 4 != 0
+            lastDistance := d
+            array.push(distances, d)
+            array.push(predictions, math.round(array.get(y_train_array, i)))
+            if array.size(predictions) > settings.neighborsCount
+                lastDistance := array.get(distances, math.round(settings.neighborsCount*3/4))
+                array.shift(distances)
+                array.shift(predictions)
+plot(array.sum(predictions), "Prediction")
+plot(lastDistance, "Threshold")
+plot(array.size(predictions), "Count")
+plot(array.size(distances) > 0 ? array.get(distances, 0) : na, "Oldest distance")

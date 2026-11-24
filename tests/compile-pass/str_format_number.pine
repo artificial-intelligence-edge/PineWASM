@@ -1,0 +1,16 @@
+//@version=6
+indicator("Format numbers")
+
+// MessageFormat `number` placeholders (the label/alert regression case): custom
+// `#`/`0`/`.`/`,` patterns plus the integer/currency/percent keyword styles
+// must format instead of passing the pattern text through verbatim.
+h = str.format("H {0,number,#.#####}", high)
+grouped = str.format("{0,number,#,##0.00} of {1, number, currency}", close * 1000000, 1340000)
+keywords = str.format("{0,number,integer} cols at {1,number,percent}", 120, 0.5)
+bare = str.format("{0,number} pts", close)
+lbl = label.new(bar_index, high, h + " " + grouped)
+label.set_text(lbl, keywords)
+
+// Fixed inputs keep two placeholder renderings byte-exact end-to-end.
+exact = str.format("{0,number,#.#}", 1.34) == "1.3" and str.format("{0,number,currency}", 1340000) == "$1,340,000.00"
+plot(exact ? str.length(h) + str.length(grouped) + str.length(keywords) + str.length(bare) : na)

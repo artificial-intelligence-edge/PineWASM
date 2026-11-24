@@ -1,0 +1,54 @@
+//@version=6
+indicator("Maps")
+
+// A `var` map persists across bars: putting the bar's close under its bar
+// index grows it, so its size equals the (1-based) bar count. Exercises
+// var-persistence and handle carry-forward for maps.
+var history = map.new_int_float()
+prev = map.put(history, bar_index, close)
+plot(map.size(history), "running entry count")
+
+// Insertion order: keys() and values() return arrays ordered by insertion.
+// Building a fresh map each bar, "z" is inserted first so it lands at index 0.
+scores = map.new_string_float()
+z0 = map.put(scores, "z", 10.0)
+a1 = map.put(scores, "a", 20.0)
+m2 = map.put(scores, "m", 30.0)
+keys = map.keys(scores)
+vals = map.values(scores)
+plot(array.indexof(keys, "z"), "z inserted first")
+plot(array.get(vals, 0), "value for first key")
+
+// put overwrites in place (keeping position) and returns the previous value;
+// contains is a membership test; remove returns the removed value.
+overwritten = map.put(scores, "a", 99.0)
+plot(overwritten, "previous value of a")
+present = map.contains(scores, "a") ? 1.0 : 0.0
+absent = map.contains(scores, "q") ? 1.0 : 0.0
+plot(present - absent, "contains present minus absent")
+removed = map.remove(scores, "z")
+plot(removed + map.size(scores), "removed value plus new size")
+
+// copy is independent: mutating the copy leaves the source untouched.
+base = map.new_string_int()
+b0 = map.put(base, "k", 1)
+dup = map.copy(base)
+d0 = map.put(dup, "k", 100)
+plot(map.get(base, "k"), "copy is independent")
+
+// put_all merges src into dst, overwriting on key collision.
+dst = map.new_string_float()
+p0 = map.put(dst, "x", 1.0)
+p1 = map.put(dst, "y", 2.0)
+src = map.new_string_float()
+s0 = map.put(src, "y", 20.0)
+s1 = map.put(src, "w", 30.0)
+map.put_all(dst, src)
+plot(map.size(dst) + map.get(dst, "y") + map.get(dst, "w"), "merged size and values")
+
+// clear empties the map.
+temp = map.new_int_int()
+t0 = map.put(temp, 1, 1)
+t1 = map.put(temp, 2, 2)
+map.clear(temp)
+plot(map.size(temp), "cleared size")

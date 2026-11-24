@@ -1,0 +1,48 @@
+[package]
+name = "pinewasm_compiler"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pipeline orchestration: the public compile and run API"
+publish.workspace = true
+
+[[bin]]
+name = "pinewasm-check"
+path = "src/bin/pinewasm_check.rs"
+
+[[bin]]
+name = "pinewasm-profile"
+path = "src/bin/pinewasm_profile.rs"
+
+# The measured subject for the benchmark suite. It lives here
+# rather than in `pinewasm_xtask` so the cold-process benchmark owns a real
+# process boundary and so the repository policy jobs, which build only the
+# xtask crate, never link the compiler pipeline they do not call.
+[[bin]]
+name = "pinewasm-benchmark-subject"
+path = "src/bin/pinewasm_benchmark_subject.rs"
+
+[dependencies]
+pinewasm_broker = { workspace = true }
+pinewasm_span = { workspace = true }
+pinewasm_syntax = { workspace = true }
+pinewasm_parse = { workspace = true }
+pinewasm_hir = { workspace = true }
+pinewasm_semantics = { workspace = true }
+pinewasm_mir = { workspace = true }
+pinewasm_csil = { workspace = true }
+pinewasm_vm = { workspace = true }
+# The pinned IANA release `version()` reports.
+pinewasm_tz = { workspace = true }
+csv = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+sha2 = { workspace = true }
+
+[lints]
+workspace = true

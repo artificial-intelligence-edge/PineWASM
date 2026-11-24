@@ -1,0 +1,22 @@
+//@version=6
+indicator("Context accessors")
+
+// timeframe.* context accessors, derived from the chart timeframe (default 1D).
+plot(timeframe.multiplier)
+plot(timeframe.isdaily ? 1.0 : 0.0)
+plot(timeframe.isintraday ? 1.0 : 0.0)
+plot(timeframe.in_seconds("1W"))
+
+// timeframe.from_seconds round-trips a length back to a timeframe string.
+tf = timeframe.from_seconds(300)
+plot(tf == "5" ? 1.0 : 0.0)
+
+// syminfo.* host-or-default symbol metadata.
+plot(syminfo.mintick)
+plot(syminfo.pricescale)
+plot(syminfo.currency == "" ? 1.0 : 0.0)
+
+// session.* position predicates: first/last bar of the run.
+plot(session.isfirstbar ? 1.0 : 0.0)
+plot(session.islastbar ? 1.0 : 0.0)
+plot(session.ismarket ? 1.0 : 0.0)

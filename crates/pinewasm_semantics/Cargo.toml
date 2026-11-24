@@ -1,0 +1,27 @@
+[package]
+name = "pinewasm_semantics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Semantic analysis: name resolution, type and qualifier checking, and AST to HIR lowering"
+publish.workspace = true
+
+[dependencies]
+pinewasm_span = { workspace = true }
+pinewasm_syntax = { workspace = true }
+pinewasm_hir = { workspace = true }
+pinewasm_num = { workspace = true }
+# Folding `timestamp(timezone, ...)` at compile time reads the same IANA
+# rules, of the same pinned release, as the interpreter.
+pinewasm_tz = { workspace = true, features = ["bundled"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+pinewasm_parse = { workspace = true }
+insta = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true

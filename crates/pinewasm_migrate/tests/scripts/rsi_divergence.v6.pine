@@ -1,0 +1,120 @@
+//@version=6
+indicator("RSI Divergence Finder", "RSI Div", overlay = false, max_labels_count = 200, max_lines_count = 200)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+rsiLen = input.int(14, "RSI Length", minval = 2)
+src = input.source(close, "Source")
+swingLeft = input.int(4, "Bars Before a Swing", minval = 1)
+swingRight = input.int(2, "Bars After a Swing", minval = 1)
+minGap = input.int(3, "Closest Earlier Swing")
+maxGap = input.int(80, "Farthest Earlier Swing")
+showHidden = input.bool(false, "Show Hidden Divergences")
+obLevel = input.int(70, "Overbought")
+osLevel = input.int(30, "Oversold")
+
+rsi = ta.rsi(src, rsiLen)
+midLevel = (obLevel + osLevel) / 2
+
+// ---------------------------------------------------------------------------
+// Swings on the oscillator. A swing is confirmed `swingRight` bars late, so
+// every reading compared below is taken that many bars back.
+// ---------------------------------------------------------------------------
+isSwingLow = not na(ta.pivotlow(rsi, swingLeft, swingRight))
+isSwingHigh = not na(ta.pivothigh(rsi, swingLeft, swingRight))
+rsiAtSwing = rsi[swingRight]
+lowAtSwing = low[swingRight]
+highAtSwing = high[swingRight]
+
+// The reading taken at the swing before the most recent one.
+earlier(bool swing, float reading) =>
+    ta.valuewhen(swing, reading, 1)
+
+// True when the two most recent swings are a usable distance apart.
+wellSpaced(bool swing) =>
+    gap = bar_index - ta.valuewhen(swing, bar_index, 1)
+    gap >= minGap and gap <= maxGap
+
+// Regular bullish: price sets a lower low while the oscillator does not.
+__v6_1 = lowAtSwing < earlier(isSwingLow, lowAtSwing)
+__v6_5 = rsiAtSwing > earlier(isSwingLow, rsiAtSwing)
+__v6_9 = wellSpaced(isSwingLow)
+bullDiv = isSwingLow and __v6_1 and __v6_5 and __v6_9
+
+// Hidden bullish: price holds a higher low while the oscillator dips lower.
+__v6_2 = lowAtSwing > earlier(isSwingLow, lowAtSwing)
+__v6_6 = rsiAtSwing < earlier(isSwingLow, rsiAtSwing)
+__v6_10 = wellSpaced(isSwingLow)
+hiddenBullDiv = showHidden and isSwingLow and __v6_2 and __v6_6 and __v6_10
+
+// Regular bearish: price sets a higher high while the oscillator does not.
+__v6_3 = highAtSwing > earlier(isSwingHigh, highAtSwing)
+__v6_7 = rsiAtSwing < earlier(isSwingHigh, rsiAtSwing)
+__v6_11 = wellSpaced(isSwingHigh)
+bearDiv = isSwingHigh and __v6_3 and __v6_7 and __v6_11
+
+// ---------------------------------------------------------------------------
+// State. The last signal direction starts unknown.
+// ---------------------------------------------------------------------------
+var bool lastWasBull = false
+if bullDiv
+    lastWasBull := true
+if bearDiv
+    lastWasBull := false
+
+// `nz` on a bool replaces `na` with false.
+prevBull = bullDiv[1]
+freshBull = bullDiv and not prevBull
+
+crossedMid = ta.cross(rsi, midLevel)
+warmingUp = (bar_index < 3)
+
+// ---------------------------------------------------------------------------
+// Plots
+// ---------------------------------------------------------------------------
+plot(rsi, "RSI", color = color.purple, linewidth = 2)
+obLine = hline(obLevel, "Overbought", color = #FF5252, linestyle = hline.style_dashed)
+osLine = hline(osLevel, "Oversold", color = #00897B, linestyle = hline.style_dashed)
+hline(midLevel, "Middle", color = color.gray, linestyle = hline.style_dotted)
+fill(obLine, osLine, color = color.new(color.purple, 90))
+
+plot(bullDiv ? rsiAtSwing : na, "Bullish", color = #00897B, linewidth = 2, style = plot.style_circles, offset = -swingRight)
+plot(bearDiv ? rsiAtSwing : na, "Bearish", color = #FF5252, linewidth = 2, style = plot.style_circles, offset = -swingRight)
+plotshape(hiddenBullDiv ? rsiAtSwing : na, "Hidden Bullish", shape.labelup, location.absolute, #00897B, offset = -swingRight, text = "H", textcolor = color.white)
+
+bgcolor(lastWasBull ? color.new(#00897B, 95) : na)
+bgcolor(warmingUp ? color.new(color.gray, 90) : na)
+
+if freshBull
+    label.new(bar_index - swingRight, rsiAtSwing, "Bull", style = label.style_label_up, color = #00897B, size = size.tiny, textcolor = color.black)
+if bearDiv
+    label.new(bar_index - swingRight, rsiAtSwing, "Bear", style = label.style_label_down, color = #FF5252, size = size.tiny, textcolor = color.black)
+
+alertcondition(bullDiv, "Bullish Divergence", "Regular bullish divergence")
+alertcondition(bearDiv, "Bearish Divergence", "Regular bearish divergence")
+if bullDiv or bearDiv
+    alert(bullDiv ? "Bullish divergence" : "Bearish divergence", alert.freq_once_per_bar_close)
+
+// ---------------------------------------------------------------------------
+// Hidden bearish divergence and a running summary.
+// ---------------------------------------------------------------------------
+__v6_4 = highAtSwing < earlier(isSwingHigh, highAtSwing)
+__v6_8 = rsiAtSwing > earlier(isSwingHigh, rsiAtSwing)
+__v6_12 = wellSpaced(isSwingHigh)
+hiddenBearDiv = showHidden and isSwingHigh and __v6_4 and __v6_8 and __v6_12
+plotshape(hiddenBearDiv ? rsiAtSwing : na, "Hidden Bearish", shape.labeldown, location.absolute, #FF5252, offset = -swingRight, text = "H", textcolor = color.white)
+
+var int bullCount = 0
+var int bearCount = 0
+bullCount := bullCount + (bullDiv ? 1 : 0)
+bearCount := bearCount + (bearDiv ? 1 : 0)
+
+var table summary = table.new(position.top_right, 2, 3, border_width = 1)
+if barstate.islast
+    table.cell(summary, 0, 0, "Bullish", text_color = color.white, bgcolor = #00897B)
+    table.cell(summary, 1, 0, str.tostring(bullCount), text_color = color.white)
+    table.cell(summary, 0, 1, "Bearish", text_color = color.white, bgcolor = #FF5252)
+    table.cell(summary, 1, 1, str.tostring(bearCount), text_color = color.white)
+    table.cell(summary, 0, 2, "Last", text_color = color.white, bgcolor = color.gray)
+    table.cell(summary, 1, 2, lastWasBull ? "Bull" : "Bear or none", text_color = color.white)

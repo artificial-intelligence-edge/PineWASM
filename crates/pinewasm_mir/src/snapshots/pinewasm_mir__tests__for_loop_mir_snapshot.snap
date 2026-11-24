@@ -1,0 +1,67 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+assertion_line: 455
+expression: "lower_source(\"indicator(\\\"L\\\")\\nvar s = 0\\ns := 0\\nfor i = 1 to 10\\n    s := s + i\\nplot(s)\\n\")"
+---
+MirBody title="L" slots=4 plots=1 values=30
+  slot 0 `s` var
+  slot 1 `%h0`
+  slot 2 `%h1`
+  slot 3 `i`
+  plot 0 title="<none>"
+bb0:
+  branch_if_slot_written slot0, bb2, bb1
+bb1:
+  v0 = const 0
+  store_user_current slot0, v0
+  jump bb3
+bb2:
+  jump bb3
+bb3:
+  v1 = const 0
+  store_user_current slot0, v1
+  v2 = const 1
+  store_user_current slot3, v2
+  v3 = const 10
+  store_user_current slot1, v3
+  v4 = read_user slot3[0]
+  v5 = read_user slot1[0]
+  v6 = binary `<=` v4, v5
+  v7 = const 1
+  v8 = const -1
+  v9 = select v6, v7, v8
+  store_user_current slot2, v9
+  jump bb4
+bb4:
+  v10 = const 10
+  store_user_current slot1, v10
+  v11 = read_user slot2[0]
+  v12 = const 0
+  v13 = binary `>=` v11, v12
+  v14 = read_user slot3[0]
+  v15 = read_user slot1[0]
+  v16 = binary `<=` v14, v15
+  v17 = read_user slot3[0]
+  v18 = read_user slot1[0]
+  v19 = binary `>=` v17, v18
+  v20 = select v13, v16, v19
+  branch v20, bb5, bb7
+bb5:
+  v21 = read_user slot0[0]
+  v22 = read_user slot3[0]
+  v23 = binary `+` v21, v22 (int)
+  store_user_current slot0, v23
+  jump bb6
+bb6:
+  v24 = read_user slot3[0]
+  v25 = read_user slot2[0]
+  v26 = binary `+` v24, v25 (int)
+  store_user_current slot3, v26
+  jump bb4
+bb7:
+  v27 = read_user slot0[0]
+  v28 = int_to_float v27
+  v29 = const #2196F3
+  plot p0, v28
+    color Color v29
+  return

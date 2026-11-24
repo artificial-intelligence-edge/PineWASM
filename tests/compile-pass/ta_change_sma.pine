@@ -1,0 +1,10 @@
+//@version=6
+indicator("TA change and sma")
+c = ta.change(close)
+c2 = ta.change(close, 2)
+s = ta.sma(close, 2)
+d = ta.sma(close - open, 2)
+plot(c)
+plot(c2)
+plot(s)
+plot(d)

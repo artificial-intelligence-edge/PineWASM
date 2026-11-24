@@ -1,0 +1,38 @@
+//@version=6
+indicator("Arrays Aggregates")
+
+// Numeric aggregates over a fresh array each bar. Each reduces the array to a
+// float, skipping na elements (empty/all-na -> na for avg/min/max/median).
+data = array.from(4.0, 2.0, 9.0, 2.0, 5.0)
+plot(array.sum(data), "sum")
+plot(array.avg(data), "avg")
+plot(array.min(data) + array.max(data), "min+max")
+plot(array.range(data), "range")
+plot(array.median(data), "median")
+plot(array.mode(data), "mode")
+plot(array.variance(data) + array.stdev(data), "variance+stdev")
+
+// Aggregates over an int array return float results.
+counts = array.from(1, 2, 3, 4)
+plot(array.sum(counts), "int sum -> float")
+
+// Transforms build a new array<float>; the source is left untouched.
+signed = array.from(-3.0, 4.0, -5.0)
+absed = array.abs(signed)
+plot(array.sum(absed), "abs sum")
+standardized = array.standardize(array.from(2.0, 4.0, 6.0))
+plot(array.get(standardized, 1), "standardized middle")
+
+// Ordering: sort mutates in place; sort_indices returns the sorting
+// permutation. `order.ascending` (default) / `order.descending` pick the
+// direction.
+unsorted = array.from(30.0, 10.0, 20.0)
+array.sort(unsorted, order.ascending)
+plot(array.get(unsorted, 0), "sorted min")
+
+desc = array.from(30.0, 10.0, 20.0)
+array.sort(desc, order.descending)
+plot(array.get(desc, 0), "sorted max")
+
+perm = array.sort_indices(array.from(30.0, 10.0, 20.0))
+plot(array.get(perm, 0), "argmin index")

@@ -1,0 +1,1518 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "dynamic-two-arrows",
+      "source": "//@version=6\nindicator(\"dynamic arrow static defaults\")\nplotarrow(close,title=\"Dynamic null\",colorup=bar_index==1 ? na : #336699,colordown=#993366)\nplotarrow(close,title=\"Dynamic alpha\",colorup=bar_index==1 ? color.new(#336699,70) : color.new(#336699,20),colordown=color.new(#993366,40))",
+      "sourceSha256": "d5962649c151b490364b5eb4828d0368fae7aaf74f3196b4033eb87622525604",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "omitted-directions",
+      "source": "//@version=6\nindicator(\"arrow static role omitted-directions\")\nplotarrow(close,title=\"Omitted directions\")",
+      "sourceSha256": "1f8b231447965b2ea88e54e40d4956a8c9a75aef4e6b1469453fb2e7ef3e452e",
+      "expected": [
+        {
+          "up": {
+            "origin": "omitted",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "omitted",
+            "r": 255,
+            "g": 0,
+            "b": 0,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "explicit-na-directions",
+      "source": "//@version=6\nindicator(\"arrow static role explicit-na-directions\")\nplotarrow(close,title=\"Explicit NA directions\",colorup=na,colordown=na)",
+      "sourceSha256": "ffe8df7e2d067b5be154e3fd77ca14fd2c02591b15f842343f4717aedfb42cbb",
+      "expected": [
+        {
+          "up": {
+            "origin": "missing",
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "t": 100
+          },
+          "down": {
+            "origin": "missing",
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "t": 100
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-color-directions",
+      "source": "//@version=6\nindicator(\"arrow static role input-color-directions\")\nup=input.color(color.new(#336699,70),\"Up\")\ndown=input.color(color.new(#993366,40),\"Down\")\nplotarrow(close,title=\"Input directions\",colorup=up,colordown=down)",
+      "sourceSha256": "33c56570296a107b1728ef247de026c0810c6a5c28ca90df372e7105418110b8",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "dynamic",
+            "r": 255,
+            "g": 0,
+            "b": 0,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-bool-conditional",
+      "source": "//@version=6\nindicator(\"arrow static role input-bool-conditional\")\nchoice=input.bool(true,\"Choice\")\nplotarrow(close,title=\"Input choice\",colorup=choice ? color.new(#336699,70) : color.new(#669933,20),colordown=#993366)",
+      "sourceSha256": "494fb7d48a47bffa31e93a220a2e245f9ff5a1b67c5deb85a9cf58191b186f67",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-new-color",
+      "source": "//@version=6\nindicator(\"arrow static role input-new-color\")\nup=input.color(#336699,\"Up\")\nplotarrow(close,title=\"Input transformed\",colorup=color.new(up,70),colordown=color.new(#993366,40))",
+      "sourceSha256": "7c36683cfd19a7d52892555398c505caf36761e070676f26c8e4443d717bba91",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "const-alias-alpha",
+      "source": "//@version=6\nindicator(\"static role const alias\")\nconst color UP=color.new(#336699,70)\nconst color DOWN=color.new(#993366,40)\nplotarrow(close-close[1],colorup=UP,colordown=DOWN)",
+      "sourceSha256": "c8c5ed143bf1dd6bd2108348791dee27f1731b9b6c0350dc72a3e0d691ffece4",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "simple-chart-color",
+      "source": "//@version=6\nindicator(\"static role chart simple\")\nsimple color UP=timeframe.isintraday ? color.new(#336699,70) : color.new(#993366,20)\nplotarrow(close-close[1],colorup=UP,colordown=color.new(#993366,40))",
+      "sourceSha256": "736b952e59f529b5877d91791cdd0e6d176831aba9a9ccd0d84fe0c4953f480a",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "const-declared-simple",
+      "source": "//@version=6\nindicator(\"static role declared simple\")\nsimple color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=color.new(#993366,40))",
+      "sourceSha256": "3603ad7c41ac6fcafa15acd4cabddc2f6020d99251fdaabdc87bda67a5605912",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-declared-constant",
+      "source": "//@version=6\nindicator(\"effective static series declaration\")\nseries color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "3c081d91ced2de3121b5e6d05436b3df780df89904ae02f00db99e8e726341f0",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "var-never-written",
+      "source": "//@version=6\nindicator(\"effective static var\")\nvar color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "7b845c631a4d3bae25aadce6fd2e4c8a26a48435575fe4a72897ae6eea5ab9e9",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "later-reassignment",
+      "source": "//@version=6\nindicator(\"effective static later write\")\ncolor UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\nUP:=#669933",
+      "sourceSha256": "0ab07ab527d6f2dcc35eb6c1e260e996580682f2d5b62ed5cc0b8fbe7f596a94",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "dead-input-branch",
+      "source": "//@version=6\nindicator(\"effective static dead input\")\nplotarrow(close-close[1],colorup=true ? color.new(#336699,70) : input.color(#669933,\"Unused\"),colordown=#993366)",
+      "sourceSha256": "64f9975cd5f7b6efa24cf2a32daad0fdd8cf0a4617fa77bf77ccd38aae297d58",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "var-later-reassignment",
+      "source": "//@version=6\nindicator(\"persistent later write\")\nvar color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\nUP:=#669933",
+      "sourceSha256": "bf67fb6a0c71114339556540bc70cf1842b067459a1aa17caefdfee7abcebe0a",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nonvar-before-reassignment",
+      "source": "//@version=6\nindicator(\"current before write\")\ncolor UP=color.new(#336699,70)\nUP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "7f04a3bfc2bf556e1411a85a877bb104b516825d87db71cd0f87bd47dff28a07",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 102,
+            "g": 153,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "conditional-before-reassignment",
+      "source": "//@version=6\nindicator(\"conditional before write\")\ncolor UP=color.new(#336699,70)\nif bar_index%2==0\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "e0e4151f84f7434458479c692e7e72de19b11a8b80cd52b8832f3abc88a9663c",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-after-call-only",
+      "source": "//@version=6\nindicator(\"input after current call\")\ncolor UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\nUP:=input.color(#669933,\"Later\")",
+      "sourceSha256": "0297d52a402e7b058ba34afd8f301d0347a3857419464d020486f0d626f5a7bb",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-same-later-write",
+      "source": "//@version=6\nindicator(\"persistent same later write\")\nvar color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\nUP:=color.new(#336699,70)",
+      "sourceSha256": "2cf7818e42905b59d2b8b28b0311ceed80b223a81368ff596dfed168750a9475",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-same-before-write",
+      "source": "//@version=6\nindicator(\"persistent same before write\")\nvar color UP=color.new(#336699,70)\nUP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "2ac378d5cbcb280a6c51c3d28c7f9e86b4a6467eed2f6d1b6feed807ebc78d9d",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-dead-later-write",
+      "source": "//@version=6\nindicator(\"persistent dead later write\")\nvar color UP=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\nif false\n    UP:=#669933",
+      "sourceSha256": "30e100fc452d5978671edbd0d85a387655dbc6a66fb596488b4f3e53c75fbb56",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "constant-known-conditional-before-write",
+      "source": "//@version=6\nindicator(\"constant condition before write\")\ncolor UP=color.new(#336699,70)\nif true\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "aa3c4ac99aa83ddf3a300869a129bcd23395cda2d90b9c192e902ccc7841d821",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 102,
+            "g": 153,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "fractional-static-alpha",
+      "source": "//@version=6\nindicator(\"fractional static arrow alpha\")\nplotarrow(close-close[1],colorup=color.new(#336699,70.25),colordown=color.new(#993366,40.125))",
+      "sourceSha256": "33d3442db265339542c2184e13683494a923772702d8e68a769510979364cf8a",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "fractional-static-alias-alpha",
+      "source": "//@version=6\nindicator(\"fractional alias arrow alpha\")\nconst float T=70.25\nseries color UP=color.new(#336699,T)\nplotarrow(close-close[1],colorup=UP,colordown=color.new(#993366,40.125))",
+      "sourceSha256": "2ac21fe6210d49122f7e69528bbdea630b31ac13ea1afdccad3cc01973cdb0be",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "fractional-input-alpha-fallback",
+      "source": "//@version=6\nindicator(\"fractional input arrow alpha\")\nUP=input.color(color.new(#336699,70.25),\"Up\")\nplotarrow(close-close[1],colorup=UP,colordown=color.new(#993366,40.125))",
+      "sourceSha256": "44ce7006212adc40ceaac93743d041561a1c6947e6758c38d98db38497705d80",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 40
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "arrow-static-role-alpha-boundaries",
+      "source": "//@version=6\nindicator(\"static alpha boundary\")\nplotarrow(close-close[1],title=\"T70.4\",colorup=color.new(#336699,70.4),colordown=#993366)\nplotarrow(close-close[1],title=\"T70.5\",colorup=color.new(#336699,70.5),colordown=#993366)\nplotarrow(close-close[1],title=\"T70.6\",colorup=color.new(#336699,70.6),colordown=#993366)\nplotarrow(close-close[1],title=\"T70.9\",colorup=color.new(#336699,70.9),colordown=#993366)\nplotarrow(close-close[1],title=\"T71.1\",colorup=color.new(#336699,71.1),colordown=#993366)\nplotarrow(close-close[1],title=\"T72.4\",colorup=color.new(#336699,72.4),colordown=#993366)\nplotarrow(close-close[1],title=\"T77.7\",colorup=color.new(#336699,77.7),colordown=#993366)\nplotarrow(close-close[1],title=\"T50.2\",colorup=color.new(#336699,50.2),colordown=#993366)",
+      "sourceSha256": "5e89ed2135a1699082f317a7deab4925e6b6f57cd1adf9596b42c5bb25bdf8e6",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 72
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 77
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 50
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "arrow-static-role-alpha-constructors",
+      "source": "//@version=6\nindicator(\"static alpha constructor boundary\")\nplotarrow(close-close[1],title=\"hex-alpha76\",colorup=#3366994c,colordown=#993366)\nplotarrow(close-close[1],title=\"hex-alpha75\",colorup=#3366994b,colordown=#993366)\nplotarrow(close-close[1],title=\"hex-alpha74\",colorup=#3366994a,colordown=#993366)\nplotarrow(close-close[1],title=\"hex-alpha77\",colorup=#3366994d,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb-fractional\",colorup=color.rgb(51,102,153,70.9),colordown=#993366)\nplotarrow(close-close[1],title=\"new-constant-expression\",colorup=color.new(#336699,70+0.9),colordown=#993366)\nplotarrow(close-close[1],title=\"new-expression-from-hex\",colorup=color.new(#336699,color.t(#3366994b)),colordown=#993366)\nplotarrow(close-close[1],title=\"new-near-zero\",colorup=color.new(#336699,0.9),colordown=#993366)",
+      "sourceSha256": "12f20acd15f4f5ded5a1c789a05a6a7c2d7afa089ade54636b16575a9aff5dd8",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "arrow-static-role-alpha-numeric-branches",
+      "source": "//@version=6\nindicator(\"numeric static transparency boundary\")\nplotarrow(close-close[1],title=\"new70.9>70.1\",colorup=color.t(color.new(#336699,70.9))>70.1?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"new70.9>70.5\",colorup=color.t(color.new(#336699,70.9))>70.5?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"new70.9>70.9\",colorup=color.t(color.new(#336699,70.9))>70.9?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb70.9>70.1\",colorup=color.t(color.rgb(51,102,153,70.9))>70.1?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb70.9>70.5\",colorup=color.t(color.rgb(51,102,153,70.9))>70.5?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb70.9>70.9\",colorup=color.t(color.rgb(51,102,153,70.9))>70.9?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex75>70.1\",colorup=color.t(#3366994b)>70.1?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex75>70.5\",colorup=color.t(#3366994b)>70.5?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex75>70.9\",colorup=color.t(#3366994b)>70.9?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex76>70.1\",colorup=color.t(#3366994c)>70.1?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex76>70.5\",colorup=color.t(#3366994c)>70.5?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex76>70.9\",colorup=color.t(#3366994c)>70.9?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"new-from-hex75>70.1\",colorup=color.t(color.new(#336699,color.t(#3366994b)))>70.1?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"new-from-hex75>70.5\",colorup=color.t(color.new(#336699,color.t(#3366994b)))>70.5?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"new-from-hex75>70.9\",colorup=color.t(color.new(#336699,color.t(#3366994b)))>70.9?#112233:#445566,colordown=#993366)",
+      "sourceSha256": "4c9888ea1154d09bfd5f06ae1dc88324dafeadecb0577e6fb9e876988399844b",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 68,
+            "g": 85,
+            "b": 102,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "arrow-static-role-alpha-exact-numeric",
+      "source": "//@version=6\nindicator(\"exact static transparency rules\")\nplotarrow(close-close[1],title=\"new70.9-equals70\",colorup=color.t(color.new(#336699,70.9))==70?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb70.9-equals71\",colorup=color.t(color.rgb(51,102,153,70.9))==71?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex75-equals71\",colorup=color.t(#3366994b)==71?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex76-equals70\",colorup=color.t(#3366994c)==70?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"rgb70.25-equals70\",colorup=color.t(color.rgb(51,102,153,70.25))==70?#112233:#445566,colordown=#993366)\nplotarrow(close-close[1],title=\"hex01-equals100\",colorup=color.t(#33669901)==100?#112233:#445566,colordown=#993366)",
+      "sourceSha256": "1ba71369413ad2d07697bf4b4329670ce0dbb37387ab848243f85721443b9398",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 17,
+            "g": 34,
+            "b": 51,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "constant-gradient",
+      "source": "//@version=6\nindicator(\"constant gradient arrow\")\nplotarrow(close-close[1],colorup=color.from_gradient(0.5,0,1,#336699,#993366),colordown=#993366)",
+      "sourceSha256": "1fbb6b51fd3fe10073368f41de5b45d798a3649b833c6eb92d7da887a0476288",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "constant-gradient-alias",
+      "source": "//@version=6\nindicator(\"constant gradient alias arrow\")\ncolor UP=color.from_gradient(0.5,0,1,#336699,#993366)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "72c47350431086b096ca6274ef6e97dff0ff1fcb31d09de3f18f636b6f9775f8",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "dynamic-gradient",
+      "source": "//@version=6\nindicator(\"dynamic gradient arrow\")\nplotarrow(close-close[1],colorup=color.from_gradient(close,0,1,#336699,#993366),colordown=#993366)",
+      "sourceSha256": "899f764b56515459b8fa5490c32b6acc759f524ec3d1ec093d3686cc4401e49e",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-cross-bar-gate",
+      "source": "//@version=6\nindicator(\"persistent cross bar gate\")\nvar bool gate=false\nvar color UP=color.new(#336699,70)\nif gate\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\ngate:=true",
+      "sourceSha256": "2d68ac9a01a630c0ecce75ec77fafa39762c75dee8da91d744e9c5175200ffcc",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-invariant-gate",
+      "source": "//@version=6\nindicator(\"persistent invariant gate\")\nvar bool gate=false\nvar color UP=color.new(#336699,70)\nif gate\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "d3428228642f94b5a8a21439c96c8adea6c20056965f18fd02d5d8124d558693",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nonpersistent-cross-bar-gate",
+      "source": "//@version=6\nindicator(\"nonpersistent reset gate\")\nbool gate=false\nvar color UP=color.new(#336699,70)\nif gate\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)\ngate:=true",
+      "sourceSha256": "cc624eaafa7ef291de91c61b726133f99119710378966a290e5ad5e7a560cc38",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "nonpersistent-unconditional-loop-write",
+      "source": "//@version=6\nindicator(\"unconditional loop arrow write\")\ncolor UP=color.new(#336699,70)\nfor i=0 to 1\n    UP:=#669933\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "0b5afdcc35f7396dc7ba79c08eaba60cc8d812892e77a6f72d0c0948e64a1d1d",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "persistent-later-iteration-write",
+      "source": "//@version=6\nindicator(\"later iteration arrow write\")\nvar color UP=color.new(#336699,70)\nbool gate=false\nfor i=0 to 1\n    if gate\n        UP:=#669933\n    gate:=true\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "ea75a69567ee50ec5aaee5a51ea722a42df462e5c5c31ed1222a35fd6fa50978",
+      "expected": [
+        {
+          "up": {
+            "origin": "dynamic",
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "origin": "constant",
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "fractional-constructor-alpha-quantization",
+      "source": "//@version=6\nindicator(\"arrow fractional static constructor boundary\")\nplotarrow(close,title=\"rgb-47.4\",colorup=color.rgb(18,52,86,47.4),colordown=color.rgb(101,67,33,47.4))\nplotarrow(close,title=\"rgb-47.5\",colorup=color.rgb(18,52,86,47.5),colordown=color.rgb(101,67,33,47.5))\nplotarrow(close,title=\"rgb-47.6\",colorup=color.rgb(18,52,86,47.6),colordown=color.rgb(101,67,33,47.6))\nplotarrow(close,title=\"rgb-70.9\",colorup=color.rgb(18,52,86,70.9),colordown=color.rgb(101,67,33,70.9))\nplotarrow(close,title=\"new-47.6\",colorup=color.new(#123456,47.6),colordown=color.new(#654321,47.6))\nplotarrow(close,title=\"hex-86\",colorup=#12345686,colordown=#65432186)",
+      "sourceSha256": "65d706c0107037d96c84d04bef1dcf99472a2943c1c16cb16e3381d36f320b0c",
+      "expected": [
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 47
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 47
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 47
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 47
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 47
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 47
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 71
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 71
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 47
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 47
+          }
+        },
+        {
+          "up": {
+            "origin": "constant",
+            "r": 18,
+            "g": 52,
+            "b": 86,
+            "t": 47
+          },
+          "down": {
+            "origin": "constant",
+            "r": 101,
+            "g": 67,
+            "b": 33,
+            "t": 47
+          }
+        }
+      ],
+      "expectedCompileSuccess": true
+    }
+  ]
+}

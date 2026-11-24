@@ -1,0 +1,13 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..31
+  Version <none>
+  ForIn [`i`, `x`] @ 0..30
+    Iterable
+      Ident `data` @ 14..18
+    Body
+      ExprStmt @ 23..30
+        Call `plot` @ 23..30
+          Ident `x` @ 28..29

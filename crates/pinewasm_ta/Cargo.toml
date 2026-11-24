@@ -1,0 +1,35 @@
+[package]
+name = "pinewasm_ta"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The stateful ta.* engine, shared by the interpreter and every emitted artifact"
+publish.workspace = true
+
+[features]
+default = []
+# `TaFunc` and friends are part of the CSIL wire format, so the front end
+# needs them serializable. The artifact build does not: `serde`'s derive pulls
+# in machinery (and variant-name rodata) that would ride along in every
+# emitted module, so the runtime blob builds this crate with the feature off.
+serde = ["dep:serde"]
+# Keep Miri on the pinned libm pure-Rust fallback; normal and artifact builds
+# retain their existing default architecture selection.
+miri = ["libm/force-soft-floats", "pinewasm_num/miri"]
+# Extraction roots for Charon/Aeneas only; never enabled in production builds.
+aeneas = []
+
+[dependencies]
+# `sqrt`/`floor`/`ceil`/`round` are std-only methods on `f64`. All four are
+# exactly rounded, so the software implementations are bit-identical to the
+# hardware ones; pinned to the same version as `pinewasm_num` so the two
+# `no_std` numeric surfaces cannot drift.
+libm = "=0.2.16"
+# The numeric source for `ta.alma`'s Gaussian kernel.
+pinewasm_num.workspace = true
+serde = { workspace = true, optional = true }
+
+[lints]
+workspace = true

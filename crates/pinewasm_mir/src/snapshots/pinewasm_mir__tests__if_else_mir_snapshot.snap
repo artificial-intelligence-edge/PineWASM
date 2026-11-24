@@ -1,0 +1,28 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"Branch\\\")\\nvalue = 0.0\\nif close > open\\n    value := close\\nelse\\n    value := open\\nplot(value)\\n\")"
+---
+MirBody title="Branch" slots=1 plots=1 values=8
+  slot 0 `value`
+  plot 0 title="<none>"
+bb0:
+  v0 = const 0
+  store_user_current slot0, v0
+  v1 = read_builtin close[0]
+  v2 = read_builtin open[0]
+  v3 = binary `>` v1, v2
+  branch v3, bb1, bb2
+bb1:
+  v4 = read_builtin close[0]
+  store_user_current slot0, v4
+  jump bb3
+bb2:
+  v5 = read_builtin open[0]
+  store_user_current slot0, v5
+  jump bb3
+bb3:
+  v6 = read_user slot0[0]
+  v7 = const #2196F3
+  plot p0, v6
+    color Color v7
+  return

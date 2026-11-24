@@ -1,0 +1,17 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..59
+  Version 6 @ 0..12
+  IndicatorDecl @ 13..29
+    Str "Var" @ 23..28
+  VarAssign `n` @ 30..39
+    Number 0 (int) @ 38..39
+  Reassign `n` @ 40..50
+    Binary `+` @ 45..50
+      Ident `n` @ 45..46
+      Number 1 (int) @ 49..50
+  ExprStmt @ 51..58
+    Call `plot` @ 51..58
+      Ident `n` @ 56..57

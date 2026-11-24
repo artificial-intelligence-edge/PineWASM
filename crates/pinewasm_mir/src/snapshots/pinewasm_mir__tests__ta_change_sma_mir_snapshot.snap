@@ -1,0 +1,25 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"TA\\\")\\nplot(ta.change(close))\\nplot(ta.sma(close, 2))\\n\")"
+---
+MirBody title="TA" slots=2 plots=2 values=8
+  slot 0 `%h0`
+  slot 1 `%h1`
+  plot 0 title="<none>"
+  plot 1 title="<none>"
+bb0:
+  v0 = read_builtin close[0]
+  store_user_current slot0, v0
+  v1 = read_user slot0[0]
+  v2 = read_user slot0[1]
+  v3 = binary `-` v1, v2
+  v4 = const #2196F3
+  plot p0, v3
+    color Color v4
+  v5 = read_builtin close[0]
+  store_user_current slot1, v5
+  v6 = window_mean slot1 len=2
+  v7 = const #2196F3
+  plot p1, v6
+    color Color v7
+  return

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's compiler and runtime.",
+  "cases": [
+    {
+      "id": "math-abs-true",
+      "source": "//@version=6\nindicator(\"constant guard math-abs-true\")\ncolor UP=color.new(#336699,70)\nif math.abs(-1)>0\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "f144d1cfa4217b317216118e2409ee28d8a4fe80303439c0e9f72c77f2ccd98e",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "math-abs-false",
+      "source": "//@version=6\nindicator(\"constant guard math-abs-false\")\ncolor UP=color.new(#336699,70)\nif math.abs(-1)<0\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "f510eea13335710337931c264cda12b216da7e14faa89cd9ef5e5eda7ab35931",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "math-max-true",
+      "source": "//@version=6\nindicator(\"constant guard math-max-true\")\ncolor UP=color.new(#336699,70)\nif math.max(1,2)==2\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "a6e309e0ec4c74c9d2f90ed115965c576405fccabcd3de64911c405960d08d09",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "math-sqrt-true",
+      "source": "//@version=6\nindicator(\"constant guard math-sqrt-true\")\ncolor UP=color.new(#336699,70)\nif math.sqrt(4)==2\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "bab2146aff06600dc8be5ed760000ada87629f73097018555609d5860b4364ca",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-math-abs",
+      "source": "//@version=6\nindicator(\"constant guard input-math-abs\")\ncolor UP=color.new(#336699,70)\nif math.abs(input.float(-1))>0\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "869c06dd2e7606b2e98ce09522c4ad0134f222c2aaa45a8ca081f8871de1400a",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    }
+  ]
+}

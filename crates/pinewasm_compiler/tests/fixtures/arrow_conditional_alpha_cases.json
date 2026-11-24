@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's compiler and runtime.",
+  "cases": [
+    {
+      "id": "same-value-conditional-alpha-reassignment",
+      "source": "//@version=6\nindicator(\"same-value conditional alpha reassignment\")\ncolor UP=color.new(#336699,70)\nif bar_index%2==0\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "2b22e82726c64f82dcb6326259f2e5dfa256608cc72432135d61134def1be741",
+      "expected": {
+        "runtimeColorers": {
+          "up": true,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 0,
+            "g": 255,
+            "b": 0,
+            "t": 0
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "#00FF00",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "literal-true-same-value-alpha-reassignment",
+      "source": "//@version=6\nindicator(\"literal true same-value alpha reassignment\")\ncolor UP=color.new(#336699,70)\nif true\n    UP:=color.new(#336699,70)\nplotarrow(close-close[1],colorup=UP,colordown=#993366)",
+      "sourceSha256": "bbcb1955936465801f7b1eeeb6b747d6605bddbae9555aa42605b1261548a37d",
+      "expected": {
+        "runtimeColorers": {
+          "up": false,
+          "down": false
+        },
+        "staticColors": {
+          "up": {
+            "r": 51,
+            "g": 102,
+            "b": 153,
+            "t": 70
+          },
+          "down": {
+            "r": 153,
+            "g": 51,
+            "b": 102,
+            "t": 0
+          }
+        },
+        "staticCss": {
+          "up": "rgba(51,102,153,0.3)",
+          "down": "#993366"
+        }
+      },
+      "expectedCompileSuccess": true
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+//@version=5
+indicator("Volatility Regime Styles", overlay = false, precision = 2)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+fastLen = input.int(10, "Fast Volatility Length")
+slowLen = input.int(50, "Slow Volatility Length")
+styleName = input.string("Area", "Plot Style", options = ["Line", "Area", "Columns", "Histogram"])
+guideName = input.string("Dashed", "Guide Style", options = ["Solid", "Dashed", "Dotted"])
+hideGuides = input.bool(false, "Hide Guides")
+smoothing = input.int(0, "Extra Smoothing (0 = off)")
+
+// ---------------------------------------------------------------------------
+// Regime
+// ---------------------------------------------------------------------------
+fastVol = ta.stdev(math.log(close / close[1]), fastLen) * math.sqrt(252) * 100
+slowVol = ta.stdev(math.log(close / close[1]), slowLen) * math.sqrt(252) * 100
+ratio = fastVol / slowVol
+
+// A smoothing length of zero means "off", because a number used as a
+// condition is false when it is zero.
+smoothed = smoothing ? ta.sma(ratio, math.max(1, smoothing)) : ratio
+
+// The regime is a small integer; zero is the calm regime.
+regime = smoothed > 1.5 ? 2 : smoothed > 1.1 ? 1 : 0
+wasCalm = not regime[1]
+if regime and wasCalm
+    log.info("Regime left calm at bar " + str.tostring(bar_index))
+
+// Comparisons with `na` are false, so this guard never fires.
+if smoothed == na
+    log.warning("missing ratio")
+
+// Each operand is tested for `na`, because a comparison with `na` is false.
+missingRatio = na(fastVol > slowVol)
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+plotStyle = switch styleName
+    "Line" => plot.style_line
+    "Area" => plot.style_area
+    "Columns" => plot.style_columns
+    "Histogram" => plot.style_histogram
+
+guideStyle = guideName == "Solid" ? hline.style_solid : guideName == "Dashed" ? hline.style_dashed : guideName == "Dotted" ? hline.style_dotted : na
+
+regimeColor = switch regime
+    2 => color.red
+    1 => color.orange
+    => color.teal
+
+plot(smoothed, "Ratio", color = regimeColor, style = plotStyle, linewidth = 2)
+plot(fastVol, "Fast Volatility", color = color.gray, style = na, display = display.data_window)
+plot(slowVol, "Slow Volatility", color = color.gray, display = na)
+hline(1.5, "High", color = color.red, linestyle = guideStyle, display = hideGuides ? display.none : display.all)
+hline(1.1, "Elevated", color = color.orange, linestyle = guideStyle)
+hline(1.0, "Neutral", color = color.gray, linestyle = hline.style_dotted, linewidth = 1)
+bgcolor(missingRatio ? color.gray : na, transp = 80)
+plotchar(regime == 2 and regime[1] != 2, "Spike", "!", location.top, color.red, size = size.tiny)
+
+// ---------------------------------------------------------------------------
+// Regime duration statistics
+// ---------------------------------------------------------------------------
+var int[] durations = array.new_int(3, 0)
+var int[] episodes = array.new_int(3, 0)
+var int runLength = 0
+if regime == regime[1]
+    runLength += 1
+else
+    if not na(regime[1])
+        prev = regime[1]
+        array.set(durations, prev, array.get(durations, prev) + runLength)
+        array.set(episodes, prev, array.get(episodes, prev) + 1)
+    runLength := 1
+
+avgDuration(int r) =>
+    n = array.get(episodes, r)
+    n ? array.get(durations, r) / n : na
+
+var table t = table.new(position.top_right, 3, 2, border_width = 1)
+if barstate.islast
+    for r = 0 to 2
+        table.cell(t, r, 0, r == 0 ? "Calm" : r == 1 ? "Elevated" : "High", text_color = color.white, bgcolor = r == 2 ? color.red : r == 1 ? color.orange : color.teal)
+        d = avgDuration(r)
+        table.cell(t, r, 1, na(d) ? "-" : str.tostring(d, "#.#"), text_color = color.white)
+
+if regime == 2 and regime[1] != 2
+    label.new(bar_index, smoothed, "High " + str.tostring(fastVol, "#.#") + "%", style = label.style_label_down, color = color.red, size = size.tiny)
+alertcondition(regime == 2 and regime[1] != 2, "High Volatility", "Volatility regime turned high")

@@ -1,0 +1,1849 @@
+{
+  "formula": "alphaByte = round(255 * (1 - transparency / 100)), with halves rounded up. Every row in this file satisfies this formula.",
+  "wholePercentages": [
+    {
+      "transparency": 0,
+      "alphaByte": 255,
+      "hex": "#123456"
+    },
+    {
+      "transparency": 1,
+      "alphaByte": 252,
+      "hex": "#123456FC"
+    },
+    {
+      "transparency": 2,
+      "alphaByte": 250,
+      "hex": "#123456FA"
+    },
+    {
+      "transparency": 3,
+      "alphaByte": 247,
+      "hex": "#123456F7"
+    },
+    {
+      "transparency": 4,
+      "alphaByte": 245,
+      "hex": "#123456F5"
+    },
+    {
+      "transparency": 5,
+      "alphaByte": 242,
+      "hex": "#123456F2"
+    },
+    {
+      "transparency": 6,
+      "alphaByte": 240,
+      "hex": "#123456F0"
+    },
+    {
+      "transparency": 7,
+      "alphaByte": 237,
+      "hex": "#123456ED"
+    },
+    {
+      "transparency": 8,
+      "alphaByte": 235,
+      "hex": "#123456EB"
+    },
+    {
+      "transparency": 9,
+      "alphaByte": 232,
+      "hex": "#123456E8"
+    },
+    {
+      "transparency": 10,
+      "alphaByte": 230,
+      "hex": "#123456E6"
+    },
+    {
+      "transparency": 11,
+      "alphaByte": 227,
+      "hex": "#123456E3"
+    },
+    {
+      "transparency": 12,
+      "alphaByte": 224,
+      "hex": "#123456E0"
+    },
+    {
+      "transparency": 13,
+      "alphaByte": 222,
+      "hex": "#123456DE"
+    },
+    {
+      "transparency": 14,
+      "alphaByte": 219,
+      "hex": "#123456DB"
+    },
+    {
+      "transparency": 15,
+      "alphaByte": 217,
+      "hex": "#123456D9"
+    },
+    {
+      "transparency": 16,
+      "alphaByte": 214,
+      "hex": "#123456D6"
+    },
+    {
+      "transparency": 17,
+      "alphaByte": 212,
+      "hex": "#123456D4"
+    },
+    {
+      "transparency": 18,
+      "alphaByte": 209,
+      "hex": "#123456D1"
+    },
+    {
+      "transparency": 19,
+      "alphaByte": 207,
+      "hex": "#123456CF"
+    },
+    {
+      "transparency": 20,
+      "alphaByte": 204,
+      "hex": "#123456CC"
+    },
+    {
+      "transparency": 21,
+      "alphaByte": 201,
+      "hex": "#123456C9"
+    },
+    {
+      "transparency": 22,
+      "alphaByte": 199,
+      "hex": "#123456C7"
+    },
+    {
+      "transparency": 23,
+      "alphaByte": 196,
+      "hex": "#123456C4"
+    },
+    {
+      "transparency": 24,
+      "alphaByte": 194,
+      "hex": "#123456C2"
+    },
+    {
+      "transparency": 25,
+      "alphaByte": 191,
+      "hex": "#123456BF"
+    },
+    {
+      "transparency": 26,
+      "alphaByte": 189,
+      "hex": "#123456BD"
+    },
+    {
+      "transparency": 27,
+      "alphaByte": 186,
+      "hex": "#123456BA"
+    },
+    {
+      "transparency": 28,
+      "alphaByte": 184,
+      "hex": "#123456B8"
+    },
+    {
+      "transparency": 29,
+      "alphaByte": 181,
+      "hex": "#123456B5"
+    },
+    {
+      "transparency": 30,
+      "alphaByte": 179,
+      "hex": "#123456B3"
+    },
+    {
+      "transparency": 31,
+      "alphaByte": 176,
+      "hex": "#123456B0"
+    },
+    {
+      "transparency": 32,
+      "alphaByte": 173,
+      "hex": "#123456AD"
+    },
+    {
+      "transparency": 33,
+      "alphaByte": 171,
+      "hex": "#123456AB"
+    },
+    {
+      "transparency": 34,
+      "alphaByte": 168,
+      "hex": "#123456A8"
+    },
+    {
+      "transparency": 35,
+      "alphaByte": 166,
+      "hex": "#123456A6"
+    },
+    {
+      "transparency": 36,
+      "alphaByte": 163,
+      "hex": "#123456A3"
+    },
+    {
+      "transparency": 37,
+      "alphaByte": 161,
+      "hex": "#123456A1"
+    },
+    {
+      "transparency": 38,
+      "alphaByte": 158,
+      "hex": "#1234569E"
+    },
+    {
+      "transparency": 39,
+      "alphaByte": 156,
+      "hex": "#1234569C"
+    },
+    {
+      "transparency": 40,
+      "alphaByte": 153,
+      "hex": "#12345699"
+    },
+    {
+      "transparency": 41,
+      "alphaByte": 150,
+      "hex": "#12345696"
+    },
+    {
+      "transparency": 42,
+      "alphaByte": 148,
+      "hex": "#12345694"
+    },
+    {
+      "transparency": 43,
+      "alphaByte": 145,
+      "hex": "#12345691"
+    },
+    {
+      "transparency": 44,
+      "alphaByte": 143,
+      "hex": "#1234568F"
+    },
+    {
+      "transparency": 45,
+      "alphaByte": 140,
+      "hex": "#1234568C"
+    },
+    {
+      "transparency": 46,
+      "alphaByte": 138,
+      "hex": "#1234568A"
+    },
+    {
+      "transparency": 47,
+      "alphaByte": 135,
+      "hex": "#12345687"
+    },
+    {
+      "transparency": 48,
+      "alphaByte": 133,
+      "hex": "#12345685"
+    },
+    {
+      "transparency": 49,
+      "alphaByte": 130,
+      "hex": "#12345682"
+    },
+    {
+      "transparency": 50,
+      "alphaByte": 128,
+      "hex": "#12345680"
+    },
+    {
+      "transparency": 51,
+      "alphaByte": 125,
+      "hex": "#1234567D"
+    },
+    {
+      "transparency": 52,
+      "alphaByte": 122,
+      "hex": "#1234567A"
+    },
+    {
+      "transparency": 53,
+      "alphaByte": 120,
+      "hex": "#12345678"
+    },
+    {
+      "transparency": 54,
+      "alphaByte": 117,
+      "hex": "#12345675"
+    },
+    {
+      "transparency": 55,
+      "alphaByte": 115,
+      "hex": "#12345673"
+    },
+    {
+      "transparency": 56,
+      "alphaByte": 112,
+      "hex": "#12345670"
+    },
+    {
+      "transparency": 57,
+      "alphaByte": 110,
+      "hex": "#1234566E"
+    },
+    {
+      "transparency": 58,
+      "alphaByte": 107,
+      "hex": "#1234566B"
+    },
+    {
+      "transparency": 59,
+      "alphaByte": 105,
+      "hex": "#12345669"
+    },
+    {
+      "transparency": 60,
+      "alphaByte": 102,
+      "hex": "#12345666"
+    },
+    {
+      "transparency": 61,
+      "alphaByte": 99,
+      "hex": "#12345663"
+    },
+    {
+      "transparency": 62,
+      "alphaByte": 97,
+      "hex": "#12345661"
+    },
+    {
+      "transparency": 63,
+      "alphaByte": 94,
+      "hex": "#1234565E"
+    },
+    {
+      "transparency": 64,
+      "alphaByte": 92,
+      "hex": "#1234565C"
+    },
+    {
+      "transparency": 65,
+      "alphaByte": 89,
+      "hex": "#12345659"
+    },
+    {
+      "transparency": 66,
+      "alphaByte": 87,
+      "hex": "#12345657"
+    },
+    {
+      "transparency": 67,
+      "alphaByte": 84,
+      "hex": "#12345654"
+    },
+    {
+      "transparency": 68,
+      "alphaByte": 82,
+      "hex": "#12345652"
+    },
+    {
+      "transparency": 69,
+      "alphaByte": 79,
+      "hex": "#1234564F"
+    },
+    {
+      "transparency": 70,
+      "alphaByte": 77,
+      "hex": "#1234564D"
+    },
+    {
+      "transparency": 71,
+      "alphaByte": 74,
+      "hex": "#1234564A"
+    },
+    {
+      "transparency": 72,
+      "alphaByte": 71,
+      "hex": "#12345647"
+    },
+    {
+      "transparency": 73,
+      "alphaByte": 69,
+      "hex": "#12345645"
+    },
+    {
+      "transparency": 74,
+      "alphaByte": 66,
+      "hex": "#12345642"
+    },
+    {
+      "transparency": 75,
+      "alphaByte": 64,
+      "hex": "#12345640"
+    },
+    {
+      "transparency": 76,
+      "alphaByte": 61,
+      "hex": "#1234563D"
+    },
+    {
+      "transparency": 77,
+      "alphaByte": 59,
+      "hex": "#1234563B"
+    },
+    {
+      "transparency": 78,
+      "alphaByte": 56,
+      "hex": "#12345638"
+    },
+    {
+      "transparency": 79,
+      "alphaByte": 54,
+      "hex": "#12345636"
+    },
+    {
+      "transparency": 80,
+      "alphaByte": 51,
+      "hex": "#12345633"
+    },
+    {
+      "transparency": 81,
+      "alphaByte": 48,
+      "hex": "#12345630"
+    },
+    {
+      "transparency": 82,
+      "alphaByte": 46,
+      "hex": "#1234562E"
+    },
+    {
+      "transparency": 83,
+      "alphaByte": 43,
+      "hex": "#1234562B"
+    },
+    {
+      "transparency": 84,
+      "alphaByte": 41,
+      "hex": "#12345629"
+    },
+    {
+      "transparency": 85,
+      "alphaByte": 38,
+      "hex": "#12345626"
+    },
+    {
+      "transparency": 86,
+      "alphaByte": 36,
+      "hex": "#12345624"
+    },
+    {
+      "transparency": 87,
+      "alphaByte": 33,
+      "hex": "#12345621"
+    },
+    {
+      "transparency": 88,
+      "alphaByte": 31,
+      "hex": "#1234561F"
+    },
+    {
+      "transparency": 89,
+      "alphaByte": 28,
+      "hex": "#1234561C"
+    },
+    {
+      "transparency": 90,
+      "alphaByte": 26,
+      "hex": "#1234561A"
+    },
+    {
+      "transparency": 91,
+      "alphaByte": 23,
+      "hex": "#12345617"
+    },
+    {
+      "transparency": 92,
+      "alphaByte": 20,
+      "hex": "#12345614"
+    },
+    {
+      "transparency": 93,
+      "alphaByte": 18,
+      "hex": "#12345612"
+    },
+    {
+      "transparency": 94,
+      "alphaByte": 15,
+      "hex": "#1234560F"
+    },
+    {
+      "transparency": 95,
+      "alphaByte": 13,
+      "hex": "#1234560D"
+    },
+    {
+      "transparency": 96,
+      "alphaByte": 10,
+      "hex": "#1234560A"
+    },
+    {
+      "transparency": 97,
+      "alphaByte": 8,
+      "hex": "#12345608"
+    },
+    {
+      "transparency": 98,
+      "alphaByte": 5,
+      "hex": "#12345605"
+    },
+    {
+      "transparency": 99,
+      "alphaByte": 3,
+      "hex": "#12345603"
+    },
+    {
+      "transparency": 100,
+      "alphaByte": 0,
+      "hex": "#12345600"
+    }
+  ],
+  "alphaBytes": [
+    {
+      "alphaByte": 0,
+      "transparency": 100,
+      "hex": "#12345600"
+    },
+    {
+      "alphaByte": 1,
+      "transparency": 99.6078431372549,
+      "hex": "#12345601"
+    },
+    {
+      "alphaByte": 2,
+      "transparency": 99.2156862745098,
+      "hex": "#12345602"
+    },
+    {
+      "alphaByte": 3,
+      "transparency": 98.82352941176471,
+      "hex": "#12345603"
+    },
+    {
+      "alphaByte": 4,
+      "transparency": 98.43137254901961,
+      "hex": "#12345604"
+    },
+    {
+      "alphaByte": 5,
+      "transparency": 98.0392156862745,
+      "hex": "#12345605"
+    },
+    {
+      "alphaByte": 6,
+      "transparency": 97.6470588235294,
+      "hex": "#12345606"
+    },
+    {
+      "alphaByte": 7,
+      "transparency": 97.25490196078431,
+      "hex": "#12345607"
+    },
+    {
+      "alphaByte": 8,
+      "transparency": 96.86274509803921,
+      "hex": "#12345608"
+    },
+    {
+      "alphaByte": 9,
+      "transparency": 96.47058823529412,
+      "hex": "#12345609"
+    },
+    {
+      "alphaByte": 10,
+      "transparency": 96.07843137254902,
+      "hex": "#1234560A"
+    },
+    {
+      "alphaByte": 11,
+      "transparency": 95.68627450980392,
+      "hex": "#1234560B"
+    },
+    {
+      "alphaByte": 12,
+      "transparency": 95.29411764705881,
+      "hex": "#1234560C"
+    },
+    {
+      "alphaByte": 13,
+      "transparency": 94.90196078431372,
+      "hex": "#1234560D"
+    },
+    {
+      "alphaByte": 14,
+      "transparency": 94.50980392156862,
+      "hex": "#1234560E"
+    },
+    {
+      "alphaByte": 15,
+      "transparency": 94.11764705882352,
+      "hex": "#1234560F"
+    },
+    {
+      "alphaByte": 16,
+      "transparency": 93.72549019607843,
+      "hex": "#12345610"
+    },
+    {
+      "alphaByte": 17,
+      "transparency": 93.33333333333333,
+      "hex": "#12345611"
+    },
+    {
+      "alphaByte": 18,
+      "transparency": 92.94117647058823,
+      "hex": "#12345612"
+    },
+    {
+      "alphaByte": 19,
+      "transparency": 92.54901960784314,
+      "hex": "#12345613"
+    },
+    {
+      "alphaByte": 20,
+      "transparency": 92.15686274509804,
+      "hex": "#12345614"
+    },
+    {
+      "alphaByte": 21,
+      "transparency": 91.76470588235294,
+      "hex": "#12345615"
+    },
+    {
+      "alphaByte": 22,
+      "transparency": 91.37254901960785,
+      "hex": "#12345616"
+    },
+    {
+      "alphaByte": 23,
+      "transparency": 90.98039215686275,
+      "hex": "#12345617"
+    },
+    {
+      "alphaByte": 24,
+      "transparency": 90.58823529411765,
+      "hex": "#12345618"
+    },
+    {
+      "alphaByte": 25,
+      "transparency": 90.19607843137256,
+      "hex": "#12345619"
+    },
+    {
+      "alphaByte": 26,
+      "transparency": 89.80392156862746,
+      "hex": "#1234561A"
+    },
+    {
+      "alphaByte": 27,
+      "transparency": 89.41176470588236,
+      "hex": "#1234561B"
+    },
+    {
+      "alphaByte": 28,
+      "transparency": 89.01960784313725,
+      "hex": "#1234561C"
+    },
+    {
+      "alphaByte": 29,
+      "transparency": 88.62745098039215,
+      "hex": "#1234561D"
+    },
+    {
+      "alphaByte": 30,
+      "transparency": 88.23529411764706,
+      "hex": "#1234561E"
+    },
+    {
+      "alphaByte": 31,
+      "transparency": 87.84313725490196,
+      "hex": "#1234561F"
+    },
+    {
+      "alphaByte": 32,
+      "transparency": 87.45098039215686,
+      "hex": "#12345620"
+    },
+    {
+      "alphaByte": 33,
+      "transparency": 87.05882352941177,
+      "hex": "#12345621"
+    },
+    {
+      "alphaByte": 34,
+      "transparency": 86.66666666666667,
+      "hex": "#12345622"
+    },
+    {
+      "alphaByte": 35,
+      "transparency": 86.27450980392157,
+      "hex": "#12345623"
+    },
+    {
+      "alphaByte": 36,
+      "transparency": 85.88235294117648,
+      "hex": "#12345624"
+    },
+    {
+      "alphaByte": 37,
+      "transparency": 85.49019607843137,
+      "hex": "#12345625"
+    },
+    {
+      "alphaByte": 38,
+      "transparency": 85.09803921568627,
+      "hex": "#12345626"
+    },
+    {
+      "alphaByte": 39,
+      "transparency": 84.70588235294117,
+      "hex": "#12345627"
+    },
+    {
+      "alphaByte": 40,
+      "transparency": 84.31372549019608,
+      "hex": "#12345628"
+    },
+    {
+      "alphaByte": 41,
+      "transparency": 83.92156862745098,
+      "hex": "#12345629"
+    },
+    {
+      "alphaByte": 42,
+      "transparency": 83.52941176470588,
+      "hex": "#1234562A"
+    },
+    {
+      "alphaByte": 43,
+      "transparency": 83.13725490196077,
+      "hex": "#1234562B"
+    },
+    {
+      "alphaByte": 44,
+      "transparency": 82.74509803921568,
+      "hex": "#1234562C"
+    },
+    {
+      "alphaByte": 45,
+      "transparency": 82.35294117647058,
+      "hex": "#1234562D"
+    },
+    {
+      "alphaByte": 46,
+      "transparency": 81.96078431372548,
+      "hex": "#1234562E"
+    },
+    {
+      "alphaByte": 47,
+      "transparency": 81.56862745098039,
+      "hex": "#1234562F"
+    },
+    {
+      "alphaByte": 48,
+      "transparency": 81.17647058823529,
+      "hex": "#12345630"
+    },
+    {
+      "alphaByte": 49,
+      "transparency": 80.7843137254902,
+      "hex": "#12345631"
+    },
+    {
+      "alphaByte": 50,
+      "transparency": 80.3921568627451,
+      "hex": "#12345632"
+    },
+    {
+      "alphaByte": 51,
+      "transparency": 80,
+      "hex": "#12345633"
+    },
+    {
+      "alphaByte": 52,
+      "transparency": 79.6078431372549,
+      "hex": "#12345634"
+    },
+    {
+      "alphaByte": 53,
+      "transparency": 79.2156862745098,
+      "hex": "#12345635"
+    },
+    {
+      "alphaByte": 54,
+      "transparency": 78.82352941176471,
+      "hex": "#12345636"
+    },
+    {
+      "alphaByte": 55,
+      "transparency": 78.43137254901961,
+      "hex": "#12345637"
+    },
+    {
+      "alphaByte": 56,
+      "transparency": 78.03921568627452,
+      "hex": "#12345638"
+    },
+    {
+      "alphaByte": 57,
+      "transparency": 77.64705882352942,
+      "hex": "#12345639"
+    },
+    {
+      "alphaByte": 58,
+      "transparency": 77.25490196078432,
+      "hex": "#1234563A"
+    },
+    {
+      "alphaByte": 59,
+      "transparency": 76.86274509803921,
+      "hex": "#1234563B"
+    },
+    {
+      "alphaByte": 60,
+      "transparency": 76.47058823529412,
+      "hex": "#1234563C"
+    },
+    {
+      "alphaByte": 61,
+      "transparency": 76.07843137254902,
+      "hex": "#1234563D"
+    },
+    {
+      "alphaByte": 62,
+      "transparency": 75.68627450980392,
+      "hex": "#1234563E"
+    },
+    {
+      "alphaByte": 63,
+      "transparency": 75.29411764705883,
+      "hex": "#1234563F"
+    },
+    {
+      "alphaByte": 64,
+      "transparency": 74.90196078431373,
+      "hex": "#12345640"
+    },
+    {
+      "alphaByte": 65,
+      "transparency": 74.50980392156863,
+      "hex": "#12345641"
+    },
+    {
+      "alphaByte": 66,
+      "transparency": 74.11764705882354,
+      "hex": "#12345642"
+    },
+    {
+      "alphaByte": 67,
+      "transparency": 73.72549019607844,
+      "hex": "#12345643"
+    },
+    {
+      "alphaByte": 68,
+      "transparency": 73.33333333333334,
+      "hex": "#12345644"
+    },
+    {
+      "alphaByte": 69,
+      "transparency": 72.94117647058825,
+      "hex": "#12345645"
+    },
+    {
+      "alphaByte": 70,
+      "transparency": 72.54901960784314,
+      "hex": "#12345646"
+    },
+    {
+      "alphaByte": 71,
+      "transparency": 72.15686274509804,
+      "hex": "#12345647"
+    },
+    {
+      "alphaByte": 72,
+      "transparency": 71.76470588235294,
+      "hex": "#12345648"
+    },
+    {
+      "alphaByte": 73,
+      "transparency": 71.37254901960785,
+      "hex": "#12345649"
+    },
+    {
+      "alphaByte": 74,
+      "transparency": 70.98039215686273,
+      "hex": "#1234564A"
+    },
+    {
+      "alphaByte": 75,
+      "transparency": 70.58823529411764,
+      "hex": "#1234564B"
+    },
+    {
+      "alphaByte": 76,
+      "transparency": 70.19607843137254,
+      "hex": "#1234564C"
+    },
+    {
+      "alphaByte": 77,
+      "transparency": 69.80392156862744,
+      "hex": "#1234564D"
+    },
+    {
+      "alphaByte": 78,
+      "transparency": 69.41176470588235,
+      "hex": "#1234564E"
+    },
+    {
+      "alphaByte": 79,
+      "transparency": 69.01960784313725,
+      "hex": "#1234564F"
+    },
+    {
+      "alphaByte": 80,
+      "transparency": 68.62745098039215,
+      "hex": "#12345650"
+    },
+    {
+      "alphaByte": 81,
+      "transparency": 68.23529411764706,
+      "hex": "#12345651"
+    },
+    {
+      "alphaByte": 82,
+      "transparency": 67.84313725490196,
+      "hex": "#12345652"
+    },
+    {
+      "alphaByte": 83,
+      "transparency": 67.45098039215686,
+      "hex": "#12345653"
+    },
+    {
+      "alphaByte": 84,
+      "transparency": 67.05882352941177,
+      "hex": "#12345654"
+    },
+    {
+      "alphaByte": 85,
+      "transparency": 66.66666666666667,
+      "hex": "#12345655"
+    },
+    {
+      "alphaByte": 86,
+      "transparency": 66.27450980392156,
+      "hex": "#12345656"
+    },
+    {
+      "alphaByte": 87,
+      "transparency": 65.88235294117646,
+      "hex": "#12345657"
+    },
+    {
+      "alphaByte": 88,
+      "transparency": 65.49019607843137,
+      "hex": "#12345658"
+    },
+    {
+      "alphaByte": 89,
+      "transparency": 65.09803921568627,
+      "hex": "#12345659"
+    },
+    {
+      "alphaByte": 90,
+      "transparency": 64.70588235294117,
+      "hex": "#1234565A"
+    },
+    {
+      "alphaByte": 91,
+      "transparency": 64.31372549019608,
+      "hex": "#1234565B"
+    },
+    {
+      "alphaByte": 92,
+      "transparency": 63.921568627450974,
+      "hex": "#1234565C"
+    },
+    {
+      "alphaByte": 93,
+      "transparency": 63.52941176470588,
+      "hex": "#1234565D"
+    },
+    {
+      "alphaByte": 94,
+      "transparency": 63.13725490196078,
+      "hex": "#1234565E"
+    },
+    {
+      "alphaByte": 95,
+      "transparency": 62.745098039215684,
+      "hex": "#1234565F"
+    },
+    {
+      "alphaByte": 96,
+      "transparency": 62.35294117647059,
+      "hex": "#12345660"
+    },
+    {
+      "alphaByte": 97,
+      "transparency": 61.96078431372549,
+      "hex": "#12345661"
+    },
+    {
+      "alphaByte": 98,
+      "transparency": 61.568627450980394,
+      "hex": "#12345662"
+    },
+    {
+      "alphaByte": 99,
+      "transparency": 61.1764705882353,
+      "hex": "#12345663"
+    },
+    {
+      "alphaByte": 100,
+      "transparency": 60.7843137254902,
+      "hex": "#12345664"
+    },
+    {
+      "alphaByte": 101,
+      "transparency": 60.392156862745104,
+      "hex": "#12345665"
+    },
+    {
+      "alphaByte": 102,
+      "transparency": 60,
+      "hex": "#12345666"
+    },
+    {
+      "alphaByte": 103,
+      "transparency": 59.6078431372549,
+      "hex": "#12345667"
+    },
+    {
+      "alphaByte": 104,
+      "transparency": 59.21568627450981,
+      "hex": "#12345668"
+    },
+    {
+      "alphaByte": 105,
+      "transparency": 58.82352941176471,
+      "hex": "#12345669"
+    },
+    {
+      "alphaByte": 106,
+      "transparency": 58.4313725490196,
+      "hex": "#1234566A"
+    },
+    {
+      "alphaByte": 107,
+      "transparency": 58.0392156862745,
+      "hex": "#1234566B"
+    },
+    {
+      "alphaByte": 108,
+      "transparency": 57.647058823529406,
+      "hex": "#1234566C"
+    },
+    {
+      "alphaByte": 109,
+      "transparency": 57.25490196078431,
+      "hex": "#1234566D"
+    },
+    {
+      "alphaByte": 110,
+      "transparency": 56.86274509803921,
+      "hex": "#1234566E"
+    },
+    {
+      "alphaByte": 111,
+      "transparency": 56.470588235294116,
+      "hex": "#1234566F"
+    },
+    {
+      "alphaByte": 112,
+      "transparency": 56.07843137254902,
+      "hex": "#12345670"
+    },
+    {
+      "alphaByte": 113,
+      "transparency": 55.68627450980392,
+      "hex": "#12345671"
+    },
+    {
+      "alphaByte": 114,
+      "transparency": 55.294117647058826,
+      "hex": "#12345672"
+    },
+    {
+      "alphaByte": 115,
+      "transparency": 54.90196078431373,
+      "hex": "#12345673"
+    },
+    {
+      "alphaByte": 116,
+      "transparency": 54.50980392156863,
+      "hex": "#12345674"
+    },
+    {
+      "alphaByte": 117,
+      "transparency": 54.117647058823536,
+      "hex": "#12345675"
+    },
+    {
+      "alphaByte": 118,
+      "transparency": 53.72549019607843,
+      "hex": "#12345676"
+    },
+    {
+      "alphaByte": 119,
+      "transparency": 53.333333333333336,
+      "hex": "#12345677"
+    },
+    {
+      "alphaByte": 120,
+      "transparency": 52.94117647058824,
+      "hex": "#12345678"
+    },
+    {
+      "alphaByte": 121,
+      "transparency": 52.54901960784314,
+      "hex": "#12345679"
+    },
+    {
+      "alphaByte": 122,
+      "transparency": 52.15686274509803,
+      "hex": "#1234567A"
+    },
+    {
+      "alphaByte": 123,
+      "transparency": 51.764705882352935,
+      "hex": "#1234567B"
+    },
+    {
+      "alphaByte": 124,
+      "transparency": 51.37254901960784,
+      "hex": "#1234567C"
+    },
+    {
+      "alphaByte": 125,
+      "transparency": 50.98039215686274,
+      "hex": "#1234567D"
+    },
+    {
+      "alphaByte": 126,
+      "transparency": 50.588235294117645,
+      "hex": "#1234567E"
+    },
+    {
+      "alphaByte": 127,
+      "transparency": 50.19607843137255,
+      "hex": "#1234567F"
+    },
+    {
+      "alphaByte": 128,
+      "transparency": 49.80392156862745,
+      "hex": "#12345680"
+    },
+    {
+      "alphaByte": 129,
+      "transparency": 49.411764705882355,
+      "hex": "#12345681"
+    },
+    {
+      "alphaByte": 130,
+      "transparency": 49.01960784313726,
+      "hex": "#12345682"
+    },
+    {
+      "alphaByte": 131,
+      "transparency": 48.62745098039216,
+      "hex": "#12345683"
+    },
+    {
+      "alphaByte": 132,
+      "transparency": 48.23529411764705,
+      "hex": "#12345684"
+    },
+    {
+      "alphaByte": 133,
+      "transparency": 47.843137254901954,
+      "hex": "#12345685"
+    },
+    {
+      "alphaByte": 134,
+      "transparency": 47.45098039215686,
+      "hex": "#12345686"
+    },
+    {
+      "alphaByte": 135,
+      "transparency": 47.05882352941176,
+      "hex": "#12345687"
+    },
+    {
+      "alphaByte": 136,
+      "transparency": 46.666666666666664,
+      "hex": "#12345688"
+    },
+    {
+      "alphaByte": 137,
+      "transparency": 46.27450980392157,
+      "hex": "#12345689"
+    },
+    {
+      "alphaByte": 138,
+      "transparency": 45.88235294117647,
+      "hex": "#1234568A"
+    },
+    {
+      "alphaByte": 139,
+      "transparency": 45.490196078431374,
+      "hex": "#1234568B"
+    },
+    {
+      "alphaByte": 140,
+      "transparency": 45.09803921568627,
+      "hex": "#1234568C"
+    },
+    {
+      "alphaByte": 141,
+      "transparency": 44.705882352941174,
+      "hex": "#1234568D"
+    },
+    {
+      "alphaByte": 142,
+      "transparency": 44.31372549019608,
+      "hex": "#1234568E"
+    },
+    {
+      "alphaByte": 143,
+      "transparency": 43.92156862745098,
+      "hex": "#1234568F"
+    },
+    {
+      "alphaByte": 144,
+      "transparency": 43.529411764705884,
+      "hex": "#12345690"
+    },
+    {
+      "alphaByte": 145,
+      "transparency": 43.13725490196079,
+      "hex": "#12345691"
+    },
+    {
+      "alphaByte": 146,
+      "transparency": 42.74509803921569,
+      "hex": "#12345692"
+    },
+    {
+      "alphaByte": 147,
+      "transparency": 42.352941176470594,
+      "hex": "#12345693"
+    },
+    {
+      "alphaByte": 148,
+      "transparency": 41.96078431372548,
+      "hex": "#12345694"
+    },
+    {
+      "alphaByte": 149,
+      "transparency": 41.56862745098039,
+      "hex": "#12345695"
+    },
+    {
+      "alphaByte": 150,
+      "transparency": 41.17647058823529,
+      "hex": "#12345696"
+    },
+    {
+      "alphaByte": 151,
+      "transparency": 40.78431372549019,
+      "hex": "#12345697"
+    },
+    {
+      "alphaByte": 152,
+      "transparency": 40.3921568627451,
+      "hex": "#12345698"
+    },
+    {
+      "alphaByte": 153,
+      "transparency": 40,
+      "hex": "#12345699"
+    },
+    {
+      "alphaByte": 154,
+      "transparency": 39.6078431372549,
+      "hex": "#1234569A"
+    },
+    {
+      "alphaByte": 155,
+      "transparency": 39.21568627450981,
+      "hex": "#1234569B"
+    },
+    {
+      "alphaByte": 156,
+      "transparency": 38.8235294117647,
+      "hex": "#1234569C"
+    },
+    {
+      "alphaByte": 157,
+      "transparency": 38.431372549019606,
+      "hex": "#1234569D"
+    },
+    {
+      "alphaByte": 158,
+      "transparency": 38.03921568627451,
+      "hex": "#1234569E"
+    },
+    {
+      "alphaByte": 159,
+      "transparency": 37.64705882352941,
+      "hex": "#1234569F"
+    },
+    {
+      "alphaByte": 160,
+      "transparency": 37.254901960784316,
+      "hex": "#123456A0"
+    },
+    {
+      "alphaByte": 161,
+      "transparency": 36.86274509803922,
+      "hex": "#123456A1"
+    },
+    {
+      "alphaByte": 162,
+      "transparency": 36.47058823529412,
+      "hex": "#123456A2"
+    },
+    {
+      "alphaByte": 163,
+      "transparency": 36.078431372549026,
+      "hex": "#123456A3"
+    },
+    {
+      "alphaByte": 164,
+      "transparency": 35.686274509803916,
+      "hex": "#123456A4"
+    },
+    {
+      "alphaByte": 165,
+      "transparency": 35.29411764705882,
+      "hex": "#123456A5"
+    },
+    {
+      "alphaByte": 166,
+      "transparency": 34.90196078431372,
+      "hex": "#123456A6"
+    },
+    {
+      "alphaByte": 167,
+      "transparency": 34.509803921568626,
+      "hex": "#123456A7"
+    },
+    {
+      "alphaByte": 168,
+      "transparency": 34.11764705882353,
+      "hex": "#123456A8"
+    },
+    {
+      "alphaByte": 169,
+      "transparency": 33.72549019607843,
+      "hex": "#123456A9"
+    },
+    {
+      "alphaByte": 170,
+      "transparency": 33.333333333333336,
+      "hex": "#123456AA"
+    },
+    {
+      "alphaByte": 171,
+      "transparency": 32.94117647058824,
+      "hex": "#123456AB"
+    },
+    {
+      "alphaByte": 172,
+      "transparency": 32.549019607843135,
+      "hex": "#123456AC"
+    },
+    {
+      "alphaByte": 173,
+      "transparency": 32.15686274509804,
+      "hex": "#123456AD"
+    },
+    {
+      "alphaByte": 174,
+      "transparency": 31.76470588235294,
+      "hex": "#123456AE"
+    },
+    {
+      "alphaByte": 175,
+      "transparency": 31.372549019607842,
+      "hex": "#123456AF"
+    },
+    {
+      "alphaByte": 176,
+      "transparency": 30.980392156862745,
+      "hex": "#123456B0"
+    },
+    {
+      "alphaByte": 177,
+      "transparency": 30.58823529411765,
+      "hex": "#123456B1"
+    },
+    {
+      "alphaByte": 178,
+      "transparency": 30.196078431372552,
+      "hex": "#123456B2"
+    },
+    {
+      "alphaByte": 179,
+      "transparency": 29.803921568627455,
+      "hex": "#123456B3"
+    },
+    {
+      "alphaByte": 180,
+      "transparency": 29.411764705882348,
+      "hex": "#123456B4"
+    },
+    {
+      "alphaByte": 181,
+      "transparency": 29.01960784313725,
+      "hex": "#123456B5"
+    },
+    {
+      "alphaByte": 182,
+      "transparency": 28.627450980392155,
+      "hex": "#123456B6"
+    },
+    {
+      "alphaByte": 183,
+      "transparency": 28.235294117647058,
+      "hex": "#123456B7"
+    },
+    {
+      "alphaByte": 184,
+      "transparency": 27.84313725490196,
+      "hex": "#123456B8"
+    },
+    {
+      "alphaByte": 185,
+      "transparency": 27.450980392156865,
+      "hex": "#123456B9"
+    },
+    {
+      "alphaByte": 186,
+      "transparency": 27.058823529411768,
+      "hex": "#123456BA"
+    },
+    {
+      "alphaByte": 187,
+      "transparency": 26.66666666666667,
+      "hex": "#123456BB"
+    },
+    {
+      "alphaByte": 188,
+      "transparency": 26.274509803921564,
+      "hex": "#123456BC"
+    },
+    {
+      "alphaByte": 189,
+      "transparency": 25.882352941176467,
+      "hex": "#123456BD"
+    },
+    {
+      "alphaByte": 190,
+      "transparency": 25.49019607843137,
+      "hex": "#123456BE"
+    },
+    {
+      "alphaByte": 191,
+      "transparency": 25.098039215686274,
+      "hex": "#123456BF"
+    },
+    {
+      "alphaByte": 192,
+      "transparency": 24.705882352941178,
+      "hex": "#123456C0"
+    },
+    {
+      "alphaByte": 193,
+      "transparency": 24.31372549019608,
+      "hex": "#123456C1"
+    },
+    {
+      "alphaByte": 194,
+      "transparency": 23.921568627450984,
+      "hex": "#123456C2"
+    },
+    {
+      "alphaByte": 195,
+      "transparency": 23.529411764705888,
+      "hex": "#123456C3"
+    },
+    {
+      "alphaByte": 196,
+      "transparency": 23.13725490196078,
+      "hex": "#123456C4"
+    },
+    {
+      "alphaByte": 197,
+      "transparency": 22.745098039215684,
+      "hex": "#123456C5"
+    },
+    {
+      "alphaByte": 198,
+      "transparency": 22.352941176470587,
+      "hex": "#123456C6"
+    },
+    {
+      "alphaByte": 199,
+      "transparency": 21.96078431372549,
+      "hex": "#123456C7"
+    },
+    {
+      "alphaByte": 200,
+      "transparency": 21.568627450980394,
+      "hex": "#123456C8"
+    },
+    {
+      "alphaByte": 201,
+      "transparency": 21.176470588235297,
+      "hex": "#123456C9"
+    },
+    {
+      "alphaByte": 202,
+      "transparency": 20.7843137254902,
+      "hex": "#123456CA"
+    },
+    {
+      "alphaByte": 203,
+      "transparency": 20.392156862745104,
+      "hex": "#123456CB"
+    },
+    {
+      "alphaByte": 204,
+      "transparency": 19.999999999999996,
+      "hex": "#123456CC"
+    },
+    {
+      "alphaByte": 205,
+      "transparency": 19.6078431372549,
+      "hex": "#123456CD"
+    },
+    {
+      "alphaByte": 206,
+      "transparency": 19.215686274509803,
+      "hex": "#123456CE"
+    },
+    {
+      "alphaByte": 207,
+      "transparency": 18.823529411764707,
+      "hex": "#123456CF"
+    },
+    {
+      "alphaByte": 208,
+      "transparency": 18.43137254901961,
+      "hex": "#123456D0"
+    },
+    {
+      "alphaByte": 209,
+      "transparency": 18.039215686274513,
+      "hex": "#123456D1"
+    },
+    {
+      "alphaByte": 210,
+      "transparency": 17.647058823529417,
+      "hex": "#123456D2"
+    },
+    {
+      "alphaByte": 211,
+      "transparency": 17.25490196078432,
+      "hex": "#123456D3"
+    },
+    {
+      "alphaByte": 212,
+      "transparency": 16.862745098039213,
+      "hex": "#123456D4"
+    },
+    {
+      "alphaByte": 213,
+      "transparency": 16.470588235294116,
+      "hex": "#123456D5"
+    },
+    {
+      "alphaByte": 214,
+      "transparency": 16.07843137254902,
+      "hex": "#123456D6"
+    },
+    {
+      "alphaByte": 215,
+      "transparency": 15.686274509803921,
+      "hex": "#123456D7"
+    },
+    {
+      "alphaByte": 216,
+      "transparency": 15.294117647058824,
+      "hex": "#123456D8"
+    },
+    {
+      "alphaByte": 217,
+      "transparency": 14.901960784313728,
+      "hex": "#123456D9"
+    },
+    {
+      "alphaByte": 218,
+      "transparency": 14.509803921568631,
+      "hex": "#123456DA"
+    },
+    {
+      "alphaByte": 219,
+      "transparency": 14.117647058823534,
+      "hex": "#123456DB"
+    },
+    {
+      "alphaByte": 220,
+      "transparency": 13.725490196078427,
+      "hex": "#123456DC"
+    },
+    {
+      "alphaByte": 221,
+      "transparency": 13.33333333333333,
+      "hex": "#123456DD"
+    },
+    {
+      "alphaByte": 222,
+      "transparency": 12.941176470588234,
+      "hex": "#123456DE"
+    },
+    {
+      "alphaByte": 223,
+      "transparency": 12.549019607843137,
+      "hex": "#123456DF"
+    },
+    {
+      "alphaByte": 224,
+      "transparency": 12.15686274509804,
+      "hex": "#123456E0"
+    },
+    {
+      "alphaByte": 225,
+      "transparency": 11.764705882352944,
+      "hex": "#123456E1"
+    },
+    {
+      "alphaByte": 226,
+      "transparency": 11.372549019607847,
+      "hex": "#123456E2"
+    },
+    {
+      "alphaByte": 227,
+      "transparency": 10.98039215686275,
+      "hex": "#123456E3"
+    },
+    {
+      "alphaByte": 228,
+      "transparency": 10.588235294117643,
+      "hex": "#123456E4"
+    },
+    {
+      "alphaByte": 229,
+      "transparency": 10.196078431372547,
+      "hex": "#123456E5"
+    },
+    {
+      "alphaByte": 230,
+      "transparency": 9.80392156862745,
+      "hex": "#123456E6"
+    },
+    {
+      "alphaByte": 231,
+      "transparency": 9.411764705882353,
+      "hex": "#123456E7"
+    },
+    {
+      "alphaByte": 232,
+      "transparency": 9.019607843137257,
+      "hex": "#123456E8"
+    },
+    {
+      "alphaByte": 233,
+      "transparency": 8.62745098039216,
+      "hex": "#123456E9"
+    },
+    {
+      "alphaByte": 234,
+      "transparency": 8.235294117647063,
+      "hex": "#123456EA"
+    },
+    {
+      "alphaByte": 235,
+      "transparency": 7.843137254901967,
+      "hex": "#123456EB"
+    },
+    {
+      "alphaByte": 236,
+      "transparency": 7.4509803921568585,
+      "hex": "#123456EC"
+    },
+    {
+      "alphaByte": 237,
+      "transparency": 7.058823529411762,
+      "hex": "#123456ED"
+    },
+    {
+      "alphaByte": 238,
+      "transparency": 6.666666666666665,
+      "hex": "#123456EE"
+    },
+    {
+      "alphaByte": 239,
+      "transparency": 6.2745098039215685,
+      "hex": "#123456EF"
+    },
+    {
+      "alphaByte": 240,
+      "transparency": 5.882352941176472,
+      "hex": "#123456F0"
+    },
+    {
+      "alphaByte": 241,
+      "transparency": 5.490196078431375,
+      "hex": "#123456F1"
+    },
+    {
+      "alphaByte": 242,
+      "transparency": 5.098039215686279,
+      "hex": "#123456F2"
+    },
+    {
+      "alphaByte": 243,
+      "transparency": 4.705882352941182,
+      "hex": "#123456F3"
+    },
+    {
+      "alphaByte": 244,
+      "transparency": 4.313725490196074,
+      "hex": "#123456F4"
+    },
+    {
+      "alphaByte": 245,
+      "transparency": 3.9215686274509776,
+      "hex": "#123456F5"
+    },
+    {
+      "alphaByte": 246,
+      "transparency": 3.529411764705881,
+      "hex": "#123456F6"
+    },
+    {
+      "alphaByte": 247,
+      "transparency": 3.1372549019607843,
+      "hex": "#123456F7"
+    },
+    {
+      "alphaByte": 248,
+      "transparency": 2.7450980392156876,
+      "hex": "#123456F8"
+    },
+    {
+      "alphaByte": 249,
+      "transparency": 2.352941176470591,
+      "hex": "#123456F9"
+    },
+    {
+      "alphaByte": 250,
+      "transparency": 1.9607843137254943,
+      "hex": "#123456FA"
+    },
+    {
+      "alphaByte": 251,
+      "transparency": 1.5686274509803977,
+      "hex": "#123456FB"
+    },
+    {
+      "alphaByte": 252,
+      "transparency": 1.17647058823529,
+      "hex": "#123456FC"
+    },
+    {
+      "alphaByte": 253,
+      "transparency": 0.7843137254901933,
+      "hex": "#123456FD"
+    },
+    {
+      "alphaByte": 254,
+      "transparency": 0.39215686274509665,
+      "hex": "#123456FE"
+    },
+    {
+      "alphaByte": 255,
+      "transparency": 0,
+      "hex": "#123456"
+    }
+  ],
+  "fractionalPercentages": [
+    {
+      "transparency": 0.1,
+      "alphaByte": 255,
+      "hex": "#123456FF"
+    },
+    {
+      "transparency": 1.25,
+      "alphaByte": 252,
+      "hex": "#123456FC"
+    },
+    {
+      "transparency": 20.5,
+      "alphaByte": 203,
+      "hex": "#123456CB"
+    },
+    {
+      "transparency": 33.333333333333336,
+      "alphaByte": 170,
+      "hex": "#123456AA"
+    },
+    {
+      "transparency": 47.6,
+      "alphaByte": 134,
+      "hex": "#12345686"
+    },
+    {
+      "transparency": 49.5,
+      "alphaByte": 129,
+      "hex": "#12345681"
+    },
+    {
+      "transparency": 50,
+      "alphaByte": 128,
+      "hex": "#12345680"
+    },
+    {
+      "transparency": 50.1,
+      "alphaByte": 127,
+      "hex": "#1234567F"
+    },
+    {
+      "transparency": 63.75,
+      "alphaByte": 92,
+      "hex": "#1234565C"
+    },
+    {
+      "transparency": 90,
+      "alphaByte": 26,
+      "hex": "#1234561A"
+    },
+    {
+      "transparency": 99.9,
+      "alphaByte": 0,
+      "hex": "#12345600"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+//@version=6
+indicator("Collections", overlay=false)
+values = array.from(open, high, low, close)
+plot(array.avg(values), "OHLC mean")
+grid = matrix.new<float>(2, 2, 0.0)
+matrix.set(grid, 0, 0, close)
+matrix.set(grid, 1, 1, open)
+plot(matrix.get(grid, 0, 0) - matrix.get(grid, 1, 1), "Diagonal change")

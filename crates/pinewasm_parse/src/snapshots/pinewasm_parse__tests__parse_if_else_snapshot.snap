@@ -1,0 +1,21 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..85
+  Version 6 @ 0..12
+  IndicatorDecl @ 13..32
+    Str "Branch" @ 23..31
+  If @ 33..84
+    Cond
+      Binary `>` @ 36..48
+        Ident `close` @ 36..41
+        Ident `open` @ 44..48
+    Then
+      ExprStmt @ 53..64
+        Call `plot` @ 53..64
+          Ident `close` @ 58..63
+    Else
+      ExprStmt @ 74..84
+        Call `plot` @ 74..84
+          Ident `open` @ 79..83

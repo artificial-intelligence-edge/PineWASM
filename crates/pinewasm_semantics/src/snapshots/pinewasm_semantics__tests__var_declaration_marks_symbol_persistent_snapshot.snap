@@ -1,0 +1,19 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 815
+expression: dump
+---
+HirProgram indicator="V"
+  symbol 0 `n`: series int (slot 0, var)
+  plot slot 0 title="<none>"
+  VarAssign `n` (sym 0)
+    ConstInt 0 : const int
+  Reassign `n` (sym 0)
+    Binary `+` : series int
+      ReadVar `n`[0] (sym 0) : series int
+      ConstInt 1 : const int
+  Plot slot 0
+    IntToFloat : series float
+      ReadVar `n`[0] (sym 0) : series int
+    Color Color
+      ConstColor #2196F3 : const color

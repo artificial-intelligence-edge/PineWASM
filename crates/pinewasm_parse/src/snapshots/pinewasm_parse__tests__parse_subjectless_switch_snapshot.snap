@@ -1,0 +1,20 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..46
+  Version <none>
+  Assign `p` @ 0..45
+    SwitchExpr @ 4..45
+      Arm @ 15..34
+        Label
+          Binary `>` @ 15..27
+            Ident `close` @ 15..20
+            Ident `open` @ 23..27
+        Body
+          ExprStmt @ 31..34
+            Number 1 (float) @ 31..34
+      Default @ 39..45
+        Body
+          ExprStmt @ 42..45
+            Number 0 (float) @ 42..45

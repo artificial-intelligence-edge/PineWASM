@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..58
+  Version <none>
+  Assign `p` @ 0..57
+    SwitchExpr @ 4..57
+      Subject
+        Ident `bar_index` @ 11..20
+      Arm @ 25..33
+        Label
+          Number 0 (int) @ 25..26
+        Body
+          ExprStmt @ 30..33
+            Number 1 (float) @ 30..33
+      Arm @ 38..46
+        Label
+          Number 1 (int) @ 38..39
+        Body
+          ExprStmt @ 43..46
+            Number 2 (float) @ 43..46
+      Default @ 51..57
+        Body
+          ExprStmt @ 54..57
+            Number 3 (float) @ 54..57

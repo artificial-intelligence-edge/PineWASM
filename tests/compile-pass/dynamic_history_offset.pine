@@ -1,0 +1,9 @@
+//@version=6
+indicator("Dynamic history offset")
+n = 1
+a = close[n]
+b = (close - open)[n]
+c = close[bar_index]
+plot(a)
+plot(b)
+plot(c)

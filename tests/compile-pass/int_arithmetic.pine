@@ -1,0 +1,8 @@
+//@version=6
+indicator("Int arithmetic")
+q = int(7 / 2)
+r = -7 % 3
+m = bar_index % 2
+mixed = q + 0.5
+plot(m == 0 ? q + r : na)
+plot(m == 0 ? na : mixed)

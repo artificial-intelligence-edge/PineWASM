@@ -1,0 +1,1241 @@
+{
+  "kind": "ohlc-body-properties-and-bindings",
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "initial:plotcandle:plotcandle-constant",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=#336699)\n",
+      "sourceSha256": "be595eacd738f96c62274b8124729e50ab83a32b143c67e4acf2b328205b592d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:plotcandle-dynamic-na",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=bar_index==0?#336699:color(na))\n",
+      "sourceSha256": "d7c43056ebd644adf9ff60fc248375199b648632f2392564babca2f69c5ab6a5",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotcandle:plotcandle-explicit-na",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color(na))\n",
+      "sourceSha256": "090a88752b8680f35825cb9dde1bb0ee0b803bd7b79222d5f557f5fa9bba2dce",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 0,
+          "g": 0,
+          "b": 0,
+          "t": 100.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:plotcandle-alpha-zero",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=#33669900)\n",
+      "sourceSha256": "89c2c388d62b650480a14682ba8585793ab3d562f33f2cc185a92ab182261748",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 100.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:plotbar-constant",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=#336699)\n",
+      "sourceSha256": "333e9a74b96e0b1c0b644398e362f3a6a7f686e0059822979df99892b8ab5d65",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:plotbar-dynamic-na",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=bar_index==0?#336699:color(na))\n",
+      "sourceSha256": "f7966dccda104477bf0432abae8d088efff8ff8d111aa3b8e16b80b5214005bd",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotbar:plotbar-explicit-na",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color(na))\n",
+      "sourceSha256": "d4cbc407e2e4b68fde4228f42e43ca779682ab07ee674c6721d0bbb39314db65",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 0,
+          "g": 0,
+          "b": 0,
+          "t": 100.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:plotbar-alpha-zero",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC close color contract\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=#33669900)\n",
+      "sourceSha256": "e828338973133a7cd1dfaff58d0092748d1ce8b43490823878534215417acd7f",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 100.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:omitted",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotcandle(open,high,low,close,title=\"OHLC contract\")",
+      "sourceSha256": "bd880531e015a33a34370fd1ca360eb51124a7841b136d6b04662c9a84765f38",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": null,
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:input-color",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nC=input.color(#336699,\"Body\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "6a10aeb20dca3a28f858baefe6a63bf68921e73338ae7538b91a67f671850064",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotcandle:fractional-static",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,70.5))",
+      "sourceSha256": "e8d4e0c132bf12258c35222ba7c99adc831150a4afa5eb59c29faa745090c31b",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:constant-true-ternary",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=true?#336699:#669933)",
+      "sourceSha256": "dd6c1313a93cf14d468121b7bf16a2a4f3c60d5c50d9d8ad0b8923ecfdf04914",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:constant-false-ternary",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=false?#336699:#669933)",
+      "sourceSha256": "01b6793192c1db495aded34ed08eddd28084e9c99cf947fecd6c3cd43be00454",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:constant-alias",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "351c8c40d3a1bb187b9c22c5b673463830acd46085bc9a9e9a00aa9590d8a3e1",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:constant-reassignment",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nC:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "df0bc0f038e7275e535ad6065c7ccf5bd6df03be0600c7dd3069b4ea370b6207",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:true-guarded-reassignment",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif true\n    C:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "e36bf58554181d55667169480890a9dc8e58a55b7eab5814da9f5fe80f622d17",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:false-guarded-reassignment",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif false\n    C:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "ad8659a3839660eb364cb24f442ba0afa1576a0007e8ddd855960bd114e59a92",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotcandle:series-guarded-reassignment",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif close>0\n    C:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "a2f1ec97387543e44ec91b44e4fdbdc175b169ea374168d32d9e91a7cdbcde23",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotcandle:history-constant-alias",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=C[1])",
+      "sourceSha256": "0343d425ec6167b0013cc678ddfbdb9b94e5dd4c8e79aea23eb70d876c58ba7c",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotcandle:helper-constant",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nbody(color c)=>c\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=body(#336699))",
+      "sourceSha256": "a78da6556bb519a941fde1f5aa447373eeb626a24739a66e7857da71110a853d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:omitted",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotbar(open,high,low,close,title=\"OHLC contract\")",
+      "sourceSha256": "5417d627edd2ee46c5cb0c5190c8e53346631e05c87a38aea6e521c2b7b162a5",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": null,
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:input-color",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nC=input.color(#336699,\"Body\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "98a6b1762fb44839701de04781aca67954af0e4bcc4fbc0ee11cae4cec74028b",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotbar:fractional-static",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,70.5))",
+      "sourceSha256": "5288f8186aa2f49874b72dc7ecd8cf0235a3f50e737fd522357aaf3618bbb056",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:constant-true-ternary",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=true?#336699:#669933)",
+      "sourceSha256": "efddbd3c68332a667f6ca4a1cd5f3de4cd34bc54af9a0beeb4c913fab10256ea",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:constant-false-ternary",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=false?#336699:#669933)",
+      "sourceSha256": "78a4e98d91b29d47d8e711240a69fb414c49e474e421333d964686ffab482017",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:constant-alias",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "d5da956955a1d11126d6127ea19ae112fe0042a2c9a752687ecbe52b78c94fe2",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:constant-reassignment",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nC:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "87992d998088f3f8ff17ca3abf2203596a4d1793d45d2dc5429081afe3991d84",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:true-guarded-reassignment",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif true\n    C:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "cbf814679e4c3f8f56d60f519a82854f8599fea6425bba17828657466c108357",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:false-guarded-reassignment",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif false\n    C:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "919e20597bba826afac36ab23b0e20f9a37f687f66ab7a5a6a459cacb3fcc819",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "initial:plotbar:series-guarded-reassignment",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nif close>0\n    C:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C)",
+      "sourceSha256": "73caafedf2ae9dcb35d25536d14e2a74d8b11e98f7c38a65701889b973f37f45",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotbar:history-constant-alias",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\ncolor C=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=C[1])",
+      "sourceSha256": "ad4d891410d32d2b999ac7f4d70fc003cf8cb0fabe3189bd12065521fc82b9d9",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "initial:plotbar:helper-constant",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body source forms\")\nbody(color c)=>c\nplotbar(open,high,low,close,title=\"OHLC contract\",color=body(#336699))",
+      "sourceSha256": "57768993136c747e7581e84f28b943b40a4a8e355e0b0bbe90d5796502017fba",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-loop-write",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nfor i=0 to 1\n    c:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "254e774035ca23945ab61f1c7ffe6aeb08e56f2fd8437373f29c04393a5b7ae3",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-dead-loop-write",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nfor i=0 to 1\n    if false\n        c:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "3288567915cf0fada21854a0849dcb75332802bfcc62540c0a6484b992495a00",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-persistent-later-write",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nvar color c=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\nc:=#669933",
+      "sourceSha256": "7f733638488750a82466c3dcad4b75dd5c594e9dfc1b3a15661830c853c15245",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-persistent-constant",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nvar color c=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "603ae96b743a509b3cb59b1d54a8700fc697ce627ab14428e3bd6b2d9fbb6f03",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-helper-mutable",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nidentity(color x)=>x\nvar color c=#336699\nout=identity(c)\nc:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=out)\n",
+      "sourceSha256": "a56af653e43e52bcdcea4d3e174863d673fa94b1d00b645fba14b7da741d3e9b",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-series-identical-write",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nif close>open\n    c:=#336699\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "9c8f5f9f3ec333da393419169c7c4dcda0214a84285eccc085a8c85434c8173b",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-input-alias",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "bc4b3671c136480364e463fbe7df31bace2cfddca189f82da892afa5cd21d753",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-input-reassigned",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nc:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "96b2d2e182f29938de408eaeb1e1f63faa71e34efe90c03fe3208c9e050c3d67",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-input-transform",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(c,70.5))\n",
+      "sourceSha256": "7726a2bb97ce96bae40c4df2ff6b25a2cf8a1d3c0046bf97711a94a080a1fe4b",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-gradient-constant",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.from_gradient(1,0,2,#336699,#669933))\n",
+      "sourceSha256": "f6796541f38c21feaba66ad2f8d8a48114c54466b7feebe30384872ca87c453a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-missing-bool-guard",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=bool(na)?#336699:#669933)\n",
+      "sourceSha256": "86c17a5237e313b534b4f52af38c4b3f8d01a6cdc5ebd7248f11dda96197f3a5",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-missing-float-guard",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=float(na)>0?#336699:#669933)\n",
+      "sourceSha256": "1463cfa03f163d3c7c21e0c3f5acd90e51c8481953e12cbca3203626b85eb88c",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-cosine-color",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,math.cos(0)))\n",
+      "sourceSha256": "3b5d67e6174157c3e7b8eaf2a92d09112988fcecf77590d1e6804a6f2f7516d0",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 1.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-tuple-constant",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\npair()=>[close,#336699]\n[v,c]=pair()\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "256e6c851149c09f8ce9e62c0a7fe9d23b1079e1720b5bdbbcdbbc2468b5bc2a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-dead-while",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nwhile false\n    c:=#669933\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "1821ed8029a06d885dc187c18b05b4675c599422dad90eaeb58b2f19172b803f",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotcandle-live-while",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\ni=0\nwhile i<1\n    c:=#669933\n    i+=1\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "96756bd56d44665e7a6757c380e093a8471e4422063068cc00c8ba522cef551c",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-loop-write",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nfor i=0 to 1\n    c:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "472276471f04d23d3485f87708da27c1bc3f1ca8656dbbcd766002dfc26617aa",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-dead-loop-write",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nfor i=0 to 1\n    if false\n        c:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "426ca167ded488c1ccf660db931d1c7ab1934fb5790ef2cc2e17814d256c3380",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-persistent-later-write",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nvar color c=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\nc:=#669933",
+      "sourceSha256": "78607a3adf15ac5a356d3c599c417f3cb7358896bd2f141bf3d9650274e1304d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-persistent-constant",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nvar color c=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "9933b603e08ba7151299da0cdd15851fb4fe3653c82705d11252558522a36787",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-helper-mutable",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nidentity(color x)=>x\nvar color c=#336699\nout=identity(c)\nc:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=out)\n",
+      "sourceSha256": "6b736c2026c6a79bf2f10740f540ba37d26fc83a0c21f6f0a038035a5e59f6d6",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-series-identical-write",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nif close>open\n    c:=#336699\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "f4ac20ebf5d37c6c1ad55238b231c15f465bfc7cee3d374a3cf0129ab972d5d0",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-input-alias",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "ec1bdada7adc981d14f00a7428ff4f4487837ec94b29316f0792bb8e7203294f",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-input-reassigned",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nc:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "0337816b4768b4574f03b12a409af5ac7b3465f3037297780bbd20e78e9e9d28",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-input-transform",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(c,70.5))\n",
+      "sourceSha256": "f1301577eef391c910b0bf7e9b941c3efb75d64fff6fde980a06ec7787557573",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-gradient-constant",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.from_gradient(1,0,2,#336699,#669933))\n",
+      "sourceSha256": "459e18107f4f3c40608bc68a280eb83050d4620a4682b4aace4efa41401cf901",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-missing-bool-guard",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=bool(na)?#336699:#669933)\n",
+      "sourceSha256": "7dc46e0ef592d4ed82462b00adc6b20a858348c74adc3e89c7fc40926c54e1c1",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-missing-float-guard",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=float(na)>0?#336699:#669933)\n",
+      "sourceSha256": "74978d30582036262d11414c6d3ab852bc58fec370d1d865e3418e5b29a00167",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-cosine-color",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,math.cos(0)))\n",
+      "sourceSha256": "4029de53c8fe866a27d2aa01ce7d1547c11f05ba11b616b055c6e366cd0c8928",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 1.0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-tuple-constant",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\npair()=>[close,#336699]\n[v,c]=pair()\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "1aaf8540067c8f47e769d9a710044d4e79172417176e68f1998e17712b4010ce",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-dead-while",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\nwhile false\n    c:=#669933\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "bfdf59ae2ed503c5659acd59b09b4284993247c3929902111ca5220286faa601",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-flow-rules-v1:plotbar-live-while",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC body flow rules\")\nc=#336699\ni=0\nwhile i<1\n    c:=#669933\n    i+=1\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "b493dbd6208c0e82749d8b2ab2de59ab86fd787ca67530b72059cdecb9a11769",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-input-new-direct",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(input.color(#336699),70.5))\n",
+      "sourceSha256": "f6830c65f88f76901c408fdd3e661b37f08d17ecc6d47f5b75ec13e0dc97038c",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-input-alpha",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\na=input.float(70.5)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,a))\n",
+      "sourceSha256": "1ad12b49bc46e1ee884432091b65253b0823473db012bdb458fe6f63c3170daf",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-input-rgb",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nr=input.int(51)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.rgb(r,102,153,70.5))\n",
+      "sourceSha256": "e19abe538a9951d4a39b394d6cd67e81cfb2b42f318cbb6b5f9d309499420415",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-input-ternary",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nb=input.bool(true)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=b?#336699:#669933)\n",
+      "sourceSha256": "f50bf779433ef39ab3efd05901020f0d29e7e14c6855e20b111797a8d975745f",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-declared-series-input",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nseries color c=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "26091ed0fe6565498bd5617efc8fb673af84fe46bda598839b3dcacfafeb524e",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-input-before-reassign",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nc=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=c)\nc:=#669933",
+      "sourceSha256": "899f9179aa1961c745afd1afc076d6fa36a3a2501e23b3d74e5fa2c99a90754a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-helper-input",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nidentity(color x)=>x\nc=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=identity(c))\n",
+      "sourceSha256": "fd9a855aaca85cda6c4bad3115e740814b9e16548a924e4edc130c7fd0382950",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotcandle-declared-series-input-new",
+      "kind": "plotcandle",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nseries color c=input.color(#336699)\nplotcandle(open,high,low,close,title=\"OHLC contract\",color=color.new(c,70.5))\n",
+      "sourceSha256": "1132cebe18e8daba610cddb7350ae4e9642d9195fef07a8008940b45c59675ca",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-input-new-direct",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(input.color(#336699),70.5))\n",
+      "sourceSha256": "1a7908a83313422610947f7c28ac39c4576679ff6b5308c8b6904ecd7fb904c8",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-input-alpha",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\na=input.float(70.5)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(#336699,a))\n",
+      "sourceSha256": "52e526b928ad396ddff45bd97898103f437ed8d37db002c72b4aa95304c194ce",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-input-rgb",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nr=input.int(51)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.rgb(r,102,153,70.5))\n",
+      "sourceSha256": "77313147eb5bc244e6bcff6b0f91ab42d71e1dcbcfe52dfee94d271ccbc13fb5",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-input-ternary",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nb=input.bool(true)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=b?#336699:#669933)\n",
+      "sourceSha256": "9f823952c6baaa39926e8e5c4bc3516de4527b4743f93e4034b39197564e6b37",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-declared-series-input",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nseries color c=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\n",
+      "sourceSha256": "a79ddd31cac5684f628068174693d997c0344080819af4f540e05dfc2761d942",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-input-before-reassign",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nc=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=c)\nc:=#669933",
+      "sourceSha256": "c5208f2fa70a4ab980eb5793d5acf922c822597534aedd1bf788ea7537ac22df",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-helper-input",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nidentity(color x)=>x\nc=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=identity(c))\n",
+      "sourceSha256": "ca0bbc76c02be0e322574a1e18aa21c3e0f438e27f7523f5308cf4c10f6cb27d",
+      "expected": {
+        "staticColorPresent": false,
+        "staticColor": null,
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "ohlc-close-readout-root-input-source-v1:plotbar-declared-series-input-new",
+      "kind": "plotbar",
+      "source": "//@version=6\nindicator(\"OHLC input source\")\nseries color c=input.color(#336699)\nplotbar(open,high,low,close,title=\"OHLC contract\",color=color.new(c,70.5))\n",
+      "sourceSha256": "f79b275fbb345dbf7ca3453763bcc470221a9955acaa89c2ab970eedae149151",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    }
+  ]
+}

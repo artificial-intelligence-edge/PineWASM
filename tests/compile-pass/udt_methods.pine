@@ -1,0 +1,88 @@
+//@version=6
+indicator("UDT methods")
+
+// A user-defined type with methods. A `method` is a function whose first,
+// explicitly-typed parameter is the receiver; `obj.f(args)` resolves to it and
+// inlines the method with the receiver prepended as the first argument.
+type Point
+    float x = 0.0
+    float y = 0.0
+
+// A pure method: reads receiver fields, returns a scalar.
+method length(Point this) =>
+    math.sqrt(this.x * this.x + this.y * this.y)
+
+// A mutating method: writes fields via `:=` and returns the receiver, so calls
+// chain. Reference semantics — the mutation is visible through the receiver.
+method move(Point this, dx, dy) =>
+    this.x := this.x + dx
+    this.y := this.y + dy
+    this
+
+method scale(Point this, k) =>
+    this.x := this.x * k
+    this.y := this.y * k
+    this
+
+// A method that calls another method on the same receiver.
+method reset(Point this) =>
+    this.move(-this.x, -this.y)
+
+// length() on a 3-4-5 triangle → 5.
+a = Point.new(3.0, 4.0)
+plot(a.length())
+
+// Chaining: move then scale then read a field.
+b = Point.new(1.0, 2.0)
+b.move(1.0, 1.0).scale(2.0)
+plot(b.x + b.y)
+
+// Two independent objects keep independent per-object state.
+c = Point.new(10.0, 0.0)
+d = Point.new(0.0, 5.0)
+c.move(1.0, 0.0)
+plot(c.x)
+plot(d.x)
+
+// A method that calls another method.
+e = Point.new(7.0, 8.0)
+e.reset()
+plot(e.x + e.y)
+
+// A method whose body has a `var` local gets fresh per-call-site state, like a
+// plain function. Two call sites accumulate independently.
+type Counter
+    int base = 0
+method tick(Counter this, step) =>
+    var int n = 0
+    n := n + step
+    this.base + n
+ctr = Counter.new(100)
+plot(ctr.tick(1))
+plot(ctr.tick(10))
+
+// A var-held object persists across bars; a method mutating it accumulates.
+var acc = Point.new(0.0, 0.0)
+acc.move(close, 0.0)
+plot(acc.x)
+
+// array<UDT>: build, push, get, read a field; mutate a field through a
+// retrieved element and observe it through the array (reference semantics).
+objs = array.new<Point>()
+array.push(objs, Point.new(3.0, 4.0))
+array.push(objs, Point.new(5.0, 6.0))
+first = array.get(objs, 0)
+plot(first.x + first.y)
+first.x := 99.0
+again = array.get(objs, 0)
+plot(again.x)
+plot(array.size(objs))
+
+// map<string, UDT>: put and get object values by key.
+m = map.new<string, Point>()
+map.put(m, "a", Point.new(1.0, 2.0))
+map.put(m, "b", Point.new(3.0, 4.0))
+pa = map.get(m, "a")
+pb = map.get(m, "b")
+plot(pa.x + pb.y)
+plot(map.size(m))

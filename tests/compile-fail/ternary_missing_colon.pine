@@ -1,0 +1,3 @@
+//@version=6
+indicator("Bad ternary")
+plot(close > open ? close)

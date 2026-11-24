@@ -1,0 +1,3 @@
+//@version=6
+indicator("Bad")
+plot(ta.sma(close, lenght = 3))

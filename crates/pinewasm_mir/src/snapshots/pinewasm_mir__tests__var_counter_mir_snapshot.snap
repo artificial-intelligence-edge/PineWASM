@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"Var\\\")\\nvar n = 0\\nn := n + 1\\nplot(n)\\n\")"
+---
+MirBody title="Var" slots=1 plots=1 values=7
+  slot 0 `n` var
+  plot 0 title="<none>"
+bb0:
+  branch_if_slot_written slot0, bb2, bb1
+bb1:
+  v0 = const 0
+  store_user_current slot0, v0
+  jump bb3
+bb2:
+  jump bb3
+bb3:
+  v1 = read_user slot0[0]
+  v2 = const 1
+  v3 = binary `+` v1, v2 (int)
+  store_user_current slot0, v3
+  v4 = read_user slot0[0]
+  v5 = int_to_float v4
+  v6 = const #2196F3
+  plot p0, v5
+    color Color v6
+  return

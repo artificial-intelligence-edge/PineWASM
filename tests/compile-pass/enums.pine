@@ -1,0 +1,29 @@
+//@version=6
+indicator("Enums")
+
+// A user-defined enum with titled and untitled members. Members are
+// referenced as `Name.member`, form a distinct value type, and support
+// `==`/`!=` comparison and `switch`.
+enum Trend
+    rising = "Rising"
+    falling = "Falling"
+    flat
+
+// Classify the current bar's direction into an enum value.
+dir = close > close[1] ? Trend.rising : (close < close[1] ? Trend.falling : Trend.flat)
+
+// Equality drives a conditional plot.
+plot(dir == Trend.rising ? 1.0 : 0.0)
+
+// A switch over the enum subject maps each member to a score.
+score = switch dir
+    Trend.rising => 2.0
+    Trend.falling => -2.0
+    Trend.flat => 0.0
+plot(score)
+
+// A var-held enum persists across bars until reassigned.
+var Direction = Trend.flat
+if dir != Trend.flat
+    Direction := dir
+plot(Direction == Trend.rising ? 10.0 : 0.0)

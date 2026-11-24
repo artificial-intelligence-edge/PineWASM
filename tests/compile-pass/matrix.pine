@@ -1,0 +1,62 @@
+//@version=6
+indicator("Matrix")
+
+// Construction and shape: a 2x3 float matrix filled with 4.0. rows/columns/
+// elements_count report its dimensions.
+m = matrix.new_float(2, 3, 4.0)
+plot(matrix.rows(m), "rows")
+plot(matrix.columns(m), "columns")
+plot(matrix.elements_count(m), "cell count")
+
+// get/set: overwrite a cell and read it back (bounds-checked at runtime).
+matrix.set(m, 1, 2, 9.0)
+plot(matrix.get(m, 1, 2), "set then get")
+
+// A `var` matrix persists across bars: accumulate a running count in (0,0).
+var counter = matrix.new_float(1, 1, 0.0)
+matrix.set(counter, 0, 0, matrix.get(counter, 0, 0) + 1.0)
+plot(matrix.get(counter, 0, 0), "running bar count")
+
+// Linear algebra on a hand-built 2x2. det([[1,2],[3,4]]) = -2; trace = 5.
+a = matrix.new_float(2, 2, 0.0)
+matrix.set(a, 0, 0, 1.0)
+matrix.set(a, 0, 1, 2.0)
+matrix.set(a, 1, 0, 3.0)
+matrix.set(a, 1, 1, 4.0)
+plot(matrix.det(a), "determinant")
+plot(matrix.trace(a), "trace")
+
+// inv(a) * a is the identity: its (0,0) cell is ~1.
+inv = matrix.inv(a)
+prod = matrix.mult(inv, a)
+plot(matrix.get(prod, 0, 0), "inv times original diagonal")
+
+// transpose swaps axes; the transposed (1,0) equals the original (0,1) = 2.
+t = matrix.transpose(a)
+plot(matrix.get(t, 1, 0), "transpose cell")
+
+// Elementwise sum and a scalar broadcast.
+b = matrix.new_float(2, 2, 10.0)
+s = matrix.sum(a, b)
+plot(matrix.get(s, 0, 0), "elementwise sum cell")
+sc = matrix.sum(a, 100.0)
+plot(matrix.get(sc, 1, 1), "scalar-broadcast cell")
+
+// Aggregates over the cells 1,2,3,4: avg 2.5, min 1, max 4.
+plot(matrix.avg(a), "average cell")
+plot(matrix.min(a), "minimum cell")
+plot(matrix.max(a), "maximum cell")
+
+// Predicates on an identity matrix.
+id = matrix.new_float(2, 2, 0.0)
+matrix.set(id, 0, 0, 1.0)
+matrix.set(id, 1, 1, 1.0)
+plot(matrix.is_identity(id) ? 1.0 : 0.0, "is identity")
+plot(matrix.is_square(id) ? 1.0 : 0.0, "is square")
+
+// Row/column mutation: add a row from an array, then swap two rows.
+grid = matrix.new_float(1, 2, 1.0)
+row = array.from(7.0, 8.0)
+matrix.add_row(grid, 1, row)
+matrix.swap_rows(grid, 0, 1)
+plot(matrix.get(grid, 0, 0), "swapped row cell")

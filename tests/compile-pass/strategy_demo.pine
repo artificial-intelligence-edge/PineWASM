@@ -1,0 +1,24 @@
+//@version=6
+strategy("Momentum Strategy", initial_capital=10000, default_qty_value=1)
+
+// Order primitives + strategy.* read surface. A momentum entry on the
+// first bar fills at the next bar's open; an exit bracket takes profit or stops
+// out. The broker emulator turns these into the trades/position/equity that
+// RunOutcome.strategy carries, and the strategy.* getters below read that same
+// state back into the script as ordinary series.
+
+// Enter long once at the start; the broker fills it at bar 1's open.
+if bar_index == 0
+    strategy.entry("Long", strategy.long)
+    // A take-profit / stop-loss bracket for the open long.
+    strategy.exit("Bracket", from_entry="Long", limit=13.0, stop=9.0)
+
+// The strategy.* getter series read the live broker state back into the script.
+plot(strategy.position_size, "position size")
+plot(strategy.equity, "equity")
+plot(strategy.openprofit, "open profit")
+plot(strategy.netprofit, "net profit")
+plot(strategy.closedtrades, "closed trades")
+plot(strategy.wintrades, "winning trades")
+plot(strategy.avg_trade, "avg trade")
+plot(close)

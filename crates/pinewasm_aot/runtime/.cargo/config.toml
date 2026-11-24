@@ -1,0 +1,24 @@
+# Memory layout of the linked runtime.
+#
+# `pinewasm_aot` splices this module's data segments into an artifact at
+# their original addresses (relocating them would mean rewriting every
+# `i32.const` in the code section), so those addresses are part of the
+# artifact's memory map and the emitter reserves the block they land in.
+#
+# rodata goes at `--global-base` = 4 KiB, leaving `[0, 4096)` for the artifact
+# header and its input table (500 inputs' worth; the emitter checks).
+# `--export=__heap_base` is what tells the emitter where rodata ends.
+#
+# The shadow stack does NOT end up where this asks. Rust always links wasm
+# with `--stack-first`, which pins the stack to `[0, stack-size)` — directly
+# on top of the artifact header. `-zstack-size` here exists only to satisfy
+# lld's `--global-base >= stack-size` check; `pinewasm_aot::runtime`
+# rewrites `__stack_pointer`'s initializer at splice time to put the real
+# stack above rodata instead.
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C", "link-arg=--global-base=4096",
+    "-C", "link-arg=-zstack-size=4096",
+    "-C", "link-arg=--export=__heap_base",
+    "-C", "link-arg=--export=__stack_pointer",
+]

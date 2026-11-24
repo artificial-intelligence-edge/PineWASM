@@ -1,0 +1,12 @@
+//@version=6
+indicator("Type annotations")
+int count = 0
+float ratio = 3
+bool flag = true
+string label = "hi"
+float pending = na
+count := count + 1
+ratio := close / open
+pending := close
+plot(ratio)
+plot(pending)

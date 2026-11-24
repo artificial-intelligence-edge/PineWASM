@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+assertion_line: 2136
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "C"
+SERIES_SLOT 0 "a"
+PLOT_SLOT 0
+
+FUNC main (max_stack 2)
+  0000 PUSH_I64 0                       ; 35..36
+  0001 PUSH_NA                          ; 19..37
+  0002 CALL_COLLECTION array.new_float 2 ; 19..37
+  0003 STORE_USER_SLOT_CURRENT 0        ; 15..37
+  0004 READ_USER_SLOT 0 0               ; 49..50
+  0005 PUSH_F64 1                       ; 52..55
+  0006 CALL_COLLECTION array.push 2     ; 38..56
+  0007 POP                              ; 38..56
+  0008 READ_USER_SLOT 0 0               ; 73..74
+  0009 CALL_COLLECTION array.size 1     ; 62..75
+  0010 INT_TO_F64                       ; 62..75
+  0011 PUSH_COLOR #2196F3               ; 57..76
+  0012 PLOT_STYLED_F64 0 1              ; 57..76
+  0013 RETURN                           ; 57..76
+END

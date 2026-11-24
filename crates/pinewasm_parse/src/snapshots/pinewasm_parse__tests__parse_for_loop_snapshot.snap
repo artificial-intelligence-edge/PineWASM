@@ -1,0 +1,16 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..31
+  Version <none>
+  For `i` @ 0..30
+    Start
+      Number 1 (int) @ 8..9
+    End
+      Number 10 (int) @ 13..15
+    Body
+      Reassign `s` @ 20..30
+        Binary `+` @ 25..30
+          Ident `s` @ 25..26
+          Ident `i` @ 29..30

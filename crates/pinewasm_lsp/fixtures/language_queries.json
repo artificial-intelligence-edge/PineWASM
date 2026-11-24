@@ -1,0 +1,419 @@
+[
+  {
+    "name": "analyze-unicode",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "analyze"
+    }
+  },
+  {
+    "name": "hover-builtin",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "hover",
+      "position": {
+        "line": 6,
+        "character": 1
+      }
+    }
+  },
+  {
+    "name": "definition-shadow",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "definition",
+      "position": {
+        "line": 5,
+        "character": 13
+      }
+    }
+  },
+  {
+    "name": "references-shadow",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "references",
+      "position": {
+        "line": 4,
+        "character": 4
+      },
+      "includeDeclaration": true
+    }
+  },
+  {
+    "name": "prepare-rename",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "prepareRename",
+      "position": {
+        "line": 4,
+        "character": 4
+      }
+    }
+  },
+  {
+    "name": "rename-shadow",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "rename",
+      "position": {
+        "line": 4,
+        "character": 4
+      },
+      "newName": "branch_x"
+    }
+  },
+  {
+    "name": "code-action",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "typo",
+        "version": "typo-1",
+        "source": "//@version=6\nindicator(\"T\")\nx = ta.smaa(close, 14)\nplot(x)\n"
+      },
+      "capability": "codeActions",
+      "range": {
+        "start": {
+          "line": 2,
+          "character": 0
+        },
+        "end": {
+          "line": 2,
+          "character": 22
+        }
+      }
+    }
+  },
+  {
+    "name": "definition-library",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main",
+        "version": "m2",
+        "source": "//@version=6\nimport example/Signals/1 as signals\nindicator(\"T\")\nplot(signals.identity(close))\n"
+      },
+      "capability": "definition",
+      "libraries": [
+        {
+          "id": "library-A",
+          "version": "lib-sha",
+          "importPath": "example/Signals/1",
+          "source": "//@version=6\nlibrary(\"Signals\")\nexport identity(float value) => value\n"
+        }
+      ],
+      "position": {
+        "line": 3,
+        "character": 16
+      }
+    }
+  },
+  {
+    "name": "diagnostics-library",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main",
+        "version": "m3",
+        "source": "//@version=6\nimport example/Signals/1 as signals\nindicator(\"T\")\nplot(signals.identity(close))\n"
+      },
+      "capability": "analyze",
+      "libraries": [
+        {
+          "id": "library-😀",
+          "version": "bad-lib-sha",
+          "importPath": "example/Signals/1",
+          "source": "//@version=6\nlibrary(\"😀\")\nexport identity(float value) => missing_symbol\n"
+        }
+      ]
+    }
+  },
+  {
+    "name": "analyze-two-library-order",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-two",
+        "version": "m-two",
+        "source": "//@version=6\nimport example/One/1 as one\nimport example/Two/1 as two\nindicator(\"Two libraries\")\nplot(one.first(close) + two.second(close))\n"
+      },
+      "capability": "analyze",
+      "libraries": [
+        {
+          "id": "library-two-request-first",
+          "version": "two-v1",
+          "importPath": "example/Two/1",
+          "source": "//@version=6\nlibrary(\"Two\")\nexport second(float value) => missing_second\n"
+        },
+        {
+          "id": "library-one-request-second",
+          "version": "one-v1",
+          "importPath": "example/One/1",
+          "source": "//@version=6\nlibrary(\"One\")\nexport first(float value) => missing_first\n"
+        }
+      ]
+    }
+  },
+  {
+    "name": "definition-two-library-first",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-two",
+        "version": "m-two",
+        "source": "//@version=6\nimport example/One/1 as one\nimport example/Two/1 as two\nindicator(\"Two libraries\")\nplot(one.first(close) + two.second(close))\n"
+      },
+      "capability": "definition",
+      "libraries": [
+        {
+          "id": "library-two",
+          "version": "two-v1",
+          "importPath": "example/Two/1",
+          "source": "//@version=6\nlibrary(\"Two\")\nbefore(float second) => second\nbeforeLocal() =>\n    second = 1\n    second\nexport second(float input) => input\n"
+        },
+        {
+          "id": "library-one",
+          "version": "one-v1",
+          "importPath": "example/One/1",
+          "source": "//@version=6\nlibrary(\"One\")\nbefore(float first) => first\nbeforeLocal() =>\n    first = 1\n    first\nexport first(float input) => input\n"
+        }
+      ],
+      "position": {
+        "line": 4,
+        "character": 10
+      }
+    }
+  },
+  {
+    "name": "definition-two-library-second",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-two",
+        "version": "m-two",
+        "source": "//@version=6\nimport example/One/1 as one\nimport example/Two/1 as two\nindicator(\"Two libraries\")\nplot(one.first(close) + two.second(close))\n"
+      },
+      "capability": "definition",
+      "libraries": [
+        {
+          "id": "library-two",
+          "version": "two-v1",
+          "importPath": "example/Two/1",
+          "source": "//@version=6\nlibrary(\"Two\")\nbefore(float second) => second\nbeforeLocal() =>\n    second = 1\n    second\nexport second(float input) => input\n"
+        },
+        {
+          "id": "library-one",
+          "version": "one-v1",
+          "importPath": "example/One/1",
+          "source": "//@version=6\nlibrary(\"One\")\nbefore(float first) => first\nbeforeLocal() =>\n    first = 1\n    first\nexport first(float input) => input\n"
+        }
+      ],
+      "position": {
+        "line": 4,
+        "character": 29
+      }
+    }
+  },
+  {
+    "name": "references-two-library-first",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-two",
+        "version": "m-two",
+        "source": "//@version=6\nimport example/One/1 as one\nimport example/Two/1 as two\nindicator(\"Two libraries\")\nplot(one.first(close) + two.second(close))\n"
+      },
+      "capability": "references",
+      "libraries": [
+        {
+          "id": "library-two",
+          "version": "two-v1",
+          "importPath": "example/Two/1",
+          "source": "//@version=6\nlibrary(\"Two\")\nexport second(float value) => value\n"
+        },
+        {
+          "id": "library-one",
+          "version": "one-v1",
+          "importPath": "example/One/1",
+          "source": "//@version=6\nlibrary(\"One\")\nexport first(float value) => value\n"
+        }
+      ],
+      "position": {
+        "line": 4,
+        "character": 6
+      },
+      "includeDeclaration": true
+    }
+  },
+  {
+    "name": "references-two-library-second",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-two",
+        "version": "m-two",
+        "source": "//@version=6\nimport example/One/1 as one\nimport example/Two/1 as two\nindicator(\"Two libraries\")\nplot(one.first(close) + two.second(close))\n"
+      },
+      "capability": "references",
+      "libraries": [
+        {
+          "id": "library-two",
+          "version": "two-v1",
+          "importPath": "example/Two/1",
+          "source": "//@version=6\nlibrary(\"Two\")\nexport second(float value) => value\n"
+        },
+        {
+          "id": "library-one",
+          "version": "one-v1",
+          "importPath": "example/One/1",
+          "source": "//@version=6\nlibrary(\"One\")\nexport first(float value) => value\n"
+        }
+      ],
+      "position": {
+        "line": 4,
+        "character": 25
+      },
+      "includeDeclaration": true
+    }
+  },
+  {
+    "name": "reject-capture",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main",
+        "version": "m4",
+        "source": "x = 1\nif close > open\n    z = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "rename",
+      "position": {
+        "line": 0,
+        "character": 0
+      },
+      "newName": "z"
+    }
+  },
+  {
+    "name": "reject-surrogate-position",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "hover",
+      "position": {
+        "line": 1,
+        "character": 12
+      }
+    }
+  },
+  {
+    "name": "reject-version",
+    "request": {
+      "schemaVersion": 99,
+      "document": {
+        "id": "main-α",
+        "version": "sha256:main-1",
+        "source": "//@version=6\nindicator(\"😀\")\nx = 1\nif close > open\n    x = 2\n    branch = x\nplot(x)\n"
+      },
+      "capability": "analyze"
+    }
+  },
+  {
+    "name": "hover-lf-utf16",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "line-endings",
+        "version": "lf-1",
+        "source": "//@version=6\nplot(str.length(\"😀\") + close)"
+      },
+      "capability": "hover",
+      "position": {
+        "line": 1,
+        "character": 24
+      }
+    }
+  },
+  {
+    "name": "hover-crlf-utf16",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "line-endings",
+        "version": "crlf-1",
+        "source": "//@version=6\r\nplot(str.length(\"😀\") + close)"
+      },
+      "capability": "hover",
+      "position": {
+        "line": 1,
+        "character": 24
+      }
+    }
+  },
+  {
+    "name": "hover-cr-utf16",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "line-endings",
+        "version": "cr-1",
+        "source": "//@version=6\rplot(str.length(\"😀\") + close)"
+      },
+      "capability": "hover",
+      "position": {
+        "line": 1,
+        "character": 24
+      }
+    }
+  },
+  {
+    "name": "shared-htf-pure-helper-fixture",
+    "request": {
+      "schemaVersion": 1,
+      "document": {
+        "id": "htf-fixture",
+        "version": "fixture-1",
+        "source": "//@version=6\nindicator(\"Shared fixture\")\nplot(close)"
+      },
+      "capability": "analyze"
+    },
+    "htfPureHelper": {
+      "source": "//@version=6\nindicator(\"Confirmed kernel\")\nimport test/Kernel/2 as kernels\nconfirmed() =>\n    estimate = kernels.rationalQuadratic(close, 8, 8, 25)\n    [estimate[1], estimate[1] > estimate[2], estimate[1] < estimate[2]]\n[value, up, down] = request.security(syminfo.tickerid, \"1D\", confirmed(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on)\nplot(value)\nplot(up ? 1.0 : 0.0)\nplot(down ? 1.0 : 0.0)\n",
+      "library": "//@version=6\nlibrary(\"Kernel\")\nexport rationalQuadratic(series float src, simple int lookback, simple float relativeWeight, simple int startAtBar) =>\n    float weighted = 0.0\n    float total = 0.0\n    size = array.size(array.from(src))\n    for i = 0 to size + startAtBar by 1\n        y = src[i]\n        w = math.pow(1 + (math.pow(i, 2) / (math.pow(lookback, 2) * 2 * relativeWeight)), -relativeWeight)\n        weighted := weighted + y*w\n        total := total + w\n        total\n    estimate = weighted / total\n    estimate\n"
+    }
+  }
+]

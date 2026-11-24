@@ -1,0 +1,34 @@
+[package]
+name = "pinewasm_num"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The numeric core shared by the reference VM and AOT artifacts"
+publish.workspace = true
+
+[features]
+default = []
+# Charon/Aeneas extraction roots only; never enabled in production builds.
+aeneas = []
+# Miri cannot execute libm's target-specific inline assembly. This explicit,
+# non-default test feature keeps the same pinned libm implementation while
+# selecting its documented pure-Rust fallback for interpreter runs only.
+miri = ["libm/force-soft-floats"]
+
+[dependencies]
+# The numeric core. Deliberately NOT `std`: `f64::exp` and friends bind
+# to whatever libm the host platform ships, so the same script produces
+# different last-ulp bits on macOS, glibc, and wasm. This crate pins one
+# implementation for every target (see the module docs).
+#
+# Pinned exactly, and deliberately so: the AOT runtime module is a *separate*
+# build of this crate for `wasm32-unknown-unknown`, and a minor-version bump
+# that reached only one of the two lockfiles would silently split the
+# reference. `tests/runtime_numerics.rs` in `pinewasm_aot` fails when they
+# diverge, but pinning stops the divergence rather than reporting it.
+libm = "=0.2.16"
+
+[lints]
+workspace = true

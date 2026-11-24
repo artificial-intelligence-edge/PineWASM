@@ -1,0 +1,5 @@
+//@version=6
+indicator("Reassign type mismatch")
+x = 1.0
+x := "oops"
+plot(x)

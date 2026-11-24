@@ -1,0 +1,18 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..34
+  Version <none>
+  For `i` @ 0..33
+    Start
+      Number 10 (int) @ 8..10
+    End
+      Number 0 (int) @ 14..15
+    Step
+      Unary `-` @ 19..21
+        Number 2 (int) @ 20..21
+    Body
+      ExprStmt @ 26..33
+        Call `plot` @ 26..33
+          Ident `i` @ 31..32

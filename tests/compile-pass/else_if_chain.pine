@@ -1,0 +1,7 @@
+//@version=6
+indicator("Chain")
+up = close > open
+down = close < open
+plot(up ? 1 : na)
+plot(not up and down ? 2 : na)
+plot(not up and not down ? 3 : na)

@@ -1,0 +1,1773 @@
+{
+  "kind": "const-color-t-numeric-default-cases",
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "kind": "const-color-t-numeric-default-cases",
+      "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+      "sourceSha256": "96fe7187fda8ba034627fe992d6f5ba270dec76030df34e6d5fa4cc93f530fae",
+      "source": "//@version=6\nindicator(\"const color accessor numeric defaults\")\nA = color.new(#336699,70.9)\nB = color.rgb(51,102,153,70.9)\nC = #3366994b\nx0 = input.float(color.t(color.new(#336699,70.9)), title=\"new-direct\")\nx1 = input.float(color.t(color.rgb(51,102,153,70.9)), title=\"rgb-direct\")\nx2 = input.float(color.t(#3366994b), title=\"hex-direct\")\nx3 = input.float(color.t(A), title=\"new-alias\")\nx4 = input.float(color.t(B), title=\"rgb-alias\")\nx5 = input.float(color.t(C), title=\"hex-alias\")\nx6 = input.float(color.t(color.rgb(51,102,153,70.25)), title=\"rgb-fraction\")\nx7 = input.float(color.t(#3366994c), title=\"hex76\")\nx8 = input.float(color.t(#33669901), title=\"hex01\")\nplot(close)",
+      "inputs": [
+        {
+          "id": "in_0",
+          "name": "new-direct",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_1",
+          "name": "rgb-direct",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_2",
+          "name": "hex-direct",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_3",
+          "name": "new-alias",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_4",
+          "name": "rgb-alias",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_5",
+          "name": "hex-alias",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_6",
+          "name": "rgb-fraction",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_7",
+          "name": "hex76",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_8",
+          "name": "hex01",
+          "type": "float",
+          "defval": 100
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "kind": "const-accessor-fractional-defaults",
+      "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+      "sourceSha256": "1e2c33824a7413206671ef0509b161f5d7c24fa134fb933c33fc1103dad54cd7",
+      "source": "//@version=6\nindicator(\"const accessor existing fractional boundary\")\nx0=input.float(color.t(color.new(#123456,0)),\"accessor new-0\")\nx1=input.float(color.t(color.rgb(18,52,86,0)),\"accessor rgb-0\")\nx2=input.float(color.t(color.new(#123456,0.1)),\"accessor new-0.1\")\nx3=input.float(color.t(color.rgb(18,52,86,0.1)),\"accessor rgb-0.1\")\nx4=input.float(color.t(color.new(#123456,47.6)),\"accessor new-47.6\")\nx5=input.float(color.t(color.rgb(18,52,86,47.6)),\"accessor rgb-47.6\")\nx6=input.float(color.t(color.new(#123456,70.25)),\"accessor new-70.25\")\nx7=input.float(color.t(color.rgb(18,52,86,70.25)),\"accessor rgb-70.25\")\nx8=input.float(color.t(color.new(#123456,70.9)),\"accessor new-70.9\")\nx9=input.float(color.t(color.rgb(18,52,86,70.9)),\"accessor rgb-70.9\")\nx10=input.float(color.t(color.new(#123456,99.9)),\"accessor new-99.9\")\nx11=input.float(color.t(color.rgb(18,52,86,99.9)),\"accessor rgb-99.9\")\nx12=input.float(color.t(color.new(#123456,100)),\"accessor new-100\")\nx13=input.float(color.t(color.rgb(18,52,86,100)),\"accessor rgb-100\")\nx14=input.float(color.t(#12345600),\"accessor hex-00\")\nx15=input.float(color.t(#12345601),\"accessor hex-01\")\nx16=input.float(color.t(#1234564b),\"accessor hex-4b\")\nx17=input.float(color.t(#1234564c),\"accessor hex-4c\")\nx18=input.float(color.t(#123456ff),\"accessor hex-ff\")\nplot(close)",
+      "inputs": [
+        {
+          "id": "in_0",
+          "name": "accessor new-0",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_1",
+          "name": "accessor rgb-0",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_2",
+          "name": "accessor new-0.1",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_3",
+          "name": "accessor rgb-0.1",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_4",
+          "name": "accessor new-47.6",
+          "type": "float",
+          "defval": 47
+        },
+        {
+          "id": "in_5",
+          "name": "accessor rgb-47.6",
+          "type": "float",
+          "defval": 47
+        },
+        {
+          "id": "in_6",
+          "name": "accessor new-70.25",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_7",
+          "name": "accessor rgb-70.25",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_8",
+          "name": "accessor new-70.9",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_9",
+          "name": "accessor rgb-70.9",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_10",
+          "name": "accessor new-99.9",
+          "type": "float",
+          "defval": 99
+        },
+        {
+          "id": "in_11",
+          "name": "accessor rgb-99.9",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_12",
+          "name": "accessor new-100",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_13",
+          "name": "accessor rgb-100",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_14",
+          "name": "accessor hex-00",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_15",
+          "name": "accessor hex-01",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_16",
+          "name": "accessor hex-4b",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_17",
+          "name": "accessor hex-4c",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_18",
+          "name": "accessor hex-ff",
+          "type": "float",
+          "defval": 0
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "kind": "const-accessor-literal-alpha-defaults",
+      "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+      "sourceSha256": "746f770d3c0f02aba40893dd92bafeffe60ffc26f9cda0d33b1195b7a4887c01",
+      "source": "//@version=6\nindicator(\"every literal alpha Const accessor\")\nx0=input.float(color.t(#12345600),\"alpha 0\")\nx1=input.float(color.t(#12345601),\"alpha 1\")\nx2=input.float(color.t(#12345602),\"alpha 2\")\nx3=input.float(color.t(#12345603),\"alpha 3\")\nx4=input.float(color.t(#12345604),\"alpha 4\")\nx5=input.float(color.t(#12345605),\"alpha 5\")\nx6=input.float(color.t(#12345606),\"alpha 6\")\nx7=input.float(color.t(#12345607),\"alpha 7\")\nx8=input.float(color.t(#12345608),\"alpha 8\")\nx9=input.float(color.t(#12345609),\"alpha 9\")\nx10=input.float(color.t(#1234560a),\"alpha 10\")\nx11=input.float(color.t(#1234560b),\"alpha 11\")\nx12=input.float(color.t(#1234560c),\"alpha 12\")\nx13=input.float(color.t(#1234560d),\"alpha 13\")\nx14=input.float(color.t(#1234560e),\"alpha 14\")\nx15=input.float(color.t(#1234560f),\"alpha 15\")\nx16=input.float(color.t(#12345610),\"alpha 16\")\nx17=input.float(color.t(#12345611),\"alpha 17\")\nx18=input.float(color.t(#12345612),\"alpha 18\")\nx19=input.float(color.t(#12345613),\"alpha 19\")\nx20=input.float(color.t(#12345614),\"alpha 20\")\nx21=input.float(color.t(#12345615),\"alpha 21\")\nx22=input.float(color.t(#12345616),\"alpha 22\")\nx23=input.float(color.t(#12345617),\"alpha 23\")\nx24=input.float(color.t(#12345618),\"alpha 24\")\nx25=input.float(color.t(#12345619),\"alpha 25\")\nx26=input.float(color.t(#1234561a),\"alpha 26\")\nx27=input.float(color.t(#1234561b),\"alpha 27\")\nx28=input.float(color.t(#1234561c),\"alpha 28\")\nx29=input.float(color.t(#1234561d),\"alpha 29\")\nx30=input.float(color.t(#1234561e),\"alpha 30\")\nx31=input.float(color.t(#1234561f),\"alpha 31\")\nx32=input.float(color.t(#12345620),\"alpha 32\")\nx33=input.float(color.t(#12345621),\"alpha 33\")\nx34=input.float(color.t(#12345622),\"alpha 34\")\nx35=input.float(color.t(#12345623),\"alpha 35\")\nx36=input.float(color.t(#12345624),\"alpha 36\")\nx37=input.float(color.t(#12345625),\"alpha 37\")\nx38=input.float(color.t(#12345626),\"alpha 38\")\nx39=input.float(color.t(#12345627),\"alpha 39\")\nx40=input.float(color.t(#12345628),\"alpha 40\")\nx41=input.float(color.t(#12345629),\"alpha 41\")\nx42=input.float(color.t(#1234562a),\"alpha 42\")\nx43=input.float(color.t(#1234562b),\"alpha 43\")\nx44=input.float(color.t(#1234562c),\"alpha 44\")\nx45=input.float(color.t(#1234562d),\"alpha 45\")\nx46=input.float(color.t(#1234562e),\"alpha 46\")\nx47=input.float(color.t(#1234562f),\"alpha 47\")\nx48=input.float(color.t(#12345630),\"alpha 48\")\nx49=input.float(color.t(#12345631),\"alpha 49\")\nx50=input.float(color.t(#12345632),\"alpha 50\")\nx51=input.float(color.t(#12345633),\"alpha 51\")\nx52=input.float(color.t(#12345634),\"alpha 52\")\nx53=input.float(color.t(#12345635),\"alpha 53\")\nx54=input.float(color.t(#12345636),\"alpha 54\")\nx55=input.float(color.t(#12345637),\"alpha 55\")\nx56=input.float(color.t(#12345638),\"alpha 56\")\nx57=input.float(color.t(#12345639),\"alpha 57\")\nx58=input.float(color.t(#1234563a),\"alpha 58\")\nx59=input.float(color.t(#1234563b),\"alpha 59\")\nx60=input.float(color.t(#1234563c),\"alpha 60\")\nx61=input.float(color.t(#1234563d),\"alpha 61\")\nx62=input.float(color.t(#1234563e),\"alpha 62\")\nx63=input.float(color.t(#1234563f),\"alpha 63\")\nx64=input.float(color.t(#12345640),\"alpha 64\")\nx65=input.float(color.t(#12345641),\"alpha 65\")\nx66=input.float(color.t(#12345642),\"alpha 66\")\nx67=input.float(color.t(#12345643),\"alpha 67\")\nx68=input.float(color.t(#12345644),\"alpha 68\")\nx69=input.float(color.t(#12345645),\"alpha 69\")\nx70=input.float(color.t(#12345646),\"alpha 70\")\nx71=input.float(color.t(#12345647),\"alpha 71\")\nx72=input.float(color.t(#12345648),\"alpha 72\")\nx73=input.float(color.t(#12345649),\"alpha 73\")\nx74=input.float(color.t(#1234564a),\"alpha 74\")\nx75=input.float(color.t(#1234564b),\"alpha 75\")\nx76=input.float(color.t(#1234564c),\"alpha 76\")\nx77=input.float(color.t(#1234564d),\"alpha 77\")\nx78=input.float(color.t(#1234564e),\"alpha 78\")\nx79=input.float(color.t(#1234564f),\"alpha 79\")\nx80=input.float(color.t(#12345650),\"alpha 80\")\nx81=input.float(color.t(#12345651),\"alpha 81\")\nx82=input.float(color.t(#12345652),\"alpha 82\")\nx83=input.float(color.t(#12345653),\"alpha 83\")\nx84=input.float(color.t(#12345654),\"alpha 84\")\nx85=input.float(color.t(#12345655),\"alpha 85\")\nx86=input.float(color.t(#12345656),\"alpha 86\")\nx87=input.float(color.t(#12345657),\"alpha 87\")\nx88=input.float(color.t(#12345658),\"alpha 88\")\nx89=input.float(color.t(#12345659),\"alpha 89\")\nx90=input.float(color.t(#1234565a),\"alpha 90\")\nx91=input.float(color.t(#1234565b),\"alpha 91\")\nx92=input.float(color.t(#1234565c),\"alpha 92\")\nx93=input.float(color.t(#1234565d),\"alpha 93\")\nx94=input.float(color.t(#1234565e),\"alpha 94\")\nx95=input.float(color.t(#1234565f),\"alpha 95\")\nx96=input.float(color.t(#12345660),\"alpha 96\")\nx97=input.float(color.t(#12345661),\"alpha 97\")\nx98=input.float(color.t(#12345662),\"alpha 98\")\nx99=input.float(color.t(#12345663),\"alpha 99\")\nx100=input.float(color.t(#12345664),\"alpha 100\")\nx101=input.float(color.t(#12345665),\"alpha 101\")\nx102=input.float(color.t(#12345666),\"alpha 102\")\nx103=input.float(color.t(#12345667),\"alpha 103\")\nx104=input.float(color.t(#12345668),\"alpha 104\")\nx105=input.float(color.t(#12345669),\"alpha 105\")\nx106=input.float(color.t(#1234566a),\"alpha 106\")\nx107=input.float(color.t(#1234566b),\"alpha 107\")\nx108=input.float(color.t(#1234566c),\"alpha 108\")\nx109=input.float(color.t(#1234566d),\"alpha 109\")\nx110=input.float(color.t(#1234566e),\"alpha 110\")\nx111=input.float(color.t(#1234566f),\"alpha 111\")\nx112=input.float(color.t(#12345670),\"alpha 112\")\nx113=input.float(color.t(#12345671),\"alpha 113\")\nx114=input.float(color.t(#12345672),\"alpha 114\")\nx115=input.float(color.t(#12345673),\"alpha 115\")\nx116=input.float(color.t(#12345674),\"alpha 116\")\nx117=input.float(color.t(#12345675),\"alpha 117\")\nx118=input.float(color.t(#12345676),\"alpha 118\")\nx119=input.float(color.t(#12345677),\"alpha 119\")\nx120=input.float(color.t(#12345678),\"alpha 120\")\nx121=input.float(color.t(#12345679),\"alpha 121\")\nx122=input.float(color.t(#1234567a),\"alpha 122\")\nx123=input.float(color.t(#1234567b),\"alpha 123\")\nx124=input.float(color.t(#1234567c),\"alpha 124\")\nx125=input.float(color.t(#1234567d),\"alpha 125\")\nx126=input.float(color.t(#1234567e),\"alpha 126\")\nx127=input.float(color.t(#1234567f),\"alpha 127\")\nx128=input.float(color.t(#12345680),\"alpha 128\")\nx129=input.float(color.t(#12345681),\"alpha 129\")\nx130=input.float(color.t(#12345682),\"alpha 130\")\nx131=input.float(color.t(#12345683),\"alpha 131\")\nx132=input.float(color.t(#12345684),\"alpha 132\")\nx133=input.float(color.t(#12345685),\"alpha 133\")\nx134=input.float(color.t(#12345686),\"alpha 134\")\nx135=input.float(color.t(#12345687),\"alpha 135\")\nx136=input.float(color.t(#12345688),\"alpha 136\")\nx137=input.float(color.t(#12345689),\"alpha 137\")\nx138=input.float(color.t(#1234568a),\"alpha 138\")\nx139=input.float(color.t(#1234568b),\"alpha 139\")\nx140=input.float(color.t(#1234568c),\"alpha 140\")\nx141=input.float(color.t(#1234568d),\"alpha 141\")\nx142=input.float(color.t(#1234568e),\"alpha 142\")\nx143=input.float(color.t(#1234568f),\"alpha 143\")\nx144=input.float(color.t(#12345690),\"alpha 144\")\nx145=input.float(color.t(#12345691),\"alpha 145\")\nx146=input.float(color.t(#12345692),\"alpha 146\")\nx147=input.float(color.t(#12345693),\"alpha 147\")\nx148=input.float(color.t(#12345694),\"alpha 148\")\nx149=input.float(color.t(#12345695),\"alpha 149\")\nx150=input.float(color.t(#12345696),\"alpha 150\")\nx151=input.float(color.t(#12345697),\"alpha 151\")\nx152=input.float(color.t(#12345698),\"alpha 152\")\nx153=input.float(color.t(#12345699),\"alpha 153\")\nx154=input.float(color.t(#1234569a),\"alpha 154\")\nx155=input.float(color.t(#1234569b),\"alpha 155\")\nx156=input.float(color.t(#1234569c),\"alpha 156\")\nx157=input.float(color.t(#1234569d),\"alpha 157\")\nx158=input.float(color.t(#1234569e),\"alpha 158\")\nx159=input.float(color.t(#1234569f),\"alpha 159\")\nx160=input.float(color.t(#123456a0),\"alpha 160\")\nx161=input.float(color.t(#123456a1),\"alpha 161\")\nx162=input.float(color.t(#123456a2),\"alpha 162\")\nx163=input.float(color.t(#123456a3),\"alpha 163\")\nx164=input.float(color.t(#123456a4),\"alpha 164\")\nx165=input.float(color.t(#123456a5),\"alpha 165\")\nx166=input.float(color.t(#123456a6),\"alpha 166\")\nx167=input.float(color.t(#123456a7),\"alpha 167\")\nx168=input.float(color.t(#123456a8),\"alpha 168\")\nx169=input.float(color.t(#123456a9),\"alpha 169\")\nx170=input.float(color.t(#123456aa),\"alpha 170\")\nx171=input.float(color.t(#123456ab),\"alpha 171\")\nx172=input.float(color.t(#123456ac),\"alpha 172\")\nx173=input.float(color.t(#123456ad),\"alpha 173\")\nx174=input.float(color.t(#123456ae),\"alpha 174\")\nx175=input.float(color.t(#123456af),\"alpha 175\")\nx176=input.float(color.t(#123456b0),\"alpha 176\")\nx177=input.float(color.t(#123456b1),\"alpha 177\")\nx178=input.float(color.t(#123456b2),\"alpha 178\")\nx179=input.float(color.t(#123456b3),\"alpha 179\")\nx180=input.float(color.t(#123456b4),\"alpha 180\")\nx181=input.float(color.t(#123456b5),\"alpha 181\")\nx182=input.float(color.t(#123456b6),\"alpha 182\")\nx183=input.float(color.t(#123456b7),\"alpha 183\")\nx184=input.float(color.t(#123456b8),\"alpha 184\")\nx185=input.float(color.t(#123456b9),\"alpha 185\")\nx186=input.float(color.t(#123456ba),\"alpha 186\")\nx187=input.float(color.t(#123456bb),\"alpha 187\")\nx188=input.float(color.t(#123456bc),\"alpha 188\")\nx189=input.float(color.t(#123456bd),\"alpha 189\")\nx190=input.float(color.t(#123456be),\"alpha 190\")\nx191=input.float(color.t(#123456bf),\"alpha 191\")\nx192=input.float(color.t(#123456c0),\"alpha 192\")\nx193=input.float(color.t(#123456c1),\"alpha 193\")\nx194=input.float(color.t(#123456c2),\"alpha 194\")\nx195=input.float(color.t(#123456c3),\"alpha 195\")\nx196=input.float(color.t(#123456c4),\"alpha 196\")\nx197=input.float(color.t(#123456c5),\"alpha 197\")\nx198=input.float(color.t(#123456c6),\"alpha 198\")\nx199=input.float(color.t(#123456c7),\"alpha 199\")\nx200=input.float(color.t(#123456c8),\"alpha 200\")\nx201=input.float(color.t(#123456c9),\"alpha 201\")\nx202=input.float(color.t(#123456ca),\"alpha 202\")\nx203=input.float(color.t(#123456cb),\"alpha 203\")\nx204=input.float(color.t(#123456cc),\"alpha 204\")\nx205=input.float(color.t(#123456cd),\"alpha 205\")\nx206=input.float(color.t(#123456ce),\"alpha 206\")\nx207=input.float(color.t(#123456cf),\"alpha 207\")\nx208=input.float(color.t(#123456d0),\"alpha 208\")\nx209=input.float(color.t(#123456d1),\"alpha 209\")\nx210=input.float(color.t(#123456d2),\"alpha 210\")\nx211=input.float(color.t(#123456d3),\"alpha 211\")\nx212=input.float(color.t(#123456d4),\"alpha 212\")\nx213=input.float(color.t(#123456d5),\"alpha 213\")\nx214=input.float(color.t(#123456d6),\"alpha 214\")\nx215=input.float(color.t(#123456d7),\"alpha 215\")\nx216=input.float(color.t(#123456d8),\"alpha 216\")\nx217=input.float(color.t(#123456d9),\"alpha 217\")\nx218=input.float(color.t(#123456da),\"alpha 218\")\nx219=input.float(color.t(#123456db),\"alpha 219\")\nx220=input.float(color.t(#123456dc),\"alpha 220\")\nx221=input.float(color.t(#123456dd),\"alpha 221\")\nx222=input.float(color.t(#123456de),\"alpha 222\")\nx223=input.float(color.t(#123456df),\"alpha 223\")\nx224=input.float(color.t(#123456e0),\"alpha 224\")\nx225=input.float(color.t(#123456e1),\"alpha 225\")\nx226=input.float(color.t(#123456e2),\"alpha 226\")\nx227=input.float(color.t(#123456e3),\"alpha 227\")\nx228=input.float(color.t(#123456e4),\"alpha 228\")\nx229=input.float(color.t(#123456e5),\"alpha 229\")\nx230=input.float(color.t(#123456e6),\"alpha 230\")\nx231=input.float(color.t(#123456e7),\"alpha 231\")\nx232=input.float(color.t(#123456e8),\"alpha 232\")\nx233=input.float(color.t(#123456e9),\"alpha 233\")\nx234=input.float(color.t(#123456ea),\"alpha 234\")\nx235=input.float(color.t(#123456eb),\"alpha 235\")\nx236=input.float(color.t(#123456ec),\"alpha 236\")\nx237=input.float(color.t(#123456ed),\"alpha 237\")\nx238=input.float(color.t(#123456ee),\"alpha 238\")\nx239=input.float(color.t(#123456ef),\"alpha 239\")\nx240=input.float(color.t(#123456f0),\"alpha 240\")\nx241=input.float(color.t(#123456f1),\"alpha 241\")\nx242=input.float(color.t(#123456f2),\"alpha 242\")\nx243=input.float(color.t(#123456f3),\"alpha 243\")\nx244=input.float(color.t(#123456f4),\"alpha 244\")\nx245=input.float(color.t(#123456f5),\"alpha 245\")\nx246=input.float(color.t(#123456f6),\"alpha 246\")\nx247=input.float(color.t(#123456f7),\"alpha 247\")\nx248=input.float(color.t(#123456f8),\"alpha 248\")\nx249=input.float(color.t(#123456f9),\"alpha 249\")\nx250=input.float(color.t(#123456fa),\"alpha 250\")\nx251=input.float(color.t(#123456fb),\"alpha 251\")\nx252=input.float(color.t(#123456fc),\"alpha 252\")\nx253=input.float(color.t(#123456fd),\"alpha 253\")\nx254=input.float(color.t(#123456fe),\"alpha 254\")\nx255=input.float(color.t(#123456ff),\"alpha 255\")\nplot(close)",
+      "inputs": [
+        {
+          "id": "in_0",
+          "name": "alpha 0",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_1",
+          "name": "alpha 1",
+          "type": "float",
+          "defval": 100
+        },
+        {
+          "id": "in_2",
+          "name": "alpha 2",
+          "type": "float",
+          "defval": 99
+        },
+        {
+          "id": "in_3",
+          "name": "alpha 3",
+          "type": "float",
+          "defval": 99
+        },
+        {
+          "id": "in_4",
+          "name": "alpha 4",
+          "type": "float",
+          "defval": 98
+        },
+        {
+          "id": "in_5",
+          "name": "alpha 5",
+          "type": "float",
+          "defval": 98
+        },
+        {
+          "id": "in_6",
+          "name": "alpha 6",
+          "type": "float",
+          "defval": 98
+        },
+        {
+          "id": "in_7",
+          "name": "alpha 7",
+          "type": "float",
+          "defval": 97
+        },
+        {
+          "id": "in_8",
+          "name": "alpha 8",
+          "type": "float",
+          "defval": 97
+        },
+        {
+          "id": "in_9",
+          "name": "alpha 9",
+          "type": "float",
+          "defval": 96
+        },
+        {
+          "id": "in_10",
+          "name": "alpha 10",
+          "type": "float",
+          "defval": 96
+        },
+        {
+          "id": "in_11",
+          "name": "alpha 11",
+          "type": "float",
+          "defval": 96
+        },
+        {
+          "id": "in_12",
+          "name": "alpha 12",
+          "type": "float",
+          "defval": 95
+        },
+        {
+          "id": "in_13",
+          "name": "alpha 13",
+          "type": "float",
+          "defval": 95
+        },
+        {
+          "id": "in_14",
+          "name": "alpha 14",
+          "type": "float",
+          "defval": 95
+        },
+        {
+          "id": "in_15",
+          "name": "alpha 15",
+          "type": "float",
+          "defval": 94
+        },
+        {
+          "id": "in_16",
+          "name": "alpha 16",
+          "type": "float",
+          "defval": 94
+        },
+        {
+          "id": "in_17",
+          "name": "alpha 17",
+          "type": "float",
+          "defval": 93
+        },
+        {
+          "id": "in_18",
+          "name": "alpha 18",
+          "type": "float",
+          "defval": 93
+        },
+        {
+          "id": "in_19",
+          "name": "alpha 19",
+          "type": "float",
+          "defval": 93
+        },
+        {
+          "id": "in_20",
+          "name": "alpha 20",
+          "type": "float",
+          "defval": 92
+        },
+        {
+          "id": "in_21",
+          "name": "alpha 21",
+          "type": "float",
+          "defval": 92
+        },
+        {
+          "id": "in_22",
+          "name": "alpha 22",
+          "type": "float",
+          "defval": 91
+        },
+        {
+          "id": "in_23",
+          "name": "alpha 23",
+          "type": "float",
+          "defval": 91
+        },
+        {
+          "id": "in_24",
+          "name": "alpha 24",
+          "type": "float",
+          "defval": 91
+        },
+        {
+          "id": "in_25",
+          "name": "alpha 25",
+          "type": "float",
+          "defval": 90
+        },
+        {
+          "id": "in_26",
+          "name": "alpha 26",
+          "type": "float",
+          "defval": 90
+        },
+        {
+          "id": "in_27",
+          "name": "alpha 27",
+          "type": "float",
+          "defval": 89
+        },
+        {
+          "id": "in_28",
+          "name": "alpha 28",
+          "type": "float",
+          "defval": 89
+        },
+        {
+          "id": "in_29",
+          "name": "alpha 29",
+          "type": "float",
+          "defval": 89
+        },
+        {
+          "id": "in_30",
+          "name": "alpha 30",
+          "type": "float",
+          "defval": 88
+        },
+        {
+          "id": "in_31",
+          "name": "alpha 31",
+          "type": "float",
+          "defval": 88
+        },
+        {
+          "id": "in_32",
+          "name": "alpha 32",
+          "type": "float",
+          "defval": 87
+        },
+        {
+          "id": "in_33",
+          "name": "alpha 33",
+          "type": "float",
+          "defval": 87
+        },
+        {
+          "id": "in_34",
+          "name": "alpha 34",
+          "type": "float",
+          "defval": 87
+        },
+        {
+          "id": "in_35",
+          "name": "alpha 35",
+          "type": "float",
+          "defval": 86
+        },
+        {
+          "id": "in_36",
+          "name": "alpha 36",
+          "type": "float",
+          "defval": 86
+        },
+        {
+          "id": "in_37",
+          "name": "alpha 37",
+          "type": "float",
+          "defval": 85
+        },
+        {
+          "id": "in_38",
+          "name": "alpha 38",
+          "type": "float",
+          "defval": 85
+        },
+        {
+          "id": "in_39",
+          "name": "alpha 39",
+          "type": "float",
+          "defval": 85
+        },
+        {
+          "id": "in_40",
+          "name": "alpha 40",
+          "type": "float",
+          "defval": 84
+        },
+        {
+          "id": "in_41",
+          "name": "alpha 41",
+          "type": "float",
+          "defval": 84
+        },
+        {
+          "id": "in_42",
+          "name": "alpha 42",
+          "type": "float",
+          "defval": 84
+        },
+        {
+          "id": "in_43",
+          "name": "alpha 43",
+          "type": "float",
+          "defval": 83
+        },
+        {
+          "id": "in_44",
+          "name": "alpha 44",
+          "type": "float",
+          "defval": 83
+        },
+        {
+          "id": "in_45",
+          "name": "alpha 45",
+          "type": "float",
+          "defval": 82
+        },
+        {
+          "id": "in_46",
+          "name": "alpha 46",
+          "type": "float",
+          "defval": 82
+        },
+        {
+          "id": "in_47",
+          "name": "alpha 47",
+          "type": "float",
+          "defval": 82
+        },
+        {
+          "id": "in_48",
+          "name": "alpha 48",
+          "type": "float",
+          "defval": 81
+        },
+        {
+          "id": "in_49",
+          "name": "alpha 49",
+          "type": "float",
+          "defval": 81
+        },
+        {
+          "id": "in_50",
+          "name": "alpha 50",
+          "type": "float",
+          "defval": 80
+        },
+        {
+          "id": "in_51",
+          "name": "alpha 51",
+          "type": "float",
+          "defval": 80
+        },
+        {
+          "id": "in_52",
+          "name": "alpha 52",
+          "type": "float",
+          "defval": 80
+        },
+        {
+          "id": "in_53",
+          "name": "alpha 53",
+          "type": "float",
+          "defval": 79
+        },
+        {
+          "id": "in_54",
+          "name": "alpha 54",
+          "type": "float",
+          "defval": 79
+        },
+        {
+          "id": "in_55",
+          "name": "alpha 55",
+          "type": "float",
+          "defval": 78
+        },
+        {
+          "id": "in_56",
+          "name": "alpha 56",
+          "type": "float",
+          "defval": 78
+        },
+        {
+          "id": "in_57",
+          "name": "alpha 57",
+          "type": "float",
+          "defval": 78
+        },
+        {
+          "id": "in_58",
+          "name": "alpha 58",
+          "type": "float",
+          "defval": 77
+        },
+        {
+          "id": "in_59",
+          "name": "alpha 59",
+          "type": "float",
+          "defval": 77
+        },
+        {
+          "id": "in_60",
+          "name": "alpha 60",
+          "type": "float",
+          "defval": 76
+        },
+        {
+          "id": "in_61",
+          "name": "alpha 61",
+          "type": "float",
+          "defval": 76
+        },
+        {
+          "id": "in_62",
+          "name": "alpha 62",
+          "type": "float",
+          "defval": 76
+        },
+        {
+          "id": "in_63",
+          "name": "alpha 63",
+          "type": "float",
+          "defval": 75
+        },
+        {
+          "id": "in_64",
+          "name": "alpha 64",
+          "type": "float",
+          "defval": 75
+        },
+        {
+          "id": "in_65",
+          "name": "alpha 65",
+          "type": "float",
+          "defval": 75
+        },
+        {
+          "id": "in_66",
+          "name": "alpha 66",
+          "type": "float",
+          "defval": 74
+        },
+        {
+          "id": "in_67",
+          "name": "alpha 67",
+          "type": "float",
+          "defval": 74
+        },
+        {
+          "id": "in_68",
+          "name": "alpha 68",
+          "type": "float",
+          "defval": 73
+        },
+        {
+          "id": "in_69",
+          "name": "alpha 69",
+          "type": "float",
+          "defval": 73
+        },
+        {
+          "id": "in_70",
+          "name": "alpha 70",
+          "type": "float",
+          "defval": 73
+        },
+        {
+          "id": "in_71",
+          "name": "alpha 71",
+          "type": "float",
+          "defval": 72
+        },
+        {
+          "id": "in_72",
+          "name": "alpha 72",
+          "type": "float",
+          "defval": 72
+        },
+        {
+          "id": "in_73",
+          "name": "alpha 73",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_74",
+          "name": "alpha 74",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_75",
+          "name": "alpha 75",
+          "type": "float",
+          "defval": 71
+        },
+        {
+          "id": "in_76",
+          "name": "alpha 76",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_77",
+          "name": "alpha 77",
+          "type": "float",
+          "defval": 70
+        },
+        {
+          "id": "in_78",
+          "name": "alpha 78",
+          "type": "float",
+          "defval": 69
+        },
+        {
+          "id": "in_79",
+          "name": "alpha 79",
+          "type": "float",
+          "defval": 69
+        },
+        {
+          "id": "in_80",
+          "name": "alpha 80",
+          "type": "float",
+          "defval": 69
+        },
+        {
+          "id": "in_81",
+          "name": "alpha 81",
+          "type": "float",
+          "defval": 68
+        },
+        {
+          "id": "in_82",
+          "name": "alpha 82",
+          "type": "float",
+          "defval": 68
+        },
+        {
+          "id": "in_83",
+          "name": "alpha 83",
+          "type": "float",
+          "defval": 67
+        },
+        {
+          "id": "in_84",
+          "name": "alpha 84",
+          "type": "float",
+          "defval": 67
+        },
+        {
+          "id": "in_85",
+          "name": "alpha 85",
+          "type": "float",
+          "defval": 67
+        },
+        {
+          "id": "in_86",
+          "name": "alpha 86",
+          "type": "float",
+          "defval": 66
+        },
+        {
+          "id": "in_87",
+          "name": "alpha 87",
+          "type": "float",
+          "defval": 66
+        },
+        {
+          "id": "in_88",
+          "name": "alpha 88",
+          "type": "float",
+          "defval": 65
+        },
+        {
+          "id": "in_89",
+          "name": "alpha 89",
+          "type": "float",
+          "defval": 65
+        },
+        {
+          "id": "in_90",
+          "name": "alpha 90",
+          "type": "float",
+          "defval": 65
+        },
+        {
+          "id": "in_91",
+          "name": "alpha 91",
+          "type": "float",
+          "defval": 64
+        },
+        {
+          "id": "in_92",
+          "name": "alpha 92",
+          "type": "float",
+          "defval": 64
+        },
+        {
+          "id": "in_93",
+          "name": "alpha 93",
+          "type": "float",
+          "defval": 64
+        },
+        {
+          "id": "in_94",
+          "name": "alpha 94",
+          "type": "float",
+          "defval": 63
+        },
+        {
+          "id": "in_95",
+          "name": "alpha 95",
+          "type": "float",
+          "defval": 63
+        },
+        {
+          "id": "in_96",
+          "name": "alpha 96",
+          "type": "float",
+          "defval": 62
+        },
+        {
+          "id": "in_97",
+          "name": "alpha 97",
+          "type": "float",
+          "defval": 62
+        },
+        {
+          "id": "in_98",
+          "name": "alpha 98",
+          "type": "float",
+          "defval": 62
+        },
+        {
+          "id": "in_99",
+          "name": "alpha 99",
+          "type": "float",
+          "defval": 61
+        },
+        {
+          "id": "in_100",
+          "name": "alpha 100",
+          "type": "float",
+          "defval": 61
+        },
+        {
+          "id": "in_101",
+          "name": "alpha 101",
+          "type": "float",
+          "defval": 60
+        },
+        {
+          "id": "in_102",
+          "name": "alpha 102",
+          "type": "float",
+          "defval": 60
+        },
+        {
+          "id": "in_103",
+          "name": "alpha 103",
+          "type": "float",
+          "defval": 60
+        },
+        {
+          "id": "in_104",
+          "name": "alpha 104",
+          "type": "float",
+          "defval": 59
+        },
+        {
+          "id": "in_105",
+          "name": "alpha 105",
+          "type": "float",
+          "defval": 59
+        },
+        {
+          "id": "in_106",
+          "name": "alpha 106",
+          "type": "float",
+          "defval": 58
+        },
+        {
+          "id": "in_107",
+          "name": "alpha 107",
+          "type": "float",
+          "defval": 58
+        },
+        {
+          "id": "in_108",
+          "name": "alpha 108",
+          "type": "float",
+          "defval": 58
+        },
+        {
+          "id": "in_109",
+          "name": "alpha 109",
+          "type": "float",
+          "defval": 57
+        },
+        {
+          "id": "in_110",
+          "name": "alpha 110",
+          "type": "float",
+          "defval": 57
+        },
+        {
+          "id": "in_111",
+          "name": "alpha 111",
+          "type": "float",
+          "defval": 56
+        },
+        {
+          "id": "in_112",
+          "name": "alpha 112",
+          "type": "float",
+          "defval": 56
+        },
+        {
+          "id": "in_113",
+          "name": "alpha 113",
+          "type": "float",
+          "defval": 56
+        },
+        {
+          "id": "in_114",
+          "name": "alpha 114",
+          "type": "float",
+          "defval": 55
+        },
+        {
+          "id": "in_115",
+          "name": "alpha 115",
+          "type": "float",
+          "defval": 55
+        },
+        {
+          "id": "in_116",
+          "name": "alpha 116",
+          "type": "float",
+          "defval": 55
+        },
+        {
+          "id": "in_117",
+          "name": "alpha 117",
+          "type": "float",
+          "defval": 54
+        },
+        {
+          "id": "in_118",
+          "name": "alpha 118",
+          "type": "float",
+          "defval": 54
+        },
+        {
+          "id": "in_119",
+          "name": "alpha 119",
+          "type": "float",
+          "defval": 53
+        },
+        {
+          "id": "in_120",
+          "name": "alpha 120",
+          "type": "float",
+          "defval": 53
+        },
+        {
+          "id": "in_121",
+          "name": "alpha 121",
+          "type": "float",
+          "defval": 53
+        },
+        {
+          "id": "in_122",
+          "name": "alpha 122",
+          "type": "float",
+          "defval": 52
+        },
+        {
+          "id": "in_123",
+          "name": "alpha 123",
+          "type": "float",
+          "defval": 52
+        },
+        {
+          "id": "in_124",
+          "name": "alpha 124",
+          "type": "float",
+          "defval": 51
+        },
+        {
+          "id": "in_125",
+          "name": "alpha 125",
+          "type": "float",
+          "defval": 51
+        },
+        {
+          "id": "in_126",
+          "name": "alpha 126",
+          "type": "float",
+          "defval": 51
+        },
+        {
+          "id": "in_127",
+          "name": "alpha 127",
+          "type": "float",
+          "defval": 50
+        },
+        {
+          "id": "in_128",
+          "name": "alpha 128",
+          "type": "float",
+          "defval": 50
+        },
+        {
+          "id": "in_129",
+          "name": "alpha 129",
+          "type": "float",
+          "defval": 49
+        },
+        {
+          "id": "in_130",
+          "name": "alpha 130",
+          "type": "float",
+          "defval": 49
+        },
+        {
+          "id": "in_131",
+          "name": "alpha 131",
+          "type": "float",
+          "defval": 49
+        },
+        {
+          "id": "in_132",
+          "name": "alpha 132",
+          "type": "float",
+          "defval": 48
+        },
+        {
+          "id": "in_133",
+          "name": "alpha 133",
+          "type": "float",
+          "defval": 48
+        },
+        {
+          "id": "in_134",
+          "name": "alpha 134",
+          "type": "float",
+          "defval": 47
+        },
+        {
+          "id": "in_135",
+          "name": "alpha 135",
+          "type": "float",
+          "defval": 47
+        },
+        {
+          "id": "in_136",
+          "name": "alpha 136",
+          "type": "float",
+          "defval": 47
+        },
+        {
+          "id": "in_137",
+          "name": "alpha 137",
+          "type": "float",
+          "defval": 46
+        },
+        {
+          "id": "in_138",
+          "name": "alpha 138",
+          "type": "float",
+          "defval": 46
+        },
+        {
+          "id": "in_139",
+          "name": "alpha 139",
+          "type": "float",
+          "defval": 45
+        },
+        {
+          "id": "in_140",
+          "name": "alpha 140",
+          "type": "float",
+          "defval": 45
+        },
+        {
+          "id": "in_141",
+          "name": "alpha 141",
+          "type": "float",
+          "defval": 45
+        },
+        {
+          "id": "in_142",
+          "name": "alpha 142",
+          "type": "float",
+          "defval": 44
+        },
+        {
+          "id": "in_143",
+          "name": "alpha 143",
+          "type": "float",
+          "defval": 44
+        },
+        {
+          "id": "in_144",
+          "name": "alpha 144",
+          "type": "float",
+          "defval": 44
+        },
+        {
+          "id": "in_145",
+          "name": "alpha 145",
+          "type": "float",
+          "defval": 43
+        },
+        {
+          "id": "in_146",
+          "name": "alpha 146",
+          "type": "float",
+          "defval": 43
+        },
+        {
+          "id": "in_147",
+          "name": "alpha 147",
+          "type": "float",
+          "defval": 42
+        },
+        {
+          "id": "in_148",
+          "name": "alpha 148",
+          "type": "float",
+          "defval": 42
+        },
+        {
+          "id": "in_149",
+          "name": "alpha 149",
+          "type": "float",
+          "defval": 42
+        },
+        {
+          "id": "in_150",
+          "name": "alpha 150",
+          "type": "float",
+          "defval": 41
+        },
+        {
+          "id": "in_151",
+          "name": "alpha 151",
+          "type": "float",
+          "defval": 41
+        },
+        {
+          "id": "in_152",
+          "name": "alpha 152",
+          "type": "float",
+          "defval": 40
+        },
+        {
+          "id": "in_153",
+          "name": "alpha 153",
+          "type": "float",
+          "defval": 40
+        },
+        {
+          "id": "in_154",
+          "name": "alpha 154",
+          "type": "float",
+          "defval": 40
+        },
+        {
+          "id": "in_155",
+          "name": "alpha 155",
+          "type": "float",
+          "defval": 39
+        },
+        {
+          "id": "in_156",
+          "name": "alpha 156",
+          "type": "float",
+          "defval": 39
+        },
+        {
+          "id": "in_157",
+          "name": "alpha 157",
+          "type": "float",
+          "defval": 38
+        },
+        {
+          "id": "in_158",
+          "name": "alpha 158",
+          "type": "float",
+          "defval": 38
+        },
+        {
+          "id": "in_159",
+          "name": "alpha 159",
+          "type": "float",
+          "defval": 38
+        },
+        {
+          "id": "in_160",
+          "name": "alpha 160",
+          "type": "float",
+          "defval": 37
+        },
+        {
+          "id": "in_161",
+          "name": "alpha 161",
+          "type": "float",
+          "defval": 37
+        },
+        {
+          "id": "in_162",
+          "name": "alpha 162",
+          "type": "float",
+          "defval": 36
+        },
+        {
+          "id": "in_163",
+          "name": "alpha 163",
+          "type": "float",
+          "defval": 36
+        },
+        {
+          "id": "in_164",
+          "name": "alpha 164",
+          "type": "float",
+          "defval": 36
+        },
+        {
+          "id": "in_165",
+          "name": "alpha 165",
+          "type": "float",
+          "defval": 35
+        },
+        {
+          "id": "in_166",
+          "name": "alpha 166",
+          "type": "float",
+          "defval": 35
+        },
+        {
+          "id": "in_167",
+          "name": "alpha 167",
+          "type": "float",
+          "defval": 35
+        },
+        {
+          "id": "in_168",
+          "name": "alpha 168",
+          "type": "float",
+          "defval": 34
+        },
+        {
+          "id": "in_169",
+          "name": "alpha 169",
+          "type": "float",
+          "defval": 34
+        },
+        {
+          "id": "in_170",
+          "name": "alpha 170",
+          "type": "float",
+          "defval": 33
+        },
+        {
+          "id": "in_171",
+          "name": "alpha 171",
+          "type": "float",
+          "defval": 33
+        },
+        {
+          "id": "in_172",
+          "name": "alpha 172",
+          "type": "float",
+          "defval": 33
+        },
+        {
+          "id": "in_173",
+          "name": "alpha 173",
+          "type": "float",
+          "defval": 32
+        },
+        {
+          "id": "in_174",
+          "name": "alpha 174",
+          "type": "float",
+          "defval": 32
+        },
+        {
+          "id": "in_175",
+          "name": "alpha 175",
+          "type": "float",
+          "defval": 31
+        },
+        {
+          "id": "in_176",
+          "name": "alpha 176",
+          "type": "float",
+          "defval": 31
+        },
+        {
+          "id": "in_177",
+          "name": "alpha 177",
+          "type": "float",
+          "defval": 31
+        },
+        {
+          "id": "in_178",
+          "name": "alpha 178",
+          "type": "float",
+          "defval": 30
+        },
+        {
+          "id": "in_179",
+          "name": "alpha 179",
+          "type": "float",
+          "defval": 30
+        },
+        {
+          "id": "in_180",
+          "name": "alpha 180",
+          "type": "float",
+          "defval": 29
+        },
+        {
+          "id": "in_181",
+          "name": "alpha 181",
+          "type": "float",
+          "defval": 29
+        },
+        {
+          "id": "in_182",
+          "name": "alpha 182",
+          "type": "float",
+          "defval": 29
+        },
+        {
+          "id": "in_183",
+          "name": "alpha 183",
+          "type": "float",
+          "defval": 28
+        },
+        {
+          "id": "in_184",
+          "name": "alpha 184",
+          "type": "float",
+          "defval": 28
+        },
+        {
+          "id": "in_185",
+          "name": "alpha 185",
+          "type": "float",
+          "defval": 27
+        },
+        {
+          "id": "in_186",
+          "name": "alpha 186",
+          "type": "float",
+          "defval": 27
+        },
+        {
+          "id": "in_187",
+          "name": "alpha 187",
+          "type": "float",
+          "defval": 27
+        },
+        {
+          "id": "in_188",
+          "name": "alpha 188",
+          "type": "float",
+          "defval": 26
+        },
+        {
+          "id": "in_189",
+          "name": "alpha 189",
+          "type": "float",
+          "defval": 26
+        },
+        {
+          "id": "in_190",
+          "name": "alpha 190",
+          "type": "float",
+          "defval": 25
+        },
+        {
+          "id": "in_191",
+          "name": "alpha 191",
+          "type": "float",
+          "defval": 25
+        },
+        {
+          "id": "in_192",
+          "name": "alpha 192",
+          "type": "float",
+          "defval": 25
+        },
+        {
+          "id": "in_193",
+          "name": "alpha 193",
+          "type": "float",
+          "defval": 24
+        },
+        {
+          "id": "in_194",
+          "name": "alpha 194",
+          "type": "float",
+          "defval": 24
+        },
+        {
+          "id": "in_195",
+          "name": "alpha 195",
+          "type": "float",
+          "defval": 24
+        },
+        {
+          "id": "in_196",
+          "name": "alpha 196",
+          "type": "float",
+          "defval": 23
+        },
+        {
+          "id": "in_197",
+          "name": "alpha 197",
+          "type": "float",
+          "defval": 23
+        },
+        {
+          "id": "in_198",
+          "name": "alpha 198",
+          "type": "float",
+          "defval": 22
+        },
+        {
+          "id": "in_199",
+          "name": "alpha 199",
+          "type": "float",
+          "defval": 22
+        },
+        {
+          "id": "in_200",
+          "name": "alpha 200",
+          "type": "float",
+          "defval": 22
+        },
+        {
+          "id": "in_201",
+          "name": "alpha 201",
+          "type": "float",
+          "defval": 21
+        },
+        {
+          "id": "in_202",
+          "name": "alpha 202",
+          "type": "float",
+          "defval": 21
+        },
+        {
+          "id": "in_203",
+          "name": "alpha 203",
+          "type": "float",
+          "defval": 20
+        },
+        {
+          "id": "in_204",
+          "name": "alpha 204",
+          "type": "float",
+          "defval": 20
+        },
+        {
+          "id": "in_205",
+          "name": "alpha 205",
+          "type": "float",
+          "defval": 20
+        },
+        {
+          "id": "in_206",
+          "name": "alpha 206",
+          "type": "float",
+          "defval": 19
+        },
+        {
+          "id": "in_207",
+          "name": "alpha 207",
+          "type": "float",
+          "defval": 19
+        },
+        {
+          "id": "in_208",
+          "name": "alpha 208",
+          "type": "float",
+          "defval": 18
+        },
+        {
+          "id": "in_209",
+          "name": "alpha 209",
+          "type": "float",
+          "defval": 18
+        },
+        {
+          "id": "in_210",
+          "name": "alpha 210",
+          "type": "float",
+          "defval": 18
+        },
+        {
+          "id": "in_211",
+          "name": "alpha 211",
+          "type": "float",
+          "defval": 17
+        },
+        {
+          "id": "in_212",
+          "name": "alpha 212",
+          "type": "float",
+          "defval": 17
+        },
+        {
+          "id": "in_213",
+          "name": "alpha 213",
+          "type": "float",
+          "defval": 16
+        },
+        {
+          "id": "in_214",
+          "name": "alpha 214",
+          "type": "float",
+          "defval": 16
+        },
+        {
+          "id": "in_215",
+          "name": "alpha 215",
+          "type": "float",
+          "defval": 16
+        },
+        {
+          "id": "in_216",
+          "name": "alpha 216",
+          "type": "float",
+          "defval": 15
+        },
+        {
+          "id": "in_217",
+          "name": "alpha 217",
+          "type": "float",
+          "defval": 15
+        },
+        {
+          "id": "in_218",
+          "name": "alpha 218",
+          "type": "float",
+          "defval": 15
+        },
+        {
+          "id": "in_219",
+          "name": "alpha 219",
+          "type": "float",
+          "defval": 14
+        },
+        {
+          "id": "in_220",
+          "name": "alpha 220",
+          "type": "float",
+          "defval": 14
+        },
+        {
+          "id": "in_221",
+          "name": "alpha 221",
+          "type": "float",
+          "defval": 13
+        },
+        {
+          "id": "in_222",
+          "name": "alpha 222",
+          "type": "float",
+          "defval": 13
+        },
+        {
+          "id": "in_223",
+          "name": "alpha 223",
+          "type": "float",
+          "defval": 13
+        },
+        {
+          "id": "in_224",
+          "name": "alpha 224",
+          "type": "float",
+          "defval": 12
+        },
+        {
+          "id": "in_225",
+          "name": "alpha 225",
+          "type": "float",
+          "defval": 12
+        },
+        {
+          "id": "in_226",
+          "name": "alpha 226",
+          "type": "float",
+          "defval": 11
+        },
+        {
+          "id": "in_227",
+          "name": "alpha 227",
+          "type": "float",
+          "defval": 11
+        },
+        {
+          "id": "in_228",
+          "name": "alpha 228",
+          "type": "float",
+          "defval": 11
+        },
+        {
+          "id": "in_229",
+          "name": "alpha 229",
+          "type": "float",
+          "defval": 10
+        },
+        {
+          "id": "in_230",
+          "name": "alpha 230",
+          "type": "float",
+          "defval": 10
+        },
+        {
+          "id": "in_231",
+          "name": "alpha 231",
+          "type": "float",
+          "defval": 9
+        },
+        {
+          "id": "in_232",
+          "name": "alpha 232",
+          "type": "float",
+          "defval": 9
+        },
+        {
+          "id": "in_233",
+          "name": "alpha 233",
+          "type": "float",
+          "defval": 9
+        },
+        {
+          "id": "in_234",
+          "name": "alpha 234",
+          "type": "float",
+          "defval": 8
+        },
+        {
+          "id": "in_235",
+          "name": "alpha 235",
+          "type": "float",
+          "defval": 8
+        },
+        {
+          "id": "in_236",
+          "name": "alpha 236",
+          "type": "float",
+          "defval": 7
+        },
+        {
+          "id": "in_237",
+          "name": "alpha 237",
+          "type": "float",
+          "defval": 7
+        },
+        {
+          "id": "in_238",
+          "name": "alpha 238",
+          "type": "float",
+          "defval": 7
+        },
+        {
+          "id": "in_239",
+          "name": "alpha 239",
+          "type": "float",
+          "defval": 6
+        },
+        {
+          "id": "in_240",
+          "name": "alpha 240",
+          "type": "float",
+          "defval": 6
+        },
+        {
+          "id": "in_241",
+          "name": "alpha 241",
+          "type": "float",
+          "defval": 5
+        },
+        {
+          "id": "in_242",
+          "name": "alpha 242",
+          "type": "float",
+          "defval": 5
+        },
+        {
+          "id": "in_243",
+          "name": "alpha 243",
+          "type": "float",
+          "defval": 5
+        },
+        {
+          "id": "in_244",
+          "name": "alpha 244",
+          "type": "float",
+          "defval": 4
+        },
+        {
+          "id": "in_245",
+          "name": "alpha 245",
+          "type": "float",
+          "defval": 4
+        },
+        {
+          "id": "in_246",
+          "name": "alpha 246",
+          "type": "float",
+          "defval": 4
+        },
+        {
+          "id": "in_247",
+          "name": "alpha 247",
+          "type": "float",
+          "defval": 3
+        },
+        {
+          "id": "in_248",
+          "name": "alpha 248",
+          "type": "float",
+          "defval": 3
+        },
+        {
+          "id": "in_249",
+          "name": "alpha 249",
+          "type": "float",
+          "defval": 2
+        },
+        {
+          "id": "in_250",
+          "name": "alpha 250",
+          "type": "float",
+          "defval": 2
+        },
+        {
+          "id": "in_251",
+          "name": "alpha 251",
+          "type": "float",
+          "defval": 2
+        },
+        {
+          "id": "in_252",
+          "name": "alpha 252",
+          "type": "float",
+          "defval": 1
+        },
+        {
+          "id": "in_253",
+          "name": "alpha 253",
+          "type": "float",
+          "defval": 1
+        },
+        {
+          "id": "in_254",
+          "name": "alpha 254",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_255",
+          "name": "alpha 255",
+          "type": "float",
+          "defval": 0
+        }
+      ],
+      "expectedCompileSuccess": true
+    },
+    {
+      "source": "//@version=6\nindicator(\"Const accessor rules\")\ncolRgbF=color.rgb(1.4,2.6,3.5,0.4)\ncolNewF=color.new(color.red,49.6)\nx=input.float(color.t(colRgbF),\"fixture rgb fractional\")\ny=input.float(color.t(colNewF),\"fixture new fractional\")\nplot(close)",
+      "inputs": [
+        {
+          "id": "in_0",
+          "name": "fixture rgb fractional",
+          "type": "float",
+          "defval": 0
+        },
+        {
+          "id": "in_1",
+          "name": "fixture new fractional",
+          "type": "float",
+          "defval": 49
+        }
+      ],
+      "sourceSha256": "4dbead7ec83f5f3aa3385de1bab5c486570ffc5f578ca3e6f8abf5357c348a6c",
+      "kind": "const-accessor-rule-defaults",
+      "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+      "expectedCompileSuccess": true
+    },
+    {
+      "source": "//@version=6\nindicator(\"Const accessor alias rule\")\nc=color.new(color.red,50.4)\nx=input.float(color.t(c),\"fixture alias new50.4\")\nplot(close)",
+      "inputs": [
+        {
+          "id": "in_0",
+          "name": "fixture alias new50.4",
+          "type": "float",
+          "defval": 50
+        }
+      ],
+      "sourceSha256": "dfd5e52f9f1094f5f5852af263a27f86fbfea16c6fe192dde2cfa372b2a1575c",
+      "kind": "const-accessor-alias-default",
+      "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+      "expectedCompileSuccess": true
+    }
+  ]
+}

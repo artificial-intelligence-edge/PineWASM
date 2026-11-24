@@ -1,0 +1,71 @@
+[package]
+name = "pinewasm_aot"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Ahead-of-time CSIL to WebAssembly backend"
+publish.workspace = true
+
+[dependencies]
+pinewasm_csil = { workspace = true }
+pinewasm_hir = { workspace = true }
+# The numeric core. The emitter needs its `host.pure` id space; the
+# runtime module spliced into every artifact is this crate compiled to wasm.
+pinewasm_num = { workspace = true }
+# The stateful `ta.*` engine: the emitter reserves its region and splices the
+# wasm build of this crate into every artifact with a `CallTa` site, so it
+# needs the same layout planner the engine uses.
+pinewasm_ta = { workspace = true }
+# Fixed exchange offsets, read by the interpreter and the spliced runtime.
+pinewasm_tz = { workspace = true }
+thiserror = { workspace = true }
+# The one external dependency doing real work: raw wasm byte emission. There
+# is no intermediate WebAssembly IR; this crate owns instruction selection
+# (see docs/aot.md §2). The
+# `wasmparser` feature adds the re-encoder, used only to splice the checked-in
+# numeric runtime into emitted artifacts (src/runtime.rs).
+wasm-encoder = { version = "0.258", features = ["wasmparser"] }
+wasmparser = "0.258"
+# `audit_standalone_wasm`'s metadata gate re-reads the emitted `module_metadata` section
+# with a real parser, mirroring the public host contract; hand-rolling
+# JSON validation here would let the gate agree with the writer's own bugs.
+serde_json = { workspace = true }
+
+[build-dependencies]
+# Canonicalize frozen bodies once while building the compiler, so generating
+# a zero-import artifact can copy already compact instruction encodings.
+wasm-encoder = { version = "0.258", features = ["wasmparser"] }
+wasmparser = "0.258"
+
+[dev-dependencies]
+pinewasm_compiler = { workspace = true }
+# The diagnostics these tests assert on are `pinewasm_span::Diagnostic`.
+pinewasm_span = { workspace = true }
+pinewasm_vm = { workspace = true }
+pinewasm_mir = { workspace = true }
+# Differential-test executor for emitted modules using a pure-Rust interpreter.
+wasmi = "1.1"
+# Reads the emitted `parameter_schema` section back with a real parser, so the
+# round-trip test cannot pass by agreeing with the writer's own bugs.
+# `float_roundtrip` because the standalone WebAssembly tests assert bit-exact price fidelity, and
+# serde_json's default float path is deliberately lossy in the last ulp
+# (measured: `9007199254740991.0` parses to `...990`); compatible Python hosts
+# use a correctly rounded JSON implementation.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+# Host-side twin of the blob's f64 printer, pinned to the exact version the
+# runtime crate vendors so the `runtime_standalone_wasm_json` differential compares two
+# builds of the same algorithm, not two algorithms.
+ryu = "=1.0.23"
+proptest = { workspace = true }
+# The emitter byte gate (`tests/emitter_byte_gate.rs`) hashes some twenty
+# thousand emitted modules and their function bodies on every run.
+sha2 = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+# Extraction roots for Charon/Aeneas only; never enabled in production builds.
+aeneas = []

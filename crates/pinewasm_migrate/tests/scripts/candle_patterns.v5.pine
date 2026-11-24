@@ -1,0 +1,116 @@
+//@version=5
+indicator("Candle Pattern Scanner", overlay = true, max_labels_count = 500)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+trendLen = input.int(14, "Trend Length")
+bodyMin = input.float(0.6, "Large Body Fraction")
+dojiMax = input.float(0.1, "Doji Body Fraction")
+showBull = input.bool(true, "Bullish Patterns")
+showBear = input.bool(true, "Bearish Patterns")
+labelSize = input.string("Small", "Label Size", options = ["Tiny", "Small", "Normal"])
+
+// ---------------------------------------------------------------------------
+// Candle anatomy
+// ---------------------------------------------------------------------------
+body = math.abs(close - open)
+range = high - low
+upperWick = high - math.max(open, close)
+lowerWick = math.min(open, close) - low
+isUp = close > open
+isDown = close < open
+
+// Trend context from a short average. Before the average exists the trend
+// is unknown.
+trendMa = ta.sma(close, trendLen)
+bool downtrend = na
+bool uptrend = na
+if not na(trendMa)
+    downtrend := close < trendMa
+    uptrend := close > trendMa
+
+// ---------------------------------------------------------------------------
+// Patterns
+// ---------------------------------------------------------------------------
+doji = range > 0 and body / range <= dojiMax
+hammer = lowerWick >= body * 2 and upperWick <= body * 0.5 and downtrend
+shootingStar = upperWick >= body * 2 and lowerWick <= body * 0.5 and uptrend
+bullEngulf = isUp and isDown[1] and close >= open[1] and open <= close[1]
+bearEngulf = isDown and isUp[1] and close <= open[1] and open >= close[1]
+morningStar = isDown[2] and body[1] < body[2] * 0.3 and isUp and close > (open[2] + close[2]) / 2
+
+// Three soldiers: three rising large bodies. `1[2]` is a constant's history,
+// which is `na` on the first two bars.
+largeBody(int back) =>
+    range[back] > 0 and body[back] / range[back] >= bodyMin
+threeSoldiers = isUp and isUp[1] and isUp[2] and largeBody(0) and largeBody(1) and largeBody(2) and not na(1[2])
+
+// Pattern strength: patterns found in the last few bars.
+count = 0
+for i = 0 to 4
+    if bullEngulf[i] or hammer[i] or morningStar[i]
+        count += 1
+
+// ---------------------------------------------------------------------------
+// Labels
+// ---------------------------------------------------------------------------
+textSize = labelSize == "Tiny" ? size.tiny : labelSize == "Normal" ? size.normal : size.small
+
+mark(string txt, bool bull) =>
+    y = bull ? low : high
+    label.new(bar_index, y, txt, style = bull ? label.style_label_up : label.style_label_down, color = bull ? color.teal : color.red, size = textSize)
+
+if showBull
+    if hammer
+        mark("H", true)
+    if bullEngulf
+        mark("BE", true)
+    if morningStar
+        mark("MS", true)
+    if threeSoldiers
+        mark("3S", true)
+if showBear
+    if shootingStar
+        mark("SS", false)
+    if bearEngulf
+        mark("BE", false)
+
+plotshape(doji, "Doji", shape.cross, location.abovebar, color = color.gray, size = size.tiny, title = "Doji Marker")
+plot(trendMa, "Trend", color = uptrend ? color.teal : downtrend ? color.red : color.gray, linewidth = 1)
+plot(count, "Recent Bullish Patterns", display = display.data_window)
+barcolor(bullEngulf ? color.teal : bearEngulf ? color.red : na)
+alertcondition(bullEngulf or hammer, "Bullish Reversal", "Bullish reversal pattern")
+alertcondition(bearEngulf or shootingStar, "Bearish Reversal", "Bearish reversal pattern")
+
+// ---------------------------------------------------------------------------
+// Pattern statistics: how often each pattern was followed by a higher close
+// three bars later.
+// ---------------------------------------------------------------------------
+var hits = map.new<string, int>()
+var seen = map.new<string, int>()
+
+record(string name, bool found) =>
+    if found
+        map.put(seen, name, (map.contains(seen, name) ? map.get(seen, name) : 0) + 1)
+        if close[3] < close
+            map.put(hits, name, (map.contains(hits, name) ? map.get(hits, name) : 0) + 1)
+
+record("Hammer", hammer[3])
+record("Bull Engulf", bullEngulf[3])
+record("Morning Star", morningStar[3])
+
+rate(string name) =>
+    n = map.contains(seen, name) ? map.get(seen, name) : 0
+    n == 0 ? na : (map.contains(hits, name) ? map.get(hits, name) : 0) / n * 100
+
+var table stats = table.new(position.bottom_right, 2, 4, border_width = 1)
+if barstate.islast
+    table.cell(stats, 0, 0, "Pattern", text_color = color.white, bgcolor = color.gray)
+    table.cell(stats, 1, 0, "Up After 3", text_color = color.white, bgcolor = color.gray)
+    names = array.from("Hammer", "Bull Engulf", "Morning Star")
+    for i = 0 to array.size(names) - 1
+        nm = array.get(names, i)
+        r = rate(nm)
+        table.cell(stats, 0, i + 1, nm, text_color = color.white)
+        table.cell(stats, 1, i + 1, na(r) ? "-" : str.tostring(r, "#") + "%", text_color = r >= 50 ? color.teal : color.red)

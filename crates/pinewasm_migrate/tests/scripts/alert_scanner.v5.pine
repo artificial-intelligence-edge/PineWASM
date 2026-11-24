@@ -1,0 +1,114 @@
+//@version=5
+indicator("Alert Scanner", overlay = true)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+maLen = input.int(50, "Trend Average")
+rsiLen = input.int(14, "RSI Length")
+volLen = input.int(20, "Volume Average")
+gapPct = input.float(1.0, "Gap Percent")
+cooldown = input.int(5, "Bars Between Alerts")
+notifyOnClose = input.bool(true, "Notify Only On Bar Close")
+
+// ---------------------------------------------------------------------------
+// Conditions. The right side of each `or` keeps history, so it is
+// evaluated on every bar even when the left side already decides the result.
+// ---------------------------------------------------------------------------
+ma = ta.sma(close, maLen)
+rsi = ta.rsi(close, rsiLen)
+volAvg = ta.sma(volume, volLen)
+
+trendFlip = ta.cross(close, ma) or ta.cross(close[1], ma[1])
+rsiExtreme = rsi > 80 or rsi < 20 or ta.cross(rsi, 50)
+volumeBurst = volume > volAvg * 2 and ta.rising(volume, 2)
+gapUp = open > high[1] * (1 + gapPct / 100)
+gapDown = open < low[1] * (1 - gapPct / 100)
+gap = gapUp or gapDown
+
+// Cooldown between alerts, tracked in bars.
+var int lastAlertBar = na
+cooledDown = na(lastAlertBar) or bar_index - lastAlertBar >= cooldown
+
+// Count how many of the conditions are active this bar.
+active = 0
+if trendFlip
+    active += 1
+if rsiExtreme
+    active += 1
+if volumeBurst
+    active += 1
+if gap
+    active += 1
+
+// ---------------------------------------------------------------------------
+// Messages. The chart timeframe is included in the text.
+// ---------------------------------------------------------------------------
+prefix = syminfo.ticker + " [" + timeframe.period + "] "
+describe() =>
+    string parts = ""
+    if trendFlip
+        parts += "trend flip, "
+    if rsiExtreme
+        parts += "RSI " + str.tostring(math.round(rsi)) + ", "
+    if volumeBurst
+        parts += "volume burst, "
+    if gap
+        parts += gapUp ? "gap up, " : "gap down, "
+    parts
+
+frequency = notifyOnClose ? alert.freq_once_per_bar_close : alert.freq_once_per_bar
+if active > 0 and cooledDown
+    alert(prefix + describe(), frequency)
+    lastAlertBar := bar_index
+
+// Intraday charts get an extra session reminder.
+if timeframe.isintraday and timeframe.period != "D" and session.isfirstbar
+    alert(prefix + "session open", alert.freq_once_per_bar)
+
+alertcondition(trendFlip, "Trend Flip", "{{ticker}} crossed its average")
+alertcondition(volumeBurst, "Volume Burst", "{{ticker}} volume burst")
+alertcondition(active >= 2, "Confluence", "Two or more scanner conditions")
+
+// ---------------------------------------------------------------------------
+// Visual summary
+// ---------------------------------------------------------------------------
+plot(ma, "Average", color = color.gray, linewidth = 1)
+plotshape(trendFlip, "Trend Flip", shape.xcross, location.abovebar, color.yellow, size = size.tiny)
+plotshape(volumeBurst, "Volume Burst", shape.square, location.belowbar, color.teal, size = size.tiny)
+plotchar(gap, "Gap", "G", location.top, gapUp ? color.teal : color.red)
+bgcolor(active >= 3 ? color.red : active == 2 ? color.yellow : na, transp = 85)
+if active >= 3
+    label.new(bar_index, high, str.tostring(active), style = label.style_label_down, color = color.yellow)
+
+// ---------------------------------------------------------------------------
+// Daily tally of each condition, reset at the start of every session.
+// ---------------------------------------------------------------------------
+newDay = ta.change(time("D")) != 0
+var int flipsToday = 0
+var int burstsToday = 0
+var int gapsToday = 0
+var int extremesToday = 0
+if newDay
+    flipsToday := 0
+    burstsToday := 0
+    gapsToday := 0
+    extremesToday := 0
+flipsToday += trendFlip ? 1 : 0
+burstsToday += volumeBurst ? 1 : 0
+gapsToday += gap ? 1 : 0
+extremesToday += rsiExtreme ? 1 : 0
+
+// A row writer with an optional highlight flag.
+writeRow(table tbl, int row, string name, int count, bool highlight = na) =>
+    table.cell(tbl, 0, row, name, text_color = color.white)
+    table.cell(tbl, 1, row, str.tostring(count), text_color = color.white, bgcolor = highlight ? color.orange : color.new(color.gray, 60))
+
+var table tally = table.new(position.bottom_left, 2, 5, border_width = 1)
+if barstate.islast
+    table.cell(tally, 0, 0, "Today", text_color = color.white, bgcolor = color.gray)
+    table.cell(tally, 1, 0, timeframe.period, text_color = color.white, bgcolor = color.gray)
+    writeRow(tally, 1, "Trend flips", flipsToday, flipsToday > 2)
+    writeRow(tally, 2, "Volume bursts", burstsToday)
+    writeRow(tally, 3, "Gaps", gapsToday, gapsToday > 0)
+    writeRow(tally, 4, "RSI extremes", extremesToday)

@@ -1,0 +1,8 @@
+//@version=6
+indicator("Omitted required argument")
+
+// `b` has no default but follows `a`, which has one. One argument is within
+// the 1-to-2 count, yet it binds `a`, leaving `b` without a value (E0224).
+f(a = 1.0, b) => a + b
+
+plot(f(close))

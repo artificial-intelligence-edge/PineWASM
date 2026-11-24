@@ -1,0 +1,7 @@
+//@version=6
+indicator("Break outside loop")
+
+// `break` is only valid inside a `for` or `while` body; here it sits at the
+// top level, which is E0223.
+break
+plot(close)

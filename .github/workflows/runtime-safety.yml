@@ -1,0 +1,220 @@
+name: Runtime safety
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+# Scheduled and dispatched runs share one group per branch.
+concurrency:
+  group: runtime-safety-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  miri:
+    name: Bounded Miri suite and unsafe inventory
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' || github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.event.repository.id) }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 90
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned stable and safety toolchains
+        run: |
+          stable_toolchain="$(grep -m1 '^channel' rust-toolchain.toml | cut -d'"' -f2)"
+          safety_toolchain="$(grep -m1 '^channel' .github/runtime-safety-toolchain.toml | cut -d'"' -f2)"
+          rustup toolchain install "${stable_toolchain}" --profile minimal
+          rustup toolchain install "${safety_toolchain}" \
+            --profile minimal --component miri --component rust-src
+          rustup default "${stable_toolchain}"
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record stable toolchain identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Record actual safety parent and Cargo child tools
+        id: toolchain_safety
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open(".github/runtime-safety-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-safety.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record safety toolchain identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_safety.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-safety.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A hung restore can use up the five-minute job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The toolchain installer owns Cargo executables; never restore over them.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          shared-key: runtime-safety-miri-${{ hashFiles('rust-toolchain.toml', '.github/runtime-safety-toolchain.toml') }}
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Verify unsafe inventory and run bounded Miri suite
+        env:
+          CARGO_HTTP_TIMEOUT: "120"
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+        run: |
+          cargo run --locked -p pinewasm_xtask -- aot-unsafe-inventory
+          cargo run --locked -p pinewasm_xtask -- runtime-safety-miri
+
+  address-sanitizer:
+    name: Native AddressSanitizer runtime paths
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' || github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.event.repository.id) }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 60
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned stable and safety toolchains
+        run: |
+          stable_toolchain="$(grep -m1 '^channel' rust-toolchain.toml | cut -d'"' -f2)"
+          safety_toolchain="$(grep -m1 '^channel' .github/runtime-safety-toolchain.toml | cut -d'"' -f2)"
+          rustup toolchain install "${stable_toolchain}" --profile minimal
+          rustup toolchain install "${safety_toolchain}" \
+            --profile minimal --component rust-src
+          rustup default "${stable_toolchain}"
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record stable toolchain identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Record actual safety parent and Cargo child tools
+        id: toolchain_safety
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open(".github/runtime-safety-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-safety.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record safety toolchain identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_safety.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-safety.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A hung restore can use up the five-minute job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The toolchain installer owns Cargo executables; never restore over them.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          shared-key: runtime-safety-address-${{ hashFiles('rust-toolchain.toml', '.github/runtime-safety-toolchain.toml') }}
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Run native runtime paths under AddressSanitizer
+        env:
+          CARGO_HTTP_TIMEOUT: "120"
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+        run: cargo run --locked -p pinewasm_xtask -- runtime-safety-asan

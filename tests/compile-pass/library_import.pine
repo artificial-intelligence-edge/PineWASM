@@ -1,0 +1,11 @@
+//@version=6
+library("MathLib")
+
+// An exported function is callable from an importer as `alias.dbl(...)`.
+export dbl(float x) =>
+    x * 2
+
+// A private (non-exported) helper: usable inside the library, but not
+// through an import alias.
+half(x) =>
+    x / 2

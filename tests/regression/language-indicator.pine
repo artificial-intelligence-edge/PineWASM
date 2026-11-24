@@ -1,0 +1,3021 @@
+//@version=6
+// ===========================================================================
+// PineWASM supported-language regression fixture: indicator() declaration.
+//
+// One indicator() script exercising a broad supported non-strategy surface:
+// language core, built-in series, ta.*, math.*, str.*, color.*, arrays,
+// matrices, maps, drawings, request.*, context and constant namespaces.
+//
+// Maintained by hand. Every feature exercised here is
+// folded into an accumulator or a check counter so a regression shows up in
+// the plotted output rather than passing silently. A change to a feature must
+// update the corresponding section here and run the command below.
+//
+// Re-verify on the local synthetic feed from the repository root:
+//   cargo run -p pinewasm_compiler --bin pinewasm-check --locked -- --run tests/regression/*.pine
+// Expected: one JSON result per file with `"ok":true`.
+// ===========================================================================
+// "lang-core" slice of the PineWASM language regression script.
+// Covers declarations, types, operators, control flow, functions, na handling, and series and history.
+//
+// Directives & declarations: `//@version=6` and the indicator() call below.
+indicator("PineWASM Language Regression", overlay = true, shorttitle = "PW-LANG", format = format.price, precision = 4, scale = scale.left, max_bars_back = 700, timeframe = "", timeframe_gaps = false, explicit_plot_zorder = false, max_lines_count = 100, max_labels_count = 20, max_boxes_count = 30, max_polylines_count = 40, calc_bars_count = 0, dynamic_requests = true, behind_chart = false)
+
+// doc-comment annotations: //@description, //@function, //@param,
+// //@returns, //@type, //@field are recognized and skipped like comments.
+//@description PineWASM language-regression chunk for the language core
+//@type a documented type
+//@field x the x field
+
+// ---------------------------------------------------------------------------
+// Accumulators. Every feature below folds into one of these two so a changed
+// return value shows up in the plotted output.
+// ---------------------------------------------------------------------------
+var float lang_core_acc = 0.0
+var float lang_core_checks = 0.0
+
+// single-line function declaration; default parameter values.
+lang_core_chk(cond, weight = 1.0) => cond ? weight : 0.0
+lang_core_near(a, b) => math.abs(a - b) < 0.000000001
+
+// multi-line function declaration (last statement is the return value).
+lang_core_span(src) =>
+    hi = src + 1.0
+    lo = src - 1.0
+    hi - lo
+
+// multi-line function returning a tuple (feeds tuple destructuring).
+lang_core_bounds(src, pad = 1.0) =>
+    hi = src + pad
+    lo = src - pad
+    [hi, lo]
+
+// ---------------------------------------------------------------------------
+// Types: scalar value types.
+// ---------------------------------------------------------------------------
+// `float` (float-form literals + OHLCV builtins), `int` (int-form
+// literals), `bool`, `string`, `color` (#RRGGBB / #RRGGBBAA and
+// the color.* named constants).
+lang_core_f = 1.5
+lang_core_i = 42
+lang_core_b = true
+lang_core_s = "lang_core"
+lang_core_c1 = #FF8800
+lang_core_c2 = #FF880080
+lang_core_c3 = color.red
+
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_f, 1.5))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_i == 42)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_b)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_s == "lang_core")
+// color equality: transparency is part of the value, so #FF8800 != #FF880080.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_c1 == #FF8800)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_c1 != lang_core_c2)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_c3 != lang_core_c1)
+// color as a ternary branch value.
+lang_core_c4 = lang_core_b ? lang_core_c1 : lang_core_c3
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_c4 == lang_core_c1)
+
+// string escapes (\n \t \" \\ are the supported set).
+lang_core_esc = "a\nb\tc\"d\\e"
+lang_core_checks := lang_core_checks + lang_core_chk(str.length(lang_core_esc) == 9)
+
+// ---------------------------------------------------------------------------
+// Types: collections (array<T>, matrix<T>, map<K, V>) with reference
+// semantics. Also collection method-call syntax `id.method(args)`.
+// ---------------------------------------------------------------------------
+var lang_core_arr = array.new<float>()
+if array.size(lang_core_arr) == 0
+    array.push(lang_core_arr, 1.0)
+    array.push(lang_core_arr, 2.0)
+    array.push(lang_core_arr, 3.0)
+// aliasing: assignment copies the handle, so mutations are shared.
+lang_core_arr_alias = lang_core_arr
+lang_core_checks := lang_core_checks + lang_core_chk(array.size(lang_core_arr_alias) == 3)
+// method-call form is byte-identical to the namespace form.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_arr.get(1) == array.get(lang_core_arr, 1))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_arr.get(2), 3.0))
+
+// array<int> is a distinct type from array<float>.
+lang_core_iarr = array.from(1, 2, 3)
+lang_core_checks := lang_core_checks + lang_core_chk(array.size(lang_core_iarr) == 3)
+
+lang_core_mx = matrix.new<float>(2, 2, 0.0)
+matrix.set(lang_core_mx, 0, 0, 5.0)
+lang_core_mx.set(1, 1, 7.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_mx.get(0, 0), 5.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(matrix.get(lang_core_mx, 1, 1), 7.0))
+
+lang_core_map = map.new<string, float>()
+lang_core_prevA = map.put(lang_core_map, "a", 1.0)
+lang_core_prevB = lang_core_map.put("b", 2.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_map.get("b"), 2.0))
+lang_core_checks := lang_core_checks + lang_core_chk(map.size(lang_core_map) == 2)
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_prevA) and na(lang_core_prevB))
+
+// ---------------------------------------------------------------------------
+// User-defined types (`type`, fields with defaults, .new(), .copy(),
+// nested + self-referential fields); `method` declarations, dispatch by
+// first-argument type, method chaining.
+// ---------------------------------------------------------------------------
+type lang_core_Point
+    float x = 0.0
+    float y = 0.0
+
+type lang_core_Inner
+    float w = 0.0
+
+type lang_core_Outer
+    lang_core_Inner child
+    float k = 0.0
+
+type lang_core_Node
+    int val = 0
+    lang_core_Node next
+
+// A pure method.
+method lang_core_len(lang_core_Point this) =>
+    math.sqrt(this.x * this.x + this.y * this.y)
+
+// A mutating method returning `this` so calls chain.
+method lang_core_move(lang_core_Point this, dx, dy) =>
+    this.x := this.x + dx
+    this.y := this.y + dy
+    this
+
+// dispatch by first-argument type: same method name on another type.
+method lang_core_len(lang_core_Inner this) =>
+    this.w
+
+// Defaults + named-argument construction (an omitted field takes its default).
+lang_core_origin = lang_core_Point.new()
+lang_core_p345 = lang_core_Point.new(x = 3.0, y = 4.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_origin.x, 0.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_p345.lang_core_len(), 5.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_Inner.new(9.0).lang_core_len(), 9.0))
+
+// Reference semantics: alias shares mutations, copy() is independent.
+lang_core_pa = lang_core_Point.new(1.0, 2.0)
+lang_core_pb = lang_core_pa
+lang_core_pc = lang_core_Point.copy(lang_core_pa)
+lang_core_pb.x := 99.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_pa.x, 99.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_pc.x, 1.0))
+
+// Chaining.
+lang_core_pd = lang_core_Point.new(1.0, 2.0)
+lang_core_pd2 = lang_core_pd.lang_core_move(1.0, 1.0).lang_core_move(1.0, 1.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_pd2.x + lang_core_pd2.y, 7.0))
+
+// Nested UDT read through two levels; self-referential linked-list walk.
+lang_core_o = lang_core_Outer.new(lang_core_Inner.new(7.0), 3.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_o.child.w + lang_core_o.k, 10.0))
+lang_core_n3 = lang_core_Node.new(3)
+lang_core_n2 = lang_core_Node.new(2, lang_core_n3)
+lang_core_n1 = lang_core_Node.new(1, lang_core_n2)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_n1.val + lang_core_n1.next.val + lang_core_n1.next.next.val == 6)
+
+// Collections of user-defined types keep reference semantics through the
+// collection.
+var lang_core_objs = array.new<lang_core_Point>()
+if array.size(lang_core_objs) == 0
+    array.push(lang_core_objs, lang_core_Point.new(3.0, 4.0))
+lang_core_first = array.get(lang_core_objs, 0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_first.lang_core_len(), 5.0))
+
+var lang_core_omap = map.new<string, lang_core_Point>()
+if map.size(lang_core_omap) == 0
+    lang_core_prevPt = map.put(lang_core_omap, "a", lang_core_Point.new(6.0, 8.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(map.get(lang_core_omap, "a").lang_core_len(), 10.0))
+
+// methods may be declared on collection receivers.
+method lang_core_total(array<float> this) =>
+    float t = 0.0
+    for v in this
+        t := t + v
+    t
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_arr.lang_core_total(), 6.0))
+
+// ---------------------------------------------------------------------------
+// Enum types: members, nominal equality, switch, var persistence.
+// ---------------------------------------------------------------------------
+enum lang_core_Trend
+    rising = "Rising"
+    falling = "Falling"
+    flat
+
+lang_core_dir = close > close[1] ? lang_core_Trend.rising : (close < close[1] ? lang_core_Trend.falling : lang_core_Trend.flat)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_Trend.rising != lang_core_Trend.falling)
+var lang_core_lastDir = lang_core_Trend.flat
+if lang_core_dir != lang_core_Trend.flat
+    lang_core_lastDir := lang_core_dir
+
+// ---------------------------------------------------------------------------
+// Drawing object TYPES as variable annotations: line, label, box, table,
+// linefill, polyline, chart.point. (The objects themselves are created below.)
+// ---------------------------------------------------------------------------
+line lang_core_ln = na
+label lang_core_lb = na
+table lang_core_tb = na
+linefill lang_core_lf = na
+polyline lang_core_pl = na
+chart.point lang_core_cp = chart.point.from_index(0, 1.0)
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_ln) and na(lang_core_lb) and na(lang_core_tb))
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_lf) and na(lang_core_pl) and not na(lang_core_cp))
+
+// A `box`-typed declaration initialized from the constructor, guarded so the
+// per-kind object cap is never exercised over the full history.
+var box lang_core_bx = na
+if barstate.islast
+    lang_core_bx := box.new(bar_index - 5, high, bar_index, low)
+
+// ---------------------------------------------------------------------------
+// Type qualifiers: const, input, simple, series, and the join lattice
+// (const < input < simple < series).
+// ---------------------------------------------------------------------------
+lang_core_constLen = 5                            // const int
+lang_core_inputLen = input.int(5, "lang_core_len") // input int
+lang_core_inputSrc = input.source(close, "lang_core_src") // series float (not input)
+lang_core_simpleX = lang_core_p345.x              // series float (UDT field read)
+lang_core_seriesX = close                         // series float
+lang_core_joined = lang_core_constLen + lang_core_inputLen        // const + input = input
+lang_core_joined2 = lang_core_constLen + bar_index                // const + series = series
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_joined == 10)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_joined2 == bar_index + 5)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_simpleX, 3.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_seriesX, lang_core_inputSrc))
+
+// ---------------------------------------------------------------------------
+// Declarations & mutability: `=`, `:=`, `var`, `varip`, explicit scalar
+// annotations, na-typed declarations, tuple destructuring, block scoping.
+// ---------------------------------------------------------------------------
+// `var` initialize-once + carry-forward; a plain `=` re-runs every bar.
+var int lang_core_barCount = 0
+lang_core_barCount := lang_core_barCount + 1
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_barCount == bar_index + 1)
+
+// `varip` lowers like `var` but skips realtime-tick rollback; on history it is
+// identical to `var`, which is what the deterministic check pins.
+varip int lang_core_tickCount = 0
+lang_core_tickCount := lang_core_tickCount + 1
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_tickCount == lang_core_barCount)
+
+// `var` inside an `if` branch initializes on the first bar the branch runs.
+if bar_index > 3
+    var int lang_core_lateInit = 100
+    lang_core_lateInit := lang_core_lateInit + 1
+
+// Explicit scalar annotations; the float annotation coerces an int initializer.
+int lang_core_ai = 7
+float lang_core_af = 7
+bool lang_core_ab = false
+string lang_core_as = "s"
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_af, 7.0) and lang_core_ai == 7 and not lang_core_ab and lang_core_as == "s")
+
+// na-typed declaration: the annotation supplies the type the bare `na` adopts,
+// and the declared type governs later `:=`.
+float lang_core_naDecl = na
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_naDecl))
+lang_core_naDecl := 3.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_naDecl, 3.0))
+var float lang_core_varNa = na
+lang_core_checks := lang_core_checks + lang_core_chk(bar_index > 0 ? na(lang_core_varNa) : true)
+
+// `:=` int → float widening.
+float lang_core_widen = 1.0
+lang_core_widen := 2
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_widen, 2.0))
+
+// Tuple destructuring, from a builtin tuple call and from a user function;
+// history works on a destructured target.
+[lang_core_macd, lang_core_signal, lang_core_hist] = ta.macd(close, 12, 26, 9)
+[lang_core_bbM, lang_core_bbU, lang_core_bbL] = ta.bb(close, 20, 2.0)
+[lang_core_hi, lang_core_lo] = lang_core_bounds(close, 2.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_hi - lang_core_lo, 4.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_macd) - nz(lang_core_signal), nz(lang_core_hist)))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_bbU - lang_core_bbL), nz(lang_core_bbU) - nz(lang_core_bbL)))
+
+// Block scoping & shadowing: a branch-local shadow does not escape.
+lang_core_shadow = 1.0
+if bar_index >= 0
+    lang_core_shadow = 2.0
+    lang_core_acc := lang_core_acc + lang_core_shadow * 0.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_shadow, 1.0))
+
+// ---------------------------------------------------------------------------
+// Operators.
+// ---------------------------------------------------------------------------
+// A run-time zero the const folder cannot see, for the by-zero rows.
+lang_core_zi = bar_index - bar_index
+
+// `+ - * /` int flavor: int OP int is int, except `/`, which keeps its
+// fraction even for two ints (`int()` restores truncation toward zero).
+lang_core_checks := lang_core_checks + lang_core_chk(7 / 2 == 3.5)
+lang_core_checks := lang_core_checks + lang_core_chk(int(-7 / 2) == -3)
+lang_core_checks := lang_core_checks + lang_core_chk(2 + 3 * 4 - 1 == 13)
+// mixed int/float promotes the int side.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(7 / 2.0, 3.5))
+// division by zero is na.
+lang_core_checks := lang_core_checks + lang_core_chk(na(1 / lang_core_zi))
+
+// `%` modulo: same precedence as `*`/`/`, sign of the dividend, `% 0` is na.
+lang_core_checks := lang_core_checks + lang_core_chk(7 % 3 == 1)
+lang_core_checks := lang_core_checks + lang_core_chk(-7 % 3 == -1)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(7.5 % 2.0, 1.5))
+lang_core_checks := lang_core_checks + lang_core_chk(na(7 % lang_core_zi))
+
+// `== != < <= > >=`, int-int exact, mixed promotes, bool/string equality.
+lang_core_checks := lang_core_checks + lang_core_chk(1 < 2 and 2 <= 2 and 3 > 2 and 3 >= 3)
+lang_core_checks := lang_core_checks + lang_core_chk(1 == 1.0 and 1 != 2.0)
+lang_core_checks := lang_core_checks + lang_core_chk(true != false and "a" == "a" and "a" != "b")
+
+// `and` / `or` / `not`, including short-circuit of a faulting rhs.
+lang_core_checks := lang_core_checks + lang_core_chk((true or array.get(lang_core_arr, 99) > 0.0))
+lang_core_checks := lang_core_checks + lang_core_chk(not (false and array.get(lang_core_arr, 99) > 0.0))
+lang_core_checks := lang_core_checks + lang_core_chk(not false and (true or false))
+
+// `?:` ternary: lowest precedence, right-associative.
+lang_core_tern = 1 > 2 ? 10.0 : 2 > 1 ? 20.0 : 30.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_tern, 20.0))
+// A false boolean condition selects the else branch.
+bool lang_core_naCond = false
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_naCond ? 1.0 : 2.0, 2.0))
+// an `na` branch adopts its sibling's type.
+lang_core_checks := lang_core_checks + lang_core_chk(na(true ? na : close))
+
+// Unary `-` and unary `+` (identity, folds away).
+lang_core_checks := lang_core_checks + lang_core_chk(-lang_core_i == -42)
+lang_core_checks := lang_core_checks + lang_core_chk(+5 == 5)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(+close, close))
+
+// `+` string concatenation: series-capable, na-propagating.
+lang_core_cat = "a" + "b" + "c"
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_cat == "abc")
+string lang_core_naStr = na
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_naStr + "x"))
+
+// Parenthesized grouping.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near((high + low) / 2, hl2))
+
+// ---------------------------------------------------------------------------
+// Control flow.
+// ---------------------------------------------------------------------------
+// if / else if / else statement.
+float lang_core_branch = 0.0
+if close > open
+    lang_core_branch := 1.0
+else if close < open
+    lang_core_branch := -1.0
+else
+    lang_core_branch := 0.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_branch == (close > open ? 1.0 : close < open ? -1.0 : 0.0))
+
+// if as an expression (value-producing, lazy blocks, multi-statement branch).
+lang_core_ifExpr = if 1 < 2
+    t = 3.0
+    t * 2.0
+else
+    0.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_ifExpr, 6.0))
+// missing else yields na of the then-branch type.
+lang_core_ifNoElse = if false
+    1.0
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_ifNoElse))
+// nested if-expression.
+lang_core_ifNest = if 1 < 2
+    if 3 < 4
+        7.0
+    else
+        8.0
+else
+    9.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_ifNest, 7.0))
+
+// switch STATEMENT (arms are statement blocks, subject evaluated once).
+float lang_core_swStmt = 0.0
+switch lang_core_constLen
+    5 =>
+        lang_core_swStmt := 50.0
+    6 =>
+        lang_core_swStmt := 60.0
+    =>
+        lang_core_swStmt := -1.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_swStmt, 50.0))
+
+// switch EXPRESSION with a subject + default.
+lang_core_swExpr = switch lang_core_constLen
+    4 => 1.0
+    5 => 2.0
+    => 3.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_swExpr, 2.0))
+// unmatched switch (no default) yields na.
+lang_core_swNone = switch lang_core_constLen
+    99 => 1.0
+    98 => 2.0
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_swNone))
+// subjectless switch: bool case conditions.
+lang_core_swBool = switch
+    lang_core_constLen > 10 => 1.0
+    lang_core_constLen > 3 => 2.0
+    => 3.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_swBool, 2.0))
+// switch over an enum subject.
+lang_core_swEnum = switch lang_core_dir
+    lang_core_Trend.rising => 2.0
+    lang_core_Trend.falling => -2.0
+    lang_core_Trend.flat => 0.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_swEnum, lang_core_dir == lang_core_Trend.rising ? 2.0 : lang_core_dir == lang_core_Trend.falling ? -2.0 : 0.0))
+
+// `for` loop: start and step captured at entry, dynamic end-bound evaluation,
+// implicit +1 step, explicit `by` step, descending steps, and float bounds.
+float lang_core_tri = 0.0
+for i = 1 to 10
+    lang_core_tri := lang_core_tri + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_tri, 55.0))
+
+float lang_core_byStep = 0.0
+for i = 0 to 10 by 2
+    lang_core_byStep := lang_core_byStep + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_byStep, 30.0))
+
+float lang_core_down = 0.0
+for i = 5 to 1
+    lang_core_down := lang_core_down + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_down, 15.0))
+
+float lang_core_downStep = 0.0
+for i = 10 to 0 by 5
+    lang_core_downStep := lang_core_downStep + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_downStep, 15.0))
+
+float lang_core_floatLoop = 0.0
+for x = 0.0 to 2.0 by 0.5
+    lang_core_floatLoop := lang_core_floatLoop + x
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_floatLoop, 5.0))
+
+// The end bound is re-evaluated before every iteration; changing it in the
+// body extends this loop through i == 100.
+int lang_core_bound = 3
+float lang_core_capt = 0.0
+for i = 1 to lang_core_bound
+    lang_core_bound := 100
+    lang_core_capt := lang_core_capt + 1.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_capt, 100.0))
+
+// `for...in`: element form, [index, element] form, empty array, nesting.
+float lang_core_forIn = 0.0
+for v in lang_core_arr
+    lang_core_forIn := lang_core_forIn + v
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_forIn, 6.0))
+
+float lang_core_forInIdx = 0.0
+for [idx, v] in lang_core_arr
+    lang_core_forInIdx := lang_core_forInIdx + idx * v
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_forInIdx, 8.0))
+
+var lang_core_empty = array.new<float>()
+float lang_core_emptyIters = 0.0
+for v in lang_core_empty
+    lang_core_emptyIters := lang_core_emptyIters + 1.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_emptyIters, 0.0))
+
+float lang_core_nested = 0.0
+for a in lang_core_arr
+    for b in lang_core_arr
+        lang_core_nested := lang_core_nested + a * b
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_nested, 36.0))
+
+// `while` loop with reassignment.
+int lang_core_wi = 0
+float lang_core_wsum = 0.0
+while lang_core_wi < 4
+    lang_core_wsum := lang_core_wsum + lang_core_wi
+    lang_core_wi := lang_core_wi + 1
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_wsum, 6.0))
+
+// `break` exits the innermost loop only.
+float lang_core_brk = 0.0
+for i = 1 to 10
+    if i > 3
+        break
+    lang_core_brk := lang_core_brk + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_brk, 6.0))
+
+float lang_core_brkInner = 0.0
+for a = 1 to 2
+    for b = 1 to 10
+        if b > 2
+            break
+        lang_core_brkInner := lang_core_brkInner + 1.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_brkInner, 4.0))
+
+// `continue` skips to the next iteration.
+float lang_core_cont = 0.0
+for i = 1 to 5
+    if i % 2 == 0
+        continue
+    lang_core_cont := lang_core_cont + i
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_cont, 9.0))
+
+// break/continue inside a for...in loop.
+float lang_core_forInBrk = 0.0
+for v in lang_core_arr
+    if v > 2.0
+        break
+    if v < 1.5
+        continue
+    lang_core_forInBrk := lang_core_forInBrk + v
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_forInBrk, 2.0))
+
+// ---------------------------------------------------------------------------
+// User-defined functions: per-call-site instantiation,
+// named arguments on both user and builtin calls.
+// ---------------------------------------------------------------------------
+lang_core_counter(step) =>
+    var int n = 0
+    n := n + step
+    n
+// two call sites keep independent `var` state.
+lang_core_cA = lang_core_counter(1)
+lang_core_cB = lang_core_counter(10)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_cA == bar_index + 1)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_cB == (bar_index + 1) * 10)
+
+// named arguments on a user function, in any order, mixed with positionals.
+[lang_core_nb1, lang_core_nb2] = lang_core_bounds(pad = 3.0, src = close)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_nb1 - lang_core_nb2, 6.0))
+lang_core_named = lang_core_chk(cond = true, weight = 4.0)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_named, 4.0))
+// default parameter used when the trailing argument is omitted.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_chk(true), 1.0))
+// named arguments on a builtin call.
+lang_core_namedTa = ta.sma(source = close, length = 5)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_namedTa), nz(ta.sma(close, 5))))
+// arguments are evaluated once per call site.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_span(close), 2.0))
+
+// ---------------------------------------------------------------------------
+// NA semantics.
+// ---------------------------------------------------------------------------
+// the `na` built-in literal adopts its context's type.
+float lang_core_naLit = na
+// Missing numeric values propagate through arithmetic.
+// A comparison involving missing data does not select the true branch.
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_naLit + 1.0))
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_naLit * close))
+lang_core_checks := lang_core_checks + lang_core_chk((lang_core_naLit > 1.0) ? false : true)
+
+// A false condition selects the else branch.
+float lang_core_naIf = 0.0
+if lang_core_naCond
+    lang_core_naIf := 1.0
+else
+    lang_core_naIf := 2.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(lang_core_naIf, 2.0))
+
+// Booleans are two-valued.
+lang_core_checks := lang_core_checks + lang_core_chk((lang_core_naCond or true) == true)
+lang_core_checks := lang_core_checks + lang_core_chk(not (lang_core_naCond and true))
+lang_core_checks := lang_core_checks + lang_core_chk((lang_core_naCond and false) == false)
+lang_core_checks := lang_core_checks + lang_core_chk(not (lang_core_naCond or false))
+
+// `na(x)` accepts nullable values, not booleans.
+lang_core_checks := lang_core_checks + lang_core_chk(na(lang_core_naLit) and not na(1.0))
+lang_core_checks := lang_core_checks + lang_core_chk(not na("s") and na("") and not na(lang_core_c1))
+// reads before bar 0 are na.
+lang_core_checks := lang_core_checks + lang_core_chk(bar_index == 0 ? na(close[1]) : not na(close[1]))
+
+// `nz(x[, replacement])`: omitted replacement is the typed zero.
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_naLit), 0.0))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_naLit, 5.0), 5.0))
+lang_core_checks := lang_core_checks + lang_core_chk(nz(na, 1) == 1)
+int lang_core_naInt = na
+lang_core_checks := lang_core_checks + lang_core_chk(nz(lang_core_naInt) == 0 and nz(lang_core_naInt, 3) == 3)
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(1.5, 9.0), 1.5))
+
+// `fixnan(x)`: carries the last non-na value; sources are coerced to float.
+lang_core_fx = fixnan(bar_index % 2 == 0 ? close : na)
+lang_core_checks := lang_core_checks + lang_core_chk(bar_index > 0 ? not na(lang_core_fx) : true)
+
+// ---------------------------------------------------------------------------
+// Series & history.
+// ---------------------------------------------------------------------------
+// `x[n]` with a non-negative integer literal, on builtins and user variables.
+lang_core_h1 = close[1]
+lang_core_h3 = close[3]
+lang_core_userSeries = close * 2.0
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_userSeries[2]), nz(close[2]) * 2.0))
+// a literal offset at the raised max_bars_back ceiling still compiles.
+lang_core_deep = close[550]
+
+// `x[n]` with an int-expression / series offset, resolved at run time.
+int lang_core_off = 2
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(close[lang_core_off]), nz(close[2])))
+lang_core_dynOff = bar_index > 3 ? 3 : 0
+lang_core_checks := lang_core_checks + lang_core_chk(not na(close[lang_core_dynOff]))
+// an offset beyond available history, or an na offset, reads na.
+int lang_core_naOff = na
+lang_core_checks := lang_core_checks + lang_core_chk(na(close[lang_core_naOff]))
+lang_core_checks := lang_core_checks + lang_core_chk(bar_index < 3 ? na(close[math.min(bar_index + 1, 3)]) : true)
+
+// `(expr)[n]` history on a compound expression: history composes, so
+// `close[1][2]` equals `close[3]`.
+lang_core_comp = (high + low)[1]
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_comp), nz(high[1] + low[1])))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(close[1][2]), nz(lang_core_h3)))
+lang_core_checks := lang_core_checks + lang_core_chk(lang_core_near(nz(lang_core_h1), nz(close[1])))
+
+// `barstate.*`: all seven predicates as series bool.
+lang_core_bs = (barstate.isfirst ? 1.0 : 0.0) + (barstate.islast ? 2.0 : 0.0) + (barstate.ishistory ? 4.0 : 0.0) + (barstate.isrealtime ? 8.0 : 0.0) + (barstate.isnew ? 16.0 : 0.0) + (barstate.isconfirmed ? 32.0 : 0.0) + (barstate.islastconfirmedhistory ? 64.0 : 0.0)
+lang_core_checks := lang_core_checks + lang_core_chk(barstate.isfirst == (bar_index == 0))
+lang_core_checks := lang_core_checks + lang_core_chk(barstate.ishistory or barstate.isrealtime)
+
+// `max_bars_back()` function form (raises the history-buffer ceiling for the
+// given series). It is void, so the call statement is bare.
+max_bars_back(lang_core_userSeries, 300)
+
+// ---------------------------------------------------------------------------
+// Fold everything into one observable accumulator and plot it.
+// ---------------------------------------------------------------------------
+lang_core_acc := lang_core_acc + lang_core_checks + nz(lang_core_deep) * 0.0 + lang_core_bs * 0.0 + nz(lang_core_hist) * 0.0 + nz(lang_core_bbM) * 0.0 + lang_core_tern + lang_core_swExpr + lang_core_forIn + nz(lang_core_fx) + (lang_core_lastDir == lang_core_Trend.rising ? 1.0 : 0.0)
+
+plot(lang_core_checks, title = "lang_core_checks")
+plot(series = lang_core_acc, title = "lang_core_acc")
+
+
+// ===========================================================================
+// Market core
+// ===========================================================================
+
+// ===========================================================================
+// Built-in market series and core variables, core script and display
+// functions, and time and date.
+// Accumulators: market_core_acc (values), market_core_checks (deterministic
+// value assertions folded into a counter). Both are plotted at the end.
+// ===========================================================================
+
+type CounterCell
+    int value
+
+var float market_core_acc = 0.0
+var CounterCell market_core_checks = CounterCell.new(0)
+
+market_core_check(bool ok) =>
+    market_core_checks.value := market_core_checks.value + (ok ? 1 : 0)
+    ok ? 1.0 : 0.0
+
+// ---------------------------------------------------------------------------
+// Built-in market series: open, high, low, close, volume, bar_index
+// ---------------------------------------------------------------------------
+market_core_o = open
+market_core_h = high
+market_core_l = low
+market_core_c = close
+market_core_v = volume
+market_core_bi = bar_index
+
+market_core_acc := market_core_acc + market_core_o + market_core_h + market_core_l + market_core_c
+// `volume` is na on this feed, so it is folded through nz() to keep the
+// accumulator finite while still reading the series each bar.
+market_core_acc := market_core_acc + nz(market_core_v, 0.0) * 0.0 + nz(market_core_c[1], 0.0) - nz(market_core_o[2], 0.0)
+
+// bar_index is `series int`: exact int arithmetic / modulo.
+market_core_acc := market_core_acc + market_core_check(market_core_bi % 2 == 0 or market_core_bi % 2 == 1)
+market_core_acc := market_core_acc + market_core_check(market_core_bi >= 0)
+market_core_acc := market_core_acc + market_core_check(market_core_h >= market_core_l)
+
+// ---------------------------------------------------------------------------
+// Derived series: hl2, hlc3, hlcc4, ohlc4 (identities checked below)
+// ---------------------------------------------------------------------------
+market_core_hl2 = hl2
+market_core_hlc3 = hlc3
+market_core_hlcc4 = hlcc4
+market_core_ohlc4 = ohlc4
+
+market_core_acc := market_core_acc + market_core_check(market_core_hl2 == (high + low) / 2)
+market_core_acc := market_core_acc + market_core_check(market_core_hlc3 == (high + low + close) / 3)
+market_core_acc := market_core_acc + market_core_check(market_core_hlcc4 == (high + low + close + close) / 4)
+market_core_acc := market_core_acc + market_core_check(market_core_ohlc4 == (open + high + low + close) / 4)
+market_core_acc := market_core_acc + market_core_hl2 + market_core_hlc3 + market_core_hlcc4 + market_core_ohlc4
+
+// ---------------------------------------------------------------------------
+// last_bar_index, last_bar_time, ask, bid, na (variable/keyword)
+// ---------------------------------------------------------------------------
+market_core_lbi = last_bar_index
+market_core_lbt = last_bar_time
+market_core_acc := market_core_acc + market_core_check(market_core_lbi >= market_core_bi)
+market_core_acc := market_core_acc + market_core_check(market_core_lbt > 0)
+
+// ask/bid are na by default in the headless VM (no host tick data supplied).
+market_core_ask = ask
+market_core_bid = bid
+market_core_acc := market_core_acc + market_core_check(na(market_core_ask))
+market_core_acc := market_core_acc + market_core_check(na(market_core_bid))
+market_core_acc := market_core_acc + nz(market_core_ask, 0.0) + nz(market_core_bid, 0.0)
+
+// `na` variable/keyword: context-typed literal, na-propagating arithmetic.
+float market_core_nafloat = na
+market_core_acc := market_core_acc + market_core_check(na(market_core_nafloat))
+market_core_acc := market_core_acc + market_core_check(na(market_core_nafloat + 1.0))
+market_core_acc := market_core_acc + nz(market_core_nafloat, 0.0)
+
+// ---------------------------------------------------------------------------
+// Time & date: time, time_close, timenow, time_tradingday (variables)
+// ---------------------------------------------------------------------------
+market_core_t = time
+market_core_tc = time_close
+market_core_tn = timenow
+market_core_ttd = time_tradingday
+
+market_core_acc := market_core_acc + market_core_check(market_core_t > 0)
+// time_close == time + timeframe.in_seconds * 1000.
+market_core_acc := market_core_acc + market_core_check(market_core_tc == market_core_t + timeframe.in_seconds(timeframe.period) * 1000)
+// timenow is deterministic here: the last bar's CLOSE time on every bar.
+market_core_acc := market_core_acc + market_core_check(market_core_tn >= market_core_tc)
+market_core_acc := market_core_acc + market_core_check(market_core_ttd > 0)
+// tradingday fallback encodes the exchange-calendar date at 00:00 UTC.
+market_core_acc := market_core_acc + market_core_check(market_core_ttd % 86400000 == 0)
+
+// time()/time_close() function forms, including the optional session,
+// timezone, bars_back and timeframe_bars_back arguments.
+market_core_td = time("1D")
+market_core_tw = time("1W")
+market_core_tsess = time("1D", "0930-1600")
+market_core_ttz = time("1D", "0930-1600", "UTC-5")
+market_core_tbb = time("1D", "0930-1600", "UTC-5", 1)
+market_core_ttfbb = time("1D", "0930-1600", "UTC-5", 0, 1)
+market_core_tcd = time_close("1D")
+market_core_tcw = time_close("1W", "0930-1600")
+market_core_tctz = time_close("1D", "0930-1600", "UTC-5")
+market_core_tcbb = time_close("1D", "0930-1600", "UTC-5", 1, 0)
+// An invalid runtime session spec returns na.
+market_core_tbad = time("1D", "not-a-session")
+market_core_acc := market_core_acc + market_core_check(na(market_core_tbad))
+market_core_acc := market_core_acc + market_core_check(nz(market_core_tcd, 0) >= nz(market_core_td, 0))
+market_core_acc := market_core_acc + nz(market_core_td, 0) * 0.0 + nz(market_core_tw, 0) * 0.0
+market_core_acc := market_core_acc + nz(market_core_tsess, 0) * 0.0 + nz(market_core_ttz, 0) * 0.0
+market_core_acc := market_core_acc + nz(market_core_tbb, 0) * 0.0 + nz(market_core_ttfbb, 0) * 0.0
+market_core_acc := market_core_acc + nz(market_core_tcw, 0) * 0.0 + nz(market_core_tctz, 0) * 0.0 + nz(market_core_tcbb, 0) * 0.0
+
+// ---------------------------------------------------------------------------
+// timestamp(): all three forms, with the expected value checked below.
+// ---------------------------------------------------------------------------
+market_core_ts_num = timestamp(2021, 6, 15)
+market_core_ts_hms = timestamp(2021, 6, 15, 14, 30, 15)
+market_core_ts_tz = timestamp("UTC-5", 2021, 6, 15, 14, 30, 15)
+market_core_ts_str = timestamp("27 Dec 2024 09:30 -0500")
+// Expected epoch-millisecond value.
+market_core_acc := market_core_acc + market_core_check(market_core_ts_str == 1735309800000)
+// The fixed-offset overload shifts the wall clock by exactly +5h of epoch ms.
+market_core_acc := market_core_acc + market_core_check(market_core_ts_tz == market_core_ts_hms + 5 * 3600000)
+market_core_acc := market_core_acc + market_core_check(market_core_ts_hms == market_core_ts_num + (14 * 3600 + 30 * 60 + 15) * 1000)
+// An na field yields na.
+market_core_acc := market_core_acc + market_core_check(na(timestamp(2021, 6, int(na))))
+
+// ---------------------------------------------------------------------------
+// Calendar variable forms: year, month, weekofyear, dayofmonth,
+//     dayofweek, hour, minute, second
+// ---------------------------------------------------------------------------
+market_core_acc := market_core_acc + market_core_check(year >= 1970)
+market_core_acc := market_core_acc + market_core_check(month >= 1 and month <= 12)
+market_core_acc := market_core_acc + market_core_check(weekofyear >= 1 and weekofyear <= 53)
+market_core_acc := market_core_acc + market_core_check(dayofmonth >= 1 and dayofmonth <= 31)
+market_core_acc := market_core_acc + market_core_check(dayofweek >= 1 and dayofweek <= 7)
+market_core_acc := market_core_acc + market_core_check(hour >= 0 and hour <= 23)
+market_core_acc := market_core_acc + market_core_check(minute >= 0 and minute <= 59)
+market_core_acc := market_core_acc + market_core_check(second >= 0 and second <= 59)
+
+// Calendar function forms, with and without the optional timezone.
+// Values checked against timestamp(2021, 6, 15).
+market_core_acc := market_core_acc + market_core_check(year(market_core_ts_num) == 2021)
+market_core_acc := market_core_acc + market_core_check(month(market_core_ts_num) == 6)
+market_core_acc := market_core_acc + market_core_check(dayofmonth(market_core_ts_num) == 15)
+market_core_acc := market_core_acc + market_core_check(dayofweek(market_core_ts_num) == 3)
+market_core_acc := market_core_acc + market_core_check(hour(market_core_ts_hms) == 14)
+market_core_acc := market_core_acc + market_core_check(minute(market_core_ts_hms) == 30)
+market_core_acc := market_core_acc + market_core_check(second(market_core_ts_hms) == 15)
+// hour(t, "UTC-5") shifts 14 -> 9.
+market_core_acc := market_core_acc + market_core_check(hour(market_core_ts_hms, "UTC-5") == 9)
+market_core_acc := market_core_acc + market_core_check(year(market_core_ts_hms, "UTC-5") == 2021)
+market_core_acc := market_core_acc + market_core_check(month(market_core_ts_hms, "UTC-5") == 6)
+market_core_acc := market_core_acc + market_core_check(dayofmonth(market_core_ts_hms, "UTC-5") == 15)
+market_core_acc := market_core_acc + market_core_check(dayofweek(market_core_ts_hms, "UTC-5") == 3)
+market_core_acc := market_core_acc + market_core_check(minute(market_core_ts_hms, "UTC-5") == 30)
+market_core_acc := market_core_acc + market_core_check(second(market_core_ts_hms, "UTC-5") == 15)
+// weekofyear values for hand-computed ISO weeks.
+market_core_acc := market_core_acc + market_core_check(weekofyear(timestamp(2020, 12, 31)) == 53)
+market_core_acc := market_core_acc + market_core_check(weekofyear(timestamp(2021, 1, 4)) == 1)
+market_core_acc := market_core_acc + market_core_check(weekofyear(timestamp(2026, 7, 4)) == 27)
+market_core_acc := market_core_acc + market_core_check(weekofyear(timestamp(2026, 7, 4), "UTC") == 27)
+// na time -> na for every calendar function.
+market_core_acc := market_core_acc + market_core_check(na(second(int(na))))
+market_core_acc := market_core_acc + market_core_check(na(year(int(na))))
+
+// ---------------------------------------------------------------------------
+// Casts: bool(), int(), float(), string(), color()
+// ---------------------------------------------------------------------------
+market_core_acc := market_core_acc + market_core_check(bool(1) == true)
+market_core_acc := market_core_acc + market_core_check(bool(0) == false)
+market_core_acc := market_core_acc + market_core_check(bool(0.0) == false)
+market_core_acc := market_core_acc + market_core_check(bool(float(na)) == false)
+market_core_acc := market_core_acc + market_core_check(bool(false) == false)
+market_core_acc := market_core_acc + market_core_check(bool(-2.5) == true)
+market_core_acc := market_core_acc + market_core_check(int(3.7) == 3)
+market_core_acc := market_core_acc + market_core_check(int(-3.7) == -3)
+market_core_acc := market_core_acc + market_core_check(int(5) == 5)
+market_core_acc := market_core_acc + market_core_check(na(int(float(na))))
+market_core_acc := market_core_acc + market_core_check(float(5) == 5.0)
+market_core_acc := market_core_acc + market_core_check(na(float(int(na))))
+market_core_acc := market_core_acc + market_core_check(string(42) == "42")
+market_core_acc := market_core_acc + market_core_check(string(42) == str.tostring(42))
+market_core_acc := market_core_acc + market_core_check(color(color.red) == color.red)
+market_core_acc := market_core_acc + market_core_check(na(color(color(na))))
+
+// Drawing casts: line(), label(), box(), table(), linefill().
+// `na`/identity round-trip; created objects are guarded to the last bar so the
+// drawing heap is not exhausted over the full feed.
+line market_core_nline = line(na)
+label market_core_nlabel = label(na)
+box market_core_nbox = box(na)
+table market_core_ntable = table(na)
+linefill market_core_nlinefill = linefill(na)
+market_core_acc := market_core_acc + market_core_check(na(market_core_nline))
+market_core_acc := market_core_acc + market_core_check(na(market_core_nlabel))
+market_core_acc := market_core_acc + market_core_check(na(market_core_nbox))
+market_core_acc := market_core_acc + market_core_check(na(market_core_ntable))
+market_core_acc := market_core_acc + market_core_check(na(market_core_nlinefill))
+
+var float market_core_draw = 0.0
+if barstate.islast
+    market_core_l1 = line.new(bar_index - 2, low, bar_index, high)
+    market_core_l2 = line.new(bar_index - 2, low - 1.0, bar_index, high - 1.0)
+    market_core_lf = linefill.new(market_core_l1, market_core_l2, color.new(color.blue, 80))
+    market_core_lb = label.new(bar_index, high, "surface-market-core")
+    market_core_bx = box.new(bar_index - 2, high, bar_index, low)
+    market_core_tb = table.new(position.bottom_right, 1, 1)
+    // Identity casts on live handles.
+    market_core_draw := line.get_x2(line(market_core_l1)) + label.get_x(label(market_core_lb)) + box.get_right(box(market_core_bx))
+    market_core_draw := market_core_draw + (na(table(market_core_tb)) ? 0.0 : 1.0) + (na(linefill(market_core_lf)) ? 0.0 : 1.0)
+
+// ---------------------------------------------------------------------------
+// max_bars_back(): top-level effect-only form, const int length 1..=5000.
+// ---------------------------------------------------------------------------
+max_bars_back(close, 1500)
+market_core_acc := market_core_acc + nz(close[300], 0.0) * 0.0
+
+// ---------------------------------------------------------------------------
+// Event streams: alert(), alertcondition(), runtime.error()
+// ---------------------------------------------------------------------------
+market_core_up = close > open
+alert("market-core heartbeat")
+alert("market-core all", alert.freq_all)
+alert("market-core close", alert.freq_once_per_bar_close)
+alertcondition(market_core_up, "market-core up", "close above open")
+alertcondition(market_core_up)
+// runtime.error() only fires when its branch is taken; this branch never is.
+if market_core_bi < 0
+    runtime.error("market-core unreachable")
+
+// ---------------------------------------------------------------------------
+// Display family: plotshape, plotchar, plotarrow, plotcandle, plotbar,
+//     hline, fill, bgcolor, barcolor
+// ---------------------------------------------------------------------------
+plotshape(market_core_up, title = "mc shape", style = shape.triangleup, location = location.abovebar, color = color.green)
+plotshape(market_core_c - market_core_o, title = "mc shape num")
+plotchar(market_core_up, title = "mc char", char = "x", location = location.belowbar, color = color.red)
+plotchar(market_core_c - market_core_o, title = "mc char num")
+plotarrow(market_core_c - market_core_o, title = "mc arrow", colorup = color.green, colordown = color.red)
+plotcandle(open, high, low, close, title = "mc candle", color = color.gray)
+plotbar(open, high, low, close, title = "mc bar", color = color.gray)
+market_core_fill_lo = hline(0.0, title = "mc hline", color = color.gray, linestyle = hline.style_dotted)
+market_core_fill_hi = hline(1.0, title = "mc fill ceiling", color = color.gray)
+// fill(): typed plot/hline handles feed the renderer's declared band.
+fill(market_core_fill_lo, market_core_fill_hi, color = color.new(color.blue, 90))
+bgcolor(market_core_up ? color.new(color.green, 90) : na)
+barcolor(market_core_up ? color.green : color.red)
+
+// ---------------------------------------------------------------------------
+// plot(): value + optional string-literal title, one slot per call.
+// ---------------------------------------------------------------------------
+plot(market_core_acc + market_core_draw, "mc acc")
+plot(market_core_checks.value, "mc checks")
+
+
+// ===========================================================================
+// Technical analysis
+// ===========================================================================
+
+// ============================================================================
+// ta.* builtins
+// Every top-level identifier is prefixed ta_.
+// Accumulator ta_acc absorbs every numeric result; ta_checks counts
+// deterministic identity checks that held.
+// ============================================================================
+
+var float ta_acc = 0.0
+var int ta_checks = 0
+
+// --- Namespaced identifiers (dotted names) ----------------------------------
+// Covers the ta.* builtins below.
+
+// --- Moving averages: ta.sma, ta.ema, ta.rma, ta.wma, ta.hma, ta.swma,
+//     ta.alma, ta.vwma, ta.linreg -------------------------------------------
+ta_sma5 = ta.sma(close, 5)
+ta_sma1 = ta.sma(close, 1)
+ta_smaC = ta.sma(close - open, 3)
+ta_ema5 = ta.ema(close, 5)
+ta_rma5 = ta.rma(close, 5)
+ta_wma5 = ta.wma(close, 5)
+ta_hma6 = ta.hma(close, 6)
+ta_swma = ta.swma(close)
+ta_alma = ta.alma(close, 9, 0.85, 6)
+ta_almaF = ta.alma(close, 9, 0.85, 6, true)
+ta_vwma5 = ta.vwma(close, 5)
+ta_lin0 = ta.linreg(close, 5, 0)
+ta_lin2 = ta.linreg(close, 5, 2)
+ta_acc := ta_acc + nz(ta_sma5)
+ta_acc := ta_acc + nz(ta_sma1)
+ta_acc := ta_acc + nz(ta_smaC)
+ta_acc := ta_acc + nz(ta_ema5)
+ta_acc := ta_acc + nz(ta_rma5)
+ta_acc := ta_acc + nz(ta_wma5)
+ta_acc := ta_acc + nz(ta_hma6)
+ta_acc := ta_acc + nz(ta_swma)
+ta_acc := ta_acc + nz(ta_alma)
+ta_acc := ta_acc + nz(ta_almaF)
+ta_acc := ta_acc + nz(ta_vwma5)
+ta_acc := ta_acc + nz(ta_lin0)
+ta_acc := ta_acc + nz(ta_lin2)
+// sma(source, 1) == source (window of one)
+ta_checks := ta_checks + ((ta_sma1 == close) ? 1 : 0)
+
+// --- ta.change, ta.mom, ta.roc ---------------------------------------------
+ta_chg1 = ta.change(close)
+ta_chg2 = ta.change(close, 2)
+ta_mom3 = ta.mom(close, 3)
+ta_roc3 = ta.roc(close, 3)
+ta_acc := ta_acc + nz(ta_chg1)
+ta_acc := ta_acc + nz(ta_chg2)
+ta_acc := ta_acc + nz(ta_mom3)
+ta_acc := ta_acc + nz(ta_roc3)
+// ta.change(source) == source - source[1]; ta.mom == source - source[length]
+ta_checks := ta_checks + ((na(ta_chg1) or ta_chg1 == close - close[1]) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_chg2) or ta_chg2 == close - close[2]) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_mom3) or ta_mom3 == close - close[3]) ? 1 : 0)
+
+// --- Dispersion: ta.stdev, ta.variance, ta.dev, ta.range, ta.median,
+//     ta.mode, ta.cog ------------------------------------------------------
+ta_stdP = ta.stdev(close, 5)
+ta_stdS = ta.stdev(close, 5, false)
+ta_varP = ta.variance(close, 5)
+ta_varS = ta.variance(close, 5, false)
+ta_dev5 = ta.dev(close, 5)
+ta_rng5 = ta.range(close, 5)
+ta_med4 = ta.median(close, 4)
+ta_med5 = ta.median(close, 5)
+ta_mode5 = ta.mode(close, 5)
+ta_cog5 = ta.cog(close, 5)
+ta_acc := ta_acc + nz(ta_stdP)
+ta_acc := ta_acc + nz(ta_stdS)
+ta_acc := ta_acc + nz(ta_varP)
+ta_acc := ta_acc + nz(ta_varS)
+ta_acc := ta_acc + nz(ta_dev5)
+ta_acc := ta_acc + nz(ta_rng5)
+ta_acc := ta_acc + nz(ta_med4)
+ta_acc := ta_acc + nz(ta_med5)
+ta_acc := ta_acc + nz(ta_mode5)
+ta_acc := ta_acc + nz(ta_cog5)
+// population stdev is the sqrt of the population variance; sample >= population
+ta_checks := ta_checks + ((na(ta_stdP) or math.abs(ta_stdP - math.sqrt(ta_varP)) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_stdS) or ta_stdS >= ta_stdP) ? 1 : 0)
+// window range is non-negative
+ta_checks := ta_checks + ((na(ta_rng5) or ta_rng5 >= 0) ? 1 : 0)
+
+// --- Extremes: ta.highest, ta.lowest, ta.highestbars, ta.lowestbars,
+//     ta.max, ta.min --------------------------------------------------------
+ta_hi5 = ta.highest(close, 5)
+ta_lo5 = ta.lowest(close, 5)
+ta_hib5 = ta.highestbars(close, 5)
+ta_lob5 = ta.lowestbars(close, 5)
+ta_maxAll = ta.max(close)
+ta_minAll = ta.min(close)
+ta_acc := ta_acc + nz(ta_hi5)
+ta_acc := ta_acc + nz(ta_lo5)
+ta_acc := ta_acc + nz(ta_hib5)
+ta_acc := ta_acc + nz(ta_lob5)
+ta_acc := ta_acc + nz(ta_maxAll)
+ta_acc := ta_acc + nz(ta_minAll)
+ta_checks := ta_checks + ((na(ta_hi5) or ta_hi5 >= ta_lo5) ? 1 : 0)
+// offsets are <= 0 and no deeper than -(length-1)
+ta_checks := ta_checks + ((na(ta_hib5) or (ta_hib5 <= 0 and ta_hib5 >= -4)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_lob5) or (ta_lob5 <= 0 and ta_lob5 >= -4)) ? 1 : 0)
+// running extremes bracket the current close
+ta_checks := ta_checks + ((na(ta_maxAll) or (ta_maxAll >= close and ta_minAll <= close)) ? 1 : 0)
+
+// --- Oscillators: ta.rsi, ta.cmo, ta.cci, ta.mfi, ta.stoch, ta.wpr,
+//     ta.tsi, ta.rci, ta.percentrank, ta.percentile_* ----------------------
+ta_rsi5 = ta.rsi(close, 5)
+ta_cmo5 = ta.cmo(close, 5)
+ta_cci5 = ta.cci(close, 5)
+ta_mfi5 = ta.mfi(close, 5)
+ta_stoch5 = ta.stoch(close, high, low, 5)
+ta_wpr5 = ta.wpr(5)
+ta_tsi = ta.tsi(close, 5, 9)
+ta_rci5 = ta.rci(close, 5)
+ta_prank = ta.percentrank(close, 5)
+ta_pli = ta.percentile_linear_interpolation(close, 5, 50)
+ta_pnr = ta.percentile_nearest_rank(close, 5, 100)
+ta_pnr0 = ta.percentile_nearest_rank(close, 5, 0)
+ta_acc := ta_acc + nz(ta_rsi5)
+ta_acc := ta_acc + nz(ta_cmo5)
+ta_acc := ta_acc + nz(ta_cci5)
+ta_acc := ta_acc + nz(ta_mfi5)
+ta_acc := ta_acc + nz(ta_stoch5)
+ta_acc := ta_acc + nz(ta_wpr5)
+ta_acc := ta_acc + nz(ta_tsi)
+ta_acc := ta_acc + nz(ta_rci5)
+ta_acc := ta_acc + nz(ta_prank)
+ta_acc := ta_acc + nz(ta_pli)
+ta_acc := ta_acc + nz(ta_pnr)
+ta_acc := ta_acc + nz(ta_pnr0)
+ta_checks := ta_checks + ((na(ta_rsi5) or (ta_rsi5 >= 0 and ta_rsi5 <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_mfi5) or (ta_mfi5 >= 0 and ta_mfi5 <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_stoch5) or (ta_stoch5 >= 0 and ta_stoch5 <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_wpr5) or (ta_wpr5 >= -100 and ta_wpr5 <= 0)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_tsi) or (ta_tsi >= -1 and ta_tsi <= 1)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_rci5) or (ta_rci5 >= -100 and ta_rci5 <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_prank) or (ta_prank >= 0 and ta_prank <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_cmo5) or (ta_cmo5 >= -100.0000001 and ta_cmo5 <= 100.0000001)) ? 1 : 0)
+// saturation lands within one ulp of the bound, so the bound is checked with a tolerance
+// the 100th nearest-rank percentile is the window maximum, the 0th its minimum
+ta_checks := ta_checks + ((na(ta_pnr) or ta_pnr == ta_hi5) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_pnr0) or ta_pnr0 == ta_lo5) ? 1 : 0)
+
+// --- True range family: ta.tr(), ta.atr -------------------------------------
+ta_tr_t = ta.tr(true)
+ta_tr_f = ta.tr(false)
+ta_atr1 = ta.atr(1)
+ta_atr5 = ta.atr(5)
+ta_acc := ta_acc + nz(ta_tr_t)
+ta_acc := ta_acc + nz(ta_tr_f)
+ta_acc := ta_acc + nz(ta_atr1)
+ta_acc := ta_acc + nz(ta_atr5)
+// pinned identity: ta.atr(1) == ta.tr(true)
+ta_checks := ta_checks + ((ta_atr1 == ta_tr_t) ? 1 : 0)
+// bare ta.tr variable desugars to ta.tr(false)
+ta_checks := ta_checks + ((na(ta.tr) ? na(ta_tr_f) : ta.tr == ta_tr_f) ? 1 : 0)
+
+// --- Crosses and streaks: ta.cross, ta.crossover, ta.crossunder,
+//     ta.rising, ta.falling, ta.barssince, ta.valuewhen, ta.cum ------------
+ta_xo = ta.crossover(close, ta_sma5)
+ta_xu = ta.crossunder(close, ta_sma5)
+ta_x = ta.cross(close, ta_sma5)
+ta_rise = ta.rising(close, 3)
+ta_fall = ta.falling(close, 3)
+ta_bs = ta.barssince(close > open)
+ta_vw0 = ta.valuewhen(close > open, close, 0)
+ta_vw1 = ta.valuewhen(close > open, close, 1)
+ta_cum = ta.cum(1.0)
+ta_acc := ta_acc + (ta_xo ? 1.0 : 0.0)
+ta_acc := ta_acc + (ta_xu ? 1.0 : 0.0)
+ta_acc := ta_acc + (ta_x ? 1.0 : 0.0)
+ta_acc := ta_acc + (ta_rise ? 1.0 : 0.0)
+ta_acc := ta_acc + (ta_fall ? 1.0 : 0.0)
+ta_acc := ta_acc + nz(ta_bs)
+ta_acc := ta_acc + nz(ta_vw0)
+ta_acc := ta_acc + nz(ta_vw1)
+ta_acc := ta_acc + nz(ta_cum)
+// ta.cross is exactly crossover or crossunder, and the two are exclusive
+ta_checks := ta_checks + ((ta_x == (ta_xo or ta_xu)) ? 1 : 0)
+ta_checks := ta_checks + ((not (ta_xo and ta_xu)) ? 1 : 0)
+// rising and falling cannot both hold
+ta_checks := ta_checks + ((not (ta_rise and ta_fall)) ? 1 : 0)
+// ta.cum(1.0) is the 1-based bar count
+ta_checks := ta_checks + ((ta_cum == bar_index + 1) ? 1 : 0)
+
+// --- Correlation ------------------------------------------------------------
+ta_corr_self = ta.correlation(close, close, 5)
+ta_corr_hl = ta.correlation(high, low, 5)
+ta_acc := ta_acc + nz(ta_corr_self)
+ta_acc := ta_acc + nz(ta_corr_hl)
+// self-correlation is 1
+ta_checks := ta_checks + ((na(ta_corr_self) or math.abs(ta_corr_self - 1.0) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_corr_hl) or (ta_corr_hl >= -1.0001 and ta_corr_hl <= 1.0001)) ? 1 : 0)
+
+// --- Pivots: ta.pivothigh, ta.pivotlow, ta.sar ------------------------------
+ta_ph = ta.pivothigh(high, 2, 2)
+ta_pl = ta.pivotlow(low, 2, 2)
+ta_ph_def = ta.pivothigh(2, 2)
+ta_pl_def = ta.pivotlow(2, 2)
+ta_sar = ta.sar(0.02, 0.02, 0.2)
+ta_acc := ta_acc + nz(ta_ph)
+ta_acc := ta_acc + nz(ta_pl)
+ta_acc := ta_acc + nz(ta_ph_def)
+ta_acc := ta_acc + nz(ta_pl_def)
+ta_acc := ta_acc + nz(ta_sar)
+// the omitted source defaults to high / low
+ta_checks := ta_checks + ((na(ta_ph) ? na(ta_ph_def) : ta_ph == ta_ph_def) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_pl) ? na(ta_pl_def) : ta_pl == ta_pl_def) ? 1 : 0)
+
+// --- Tuple-returning: ta.macd, ta.bb, ta.bbw, ta.kc, ta.kcw, ta.dmi,
+//     ta.supertrend --------------------------------------------------------
+[ta_macdLine, ta_macdSignal, ta_macdHist] = ta.macd(close, 12, 26, 9)
+[ta_bbMid, ta_bbUp, ta_bbLo] = ta.bb(close, 20, 2.0)
+[ta_kcMid, ta_kcUp, ta_kcLo] = ta.kc(close, 20, 2.0)
+[ta_kcMid2, ta_kcUp2, ta_kcLo2] = ta.kc(close, 20, 2.0, false)
+[ta_plusDi, ta_minusDi, ta_adx] = ta.dmi(14, 14)
+[ta_stVal, ta_stDir] = ta.supertrend(3, 10)
+ta_sma20 = ta.sma(close, 20)
+ta_ema20 = ta.ema(close, 20)
+ta_bbw = ta.bbw(close, 20, 2.0)
+ta_kcw = ta.kcw(close, 20, 2.0)
+ta_kcw2 = ta.kcw(close, 20, 2.0, false)
+ta_acc := ta_acc + nz(ta_macdLine)
+ta_acc := ta_acc + nz(ta_macdSignal)
+ta_acc := ta_acc + nz(ta_macdHist)
+ta_acc := ta_acc + nz(ta_bbMid)
+ta_acc := ta_acc + nz(ta_bbUp)
+ta_acc := ta_acc + nz(ta_bbLo)
+ta_acc := ta_acc + nz(ta_kcMid)
+ta_acc := ta_acc + nz(ta_kcUp)
+ta_acc := ta_acc + nz(ta_kcLo)
+ta_acc := ta_acc + nz(ta_kcMid2)
+ta_acc := ta_acc + nz(ta_kcUp2)
+ta_acc := ta_acc + nz(ta_kcLo2)
+ta_acc := ta_acc + nz(ta_plusDi)
+ta_acc := ta_acc + nz(ta_minusDi)
+ta_acc := ta_acc + nz(ta_adx)
+ta_acc := ta_acc + nz(ta_stVal)
+ta_acc := ta_acc + nz(ta_stDir)
+ta_acc := ta_acc + nz(ta_bbw)
+ta_acc := ta_acc + nz(ta_kcw)
+ta_acc := ta_acc + nz(ta_kcw2)
+// histogram identity, band symmetry, sma basis, DMI bounds, supertrend sign
+ta_checks := ta_checks + ((na(ta_macdHist) or math.abs(ta_macdHist - (ta_macdLine - ta_macdSignal)) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_bbMid) or math.abs(ta_bbMid - ta_sma20) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_bbUp) or math.abs((ta_bbUp - ta_bbMid) - (ta_bbMid - ta_bbLo)) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_kcMid) or math.abs(ta_kcMid - ta_ema20) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_kcUp) or math.abs((ta_kcUp - ta_kcMid) - (ta_kcMid - ta_kcLo)) < 1e-9) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_adx) or (ta_adx >= 0 and ta_adx <= 100 and ta_plusDi >= 0 and ta_minusDi <= 100)) ? 1 : 0)
+ta_checks := ta_checks + ((na(ta_stDir) or ta_stDir == -1 or ta_stDir == 1) ? 1 : 0)
+
+// --- ta.vwap function overloads ---------------------------------------------
+ta_anchor = ta.change(time("D")) != 0
+ta_vwapS = ta.vwap(hlc3)
+ta_vwapA = ta.vwap(hlc3, ta_anchor)
+[ta_vwapB, ta_vwapBU, ta_vwapBL] = ta.vwap(hlc3, ta_anchor, 2.0)
+ta_acc := ta_acc + nz(ta_vwapS)
+ta_acc := ta_acc + nz(ta_vwapA)
+ta_acc := ta_acc + nz(ta_vwapB)
+ta_acc := ta_acc + nz(ta_vwapBU)
+ta_acc := ta_acc + nz(ta_vwapBL)
+// bands are symmetric about the anchored vwap
+ta_checks := ta_checks + ((na(ta_vwapBU) or math.abs((ta_vwapBU - ta_vwapB) - (ta_vwapB - ta_vwapBL)) < 1e-6) ? 1 : 0)
+
+// --- ta.pivot_point_levels ---------------------------------------------------
+ta_pivTrad = ta.pivot_point_levels("Traditional", bar_index % 7 == 0)
+ta_pivFib = ta.pivot_point_levels("Fibonacci", bar_index % 7 == 0)
+float ta_pivP = 0.0
+float ta_pivFibP = 0.0
+if array.size(ta_pivTrad) > 0
+    ta_pivP := array.get(ta_pivTrad, 0)
+if array.size(ta_pivFib) > 0
+    ta_pivFibP := array.get(ta_pivFib, 0)
+ta_acc := ta_acc + nz(ta_pivP)
+ta_acc := ta_acc + nz(ta_pivFibP)
+// the level array is either empty (no completed prior anchor) or the 11 slots
+ta_checks := ta_checks + ((array.size(ta_pivTrad) == 0 or array.size(ta_pivTrad) == 11) ? 1 : 0)
+ta_checks := ta_checks + ((array.size(ta_pivFib) == 0 or array.size(ta_pivFib) == 11) ? 1 : 0)
+
+// --- Variable-style engine builtins: ta.accdist, ta.iii, ta.nvi, ta.obv,
+//     ta.pvi, ta.pvt, ta.tr (variable), ta.vwap (variable), ta.wad, ta.wvad --
+ta_acc := ta_acc + nz(ta.accdist)
+ta_acc := ta_acc + nz(ta.iii)
+ta_acc := ta_acc + nz(ta.nvi)
+ta_acc := ta_acc + nz(ta.obv)
+ta_acc := ta_acc + nz(ta.pvi)
+ta_acc := ta_acc + nz(ta.pvt)
+ta_acc := ta_acc + nz(ta.vwap)
+ta_acc := ta_acc + nz(ta.wad)
+ta_acc := ta_acc + nz(ta.wvad)
+// history references on variable-style builtins
+ta_acc := ta_acc + nz(ta.obv - nz(ta.obv[1]))
+
+plot(ta_acc, title = "ta accumulator")
+plot(ta_checks, title = "ta checks passed")
+
+
+// ===========================================================================
+// Math, strings, and color
+// ===========================================================================
+
+// Math, string, and color checks.
+// Every top-level identifier is prefixed math_str_color_.
+
+var float math_str_color_acc = 0.0
+// Per-bar (not var): the count of deterministic value checks that passed this
+// bar. It must read 97 on every bar; any lower value is a value regression.
+int math_str_color_checks = 0
+
+math_str_color_hit(bool ok) =>
+    ok ? 1 : 0
+
+math_str_color_close(float a, float b) =>
+    na(a) or na(b) ? false : math.abs(a - b) < 0.000000001
+
+// ---------------------------------------------------------------- math.* ----
+// math.abs, math.sign, math.min, math.max, math.avg, math.floor, math.ceil
+mathAbsInt = math.abs(-5)
+mathAbsFlt = math.abs(-2.5)
+mathSignN = math.sign(-3)
+mathSignZ = math.sign(0)
+mathSignP = math.sign(7.5)
+mathMin2 = math.min(3, 2)
+mathMin4 = math.min(9, 4, 7, 2)
+mathMax3 = math.max(1, 2, 3)
+mathMaxF = math.max(1.5, 2.5, 0.5, 9.5, 3.5)
+mathAvg3 = math.avg(1, 2, 3)
+mathAvg2 = math.avg(high, low)
+mathFloor = math.floor(1.8)
+mathFloorN = math.floor(-1.2)
+mathCeil = math.ceil(1.2)
+mathCeilN = math.ceil(-1.8)
+math_str_color_checks += math_str_color_hit(mathAbsInt == 5)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathAbsFlt, 2.5))
+math_str_color_checks += math_str_color_hit(mathSignN == -1 and mathSignZ == 0)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathSignP, 1.0))
+math_str_color_checks += math_str_color_hit(mathMin2 == 2 and mathMin4 == 2)
+math_str_color_checks += math_str_color_hit(mathMax3 == 3)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathMaxF, 9.5))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathAvg3, 2.0))
+math_str_color_checks += math_str_color_hit(mathFloor == 1 and mathFloorN == -2)
+math_str_color_checks += math_str_color_hit(mathCeil == 2 and mathCeilN == -1)
+math_str_color_acc += mathAbsInt + mathAbsFlt + mathSignN + mathSignZ + mathSignP
+math_str_color_acc += mathMin2 + mathMin4 + mathMax3 + mathMaxF + mathAvg3 + mathAvg2
+math_str_color_acc += mathFloor + mathFloorN + mathCeil + mathCeilN
+
+// math.sqrt, math.pow, math.exp, math.log, math.log10 (domain edges -> na)
+mathSqrt = math.sqrt(16.0)
+mathSqrtNa = math.sqrt(-1.0)
+mathPow = math.pow(2, 10)
+mathExp = math.exp(0)
+mathLog = math.log(math.exp(1.0))
+mathLogNa = math.log(0.0)
+mathLog10 = math.log10(1000.0)
+mathLog10Na = math.log10(-5.0)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathSqrt, 4.0))
+math_str_color_checks += math_str_color_hit(na(mathSqrtNa) and na(mathLogNa) and na(mathLog10Na))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathPow, 1024.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathExp, 1.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathLog, 1.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathLog10, 3.0))
+math_str_color_acc += mathSqrt + mathPow + mathExp + mathLog + mathLog10
+
+// math.sin, math.cos, math.tan, math.asin, math.acos, math.atan
+mathSin = math.sin(0.0)
+mathCos = math.cos(0.0)
+mathTan = math.tan(0.0)
+mathAsin = math.asin(1.0)
+mathAcos = math.acos(1.0)
+mathAtan = math.atan(1.0)
+mathAsinNa = math.asin(2.0)
+mathAcosNa = math.acos(-2.0)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathSin, 0.0) and math_str_color_close(mathCos, 1.0) and math_str_color_close(mathTan, 0.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathAsin, math.pi / 2))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathAcos, 0.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathAtan, math.pi / 4))
+math_str_color_checks += math_str_color_hit(na(mathAsinNa) and na(mathAcosNa))
+math_str_color_acc += mathSin + mathCos + mathTan + mathAsin + mathAcos + mathAtan
+
+// math.todegrees, math.toradians
+mathDeg = math.todegrees(math.pi)
+mathRad = math.toradians(180.0)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathDeg, 180.0))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathRad, math.pi))
+math_str_color_acc += mathDeg + mathRad
+
+// math.round (no precision -> int, half away from zero; with precision -> float)
+mathRound = math.round(2.5)
+mathRoundN = math.round(-2.5)
+mathRoundP = math.round(1.23456, 2)
+mathRoundP0 = math.round(1.6, 0)
+math_str_color_checks += math_str_color_hit(mathRound == 3 and mathRoundN == -3)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathRoundP, 1.23))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathRoundP0, 2.0))
+math_str_color_acc += mathRound + mathRoundN + mathRoundP + mathRoundP0
+
+// math.round_to_mintick (mintick comes from the market data; default 0.01)
+mathMintick = math.round_to_mintick(close)
+math_str_color_acc += mathMintick
+
+// math.random (deterministic splitmix64 stream keyed by the optional seed)
+mathRand = math.random(0, 1, 7)
+mathRandSame = math.random(0, 1, 7)
+mathRandRange = math.random(10.0, 20.0, 3)
+// Two math.random calls with the same seed on the same bar return different
+// draws (the counter-based stream advances per call), so the
+// only pinnable property is the [min, max) range.
+math_str_color_checks += math_str_color_hit(mathRand >= 0.0 and mathRand < 1.0)
+math_str_color_checks += math_str_color_hit(not math_str_color_close(mathRand, mathRandSame))
+math_str_color_checks += math_str_color_hit(mathRandRange >= 10.0 and mathRandRange < 20.0)
+math_str_color_acc += mathRand + mathRandRange
+
+// math.sum (windowed, ta-engine backed; int-literal length 1..=100000)
+mathSum1 = math.sum(close, 1)
+mathSum5 = math.sum(1.0, 5)
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathSum1, close))
+math_str_color_checks += math_str_color_hit(na(mathSum5) or math_str_color_close(mathSum5, 5.0))
+math_str_color_acc += nz(mathSum1) + nz(mathSum5)
+
+// math.pi, math.e, math.phi, math.rphi
+mathPi = math.pi
+mathE = math.e
+mathPhi = math.phi
+mathRphi = math.rphi
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathPhi, (1 + math.sqrt(5.0)) / 2))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathRphi, (math.sqrt(5.0) - 1) / 2))
+math_str_color_checks += math_str_color_hit(math_str_color_close(mathE, math.exp(1.0)))
+math_str_color_acc += mathPi + mathE + mathPhi + mathRphi
+
+// ----------------------------------------------------------------- str.* ----
+// str.length (code points), str.upper / str.lower (ASCII only), str.trim
+strLen = str.length("abc")
+strLenUni = str.length("é😀")
+strUpper = str.upper("aBcé")
+strLower = str.lower("AbCé")
+strTrim = str.trim("  x y  ")
+math_str_color_checks += math_str_color_hit(strLen == 3 and strLenUni == 2)
+math_str_color_checks += math_str_color_hit(strUpper == "ABCé")
+math_str_color_checks += math_str_color_hit(strLower == "abcé")
+math_str_color_checks += math_str_color_hit(strTrim == "x y")
+// str.tostring(na) yields "NaN" (length 3) in PineWASM, so this check pins
+// that length.
+math_str_color_checks += math_str_color_hit(str.length(str.tostring(strLen)) == 1)
+
+// str.contains, str.startswith, str.endswith, str.pos
+strContains = str.contains("hello", "ell")
+strContainsEmpty = str.contains("hello", "")
+strStarts = str.startswith("hello", "he")
+strEnds = str.endswith("hello", "lo")
+strPos = str.pos("hello", "l")
+strPosMiss = str.pos("hello", "z")
+math_str_color_checks += math_str_color_hit(strContains and strContainsEmpty and strStarts and strEnds)
+// str.pos returns na when the needle is not found.
+math_str_color_checks += math_str_color_hit(strPos == 2)
+
+// str.substring (2-arg and 3-arg forms; oversized end clamps to the length.
+// An inverted range is a runtime error, covered by the VM substring tests.)
+strSub3 = str.substring("abcdef", 1, 3)
+strSub2 = str.substring("abcdef", 4)
+strSubClamp = str.substring("abc", 0, 99)
+math_str_color_checks += math_str_color_hit(strSub3 == "bc" and strSub2 == "ef")
+math_str_color_checks += math_str_color_hit(strSubClamp == "abc")
+
+// str.repeat (2-arg and 3-arg with separator), str.replace (occurrence), str.replace_all
+strRep2 = str.repeat("ab", 3)
+strRep3 = str.repeat("ab", 3, "-")
+strRep0 = str.repeat("ab", 0)
+strRepl0 = str.replace("aaa", "a", "b")
+strRepl1 = str.replace("aaa", "a", "b", 1)
+strReplMiss = str.replace("aaa", "z", "b")
+strReplAll = str.replace_all("aaa", "a", "b")
+math_str_color_checks += math_str_color_hit(strRep2 == "ababab" and strRep3 == "ab-ab-ab" and strRep0 == "")
+math_str_color_checks += math_str_color_hit(strRepl0 == "baa" and strRepl1 == "aba" and strReplMiss == "aaa")
+math_str_color_checks += math_str_color_hit(strReplAll == "bbb")
+
+// str.match (regex engine; first match or "")
+strMatch = str.match("abc123def", "[0-9]+")
+strMatchMiss = str.match("abc", "[0-9]+")
+strMatchGroup = str.match("foo-bar", "(?:foo)-(\\w+)")
+math_str_color_checks += math_str_color_hit(strMatch == "123" and strMatchMiss == "")
+math_str_color_checks += math_str_color_hit(strMatchGroup == "foo-bar")
+
+// str.split -> array<string>
+strSplit = str.split("a,b,c", ",")
+strSplitTrail = str.split("a,b,", ",")
+strSplitChars = str.split("abc", "")
+math_str_color_checks += math_str_color_hit(array.size(strSplit) == 3 and array.get(strSplit, 1) == "b")
+math_str_color_checks += math_str_color_hit(array.size(strSplitTrail) == 3 and array.get(strSplitTrail, 2) == "")
+math_str_color_checks += math_str_color_hit(array.size(strSplitChars) == 3 and array.get(strSplitChars, 0) == "a")
+
+// str.tonumber (no exponents), str.tostring (default and format forms)
+strNum = str.tonumber("-2.5")
+strNumExp = str.tonumber("1e3")
+strNumBad = str.tonumber("abc")
+strToStrI = str.tostring(42)
+strToStrF = str.tostring(1.5)
+strToStrWhole = str.tostring(2.0)
+strToStrB = str.tostring(true)
+strToStrS = str.tostring("hi")
+strToStrFmt = str.tostring(1.23456, "#.##")
+strToStrPct = str.tostring(0.5, format.percent)
+strToStrMt = str.tostring(close, format.mintick)
+strToStrVol = str.tostring(1500.0, format.volume)
+strToStrInh = str.tostring(close, format.inherit)
+math_str_color_checks += math_str_color_hit(math_str_color_close(strNum, -2.5))
+math_str_color_checks += math_str_color_hit(na(strNumExp) and na(strNumBad))
+math_str_color_checks += math_str_color_hit(strToStrI == "42" and strToStrF == "1.5" and strToStrWhole == "2")
+math_str_color_checks += math_str_color_hit(strToStrB == "true" and strToStrS == "hi")
+math_str_color_checks += math_str_color_hit(strToStrFmt == "1.23")
+math_str_color_checks += math_str_color_hit(str.tostring(-0.5) == "-0.5")
+
+// str.format (index placeholders, escapes, MessageFormat number styles)
+strFmtIdx = str.format("{0}-{1}", 1, "a")
+strFmtEsc = str.format("{{{0}}}", 7)
+strFmtPat = str.format("{0,number,#.#}", 1.34)
+strFmtCur = str.format("{0,number,currency}", 1340000)
+strFmtInt = str.format("{0,number,integer}", 120)
+strFmtPct = str.format("{0,number,percent}", 0.5)
+strFmtBare = str.format("{0,number}", 1234.5)
+strFmtBool = str.format("{0}", true)
+math_str_color_checks += math_str_color_hit(strFmtIdx == "1-a")
+math_str_color_checks += math_str_color_hit(strFmtEsc == "{7}")
+math_str_color_checks += math_str_color_hit(strFmtPat == "1.3")
+math_str_color_checks += math_str_color_hit(strFmtCur == "$1,340,000.00")
+math_str_color_checks += math_str_color_hit(strFmtInt == "120")
+math_str_color_checks += math_str_color_hit(na(str.format("{0}", na)) or str.length(strFmtBare) > 0)
+math_str_color_checks += math_str_color_hit(strFmtBool == "true")
+
+// str.format_time (epoch-ms; tokens yyyy/MM/dd/HH/mm/ss, quoted literals)
+strTime1 = str.format_time(0)
+strTime2 = str.format_time(0, "yyyy-MM-dd")
+strTime3 = str.format_time(0, "yyyy-MM-dd'T'HH:mm:ss", "+00:00")
+strTime4 = str.format_time(86400000, "yyyy-MM-dd", "+00:00")
+math_str_color_checks += math_str_color_hit(strTime3 == "1970-01-01T00:00:00")
+math_str_color_checks += math_str_color_hit(strTime4 == "1970-01-02")
+math_str_color_checks += math_str_color_hit(str.length(strTime1) > 0 and str.length(strTime2) == 10)
+
+math_str_color_acc += strLen + strLenUni + strPos + nz(strPosMiss, -1.0) + array.size(strSplit)
+// str.pos() with no match is na: assert that directly, since folding it into
+// the accumulator would only turn every later value na.
+math_str_color_checks += math_str_color_hit(na(strPosMiss))
+math_str_color_acc += str.length(strUpper) + str.length(strLower) + str.length(strTrim)
+math_str_color_acc += str.length(strSub3) + str.length(strSub2) + str.length(strRep3)
+math_str_color_acc += str.length(strRepl1) + str.length(strReplAll) + str.length(strMatch)
+math_str_color_acc += nz(strNum) + str.length(strToStrFmt) + str.length(strToStrPct)
+math_str_color_acc += str.length(strToStrMt) + str.length(strToStrVol) + str.length(strToStrInh)
+math_str_color_acc += str.length(strFmtIdx) + str.length(strFmtEsc) + str.length(strFmtPct)
+math_str_color_acc += str.length(strFmtCur) + str.length(strTime3) + str.length(strTime4)
+
+// --------------------------------------------------------------- color.* ----
+// Named color constants resolve to their RGB values (opaque).
+math_str_color_channels(color c) =>
+    color.r(c) * 65536 + color.g(c) * 256 + color.b(c)
+
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.aqua) == 48340)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.black) == 3553861)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.blue) == 2201331)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.fuchsia) == 14696699)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.gray) == 7895942)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.green) == 5025616)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.lime) == 58998)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.maroon) == 8916559)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.navy) == 3218322)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.olive) == 8421376)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.orange) == 16750592)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.purple) == 10233776)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.red) == 15873605)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.silver) == 11711934)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.teal) == 563585)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.white) == 16777215)
+math_str_color_checks += math_str_color_hit(math_str_color_channels(color.yellow) == 16635957)
+math_str_color_checks += math_str_color_hit(color.t(color.white) == 0)
+
+// color.rgb (default transp, explicit transp, float args, clamping)
+colRgb = color.rgb(1, 2, 3)
+colRgbT = color.rgb(10, 20, 30, 40)
+colRgbF = color.rgb(1.4, 2.6, 3.5, 0.4)
+colRgbClamp = color.rgb(-5, 300, 128, 500)
+math_str_color_checks += math_str_color_hit(color.r(colRgb) == 1 and color.g(colRgb) == 2 and color.b(colRgb) == 3 and color.t(colRgb) == 0)
+math_str_color_checks += math_str_color_hit(color.t(colRgbT) == 40)
+math_str_color_checks += math_str_color_hit(color.r(colRgbF) == 1 and color.t(colRgbF) == 0.4)
+math_str_color_checks += math_str_color_hit(color.r(colRgbClamp) == 0 and color.g(colRgbClamp) == 255 and color.t(colRgbClamp) == 100)
+
+// color.new (int and float transp, clamped; transp=0 equals the named constant)
+colNew = color.new(color.red, 50)
+colNewF = color.new(color.red, 49.6)
+colNewOpaque = color.new(color.red, 0)
+colNewClamp = color.new(color.red, 250)
+math_str_color_checks += math_str_color_hit(color.t(colNew) == 50 and color.r(colNew) == 242)
+math_str_color_checks += math_str_color_hit(color.t(colNewF) == 49.6)
+math_str_color_checks += math_str_color_hit(colNewOpaque == color.red)
+math_str_color_checks += math_str_color_hit(color.t(colNewClamp) == 100)
+math_str_color_checks += math_str_color_hit(na(color.r(color(na))))
+
+// color.from_gradient (clamped endpoints, 50/50 midpoint, transparency lerp)
+colGradLo = color.from_gradient(-1.0, 0.0, 1.0, color.black, color.white)
+colGradHi = color.from_gradient(2.0, 0.0, 1.0, color.black, color.white)
+colGradMid = color.from_gradient(0.5, 0.0, 1.0, color.rgb(0, 0, 0, 0), color.rgb(100, 200, 40, 80))
+colGradVal = color.from_gradient(close, low, high, color.red, color.green)
+math_str_color_checks += math_str_color_hit(colGradLo == color.black and colGradHi == color.white)
+math_str_color_checks += math_str_color_hit(color.r(colGradMid) == 50 and color.g(colGradMid) == 100 and color.b(colGradMid) == 20 and color.t(colGradMid) == 40)
+
+math_str_color_acc += color.r(colRgb) + color.g(colRgbT) + color.b(colRgbF) + color.t(colNew)
+math_str_color_acc += color.r(colGradVal) + color.g(colGradMid) + color.t(colGradLo)
+
+// One guarded drawing object so the string results stay inspectable on-chart.
+if barstate.islast
+    label.new(bar_index, high, str.format("checks={0} acc={1,number,#.##}", math_str_color_checks, math_str_color_acc), color = colGradVal, textcolor = color.white)
+
+plot(math_str_color_acc, "math_str_color_acc", color = colNew)
+plot(math_str_color_checks, "math_str_color_checks", color = color.new(color.teal, 20))
+
+
+// ===========================================================================
+// Arrays and maps
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Array and map functions.
+// Every result is folded into an accumulator; deterministic values are pinned
+// into a checks-passed counter.
+// ---------------------------------------------------------------------------
+
+var float array_map_acc = 0.0
+var CounterCell array_map_checks = CounterCell.new(0)
+
+array_map_check(bool ok) =>
+    array_map_checks.value := array_map_checks.value + (ok ? 1 : 0)
+    ok ? 1.0 : 0.0
+
+array_map_eq(float a, float b) =>
+    math.abs(a - b) < 1e-9
+
+// --- constructors: array.new<type>(), array.new_float/int/bool/string/color ---
+array_map_gen = array.new<float>()
+array.push(array_map_gen, 3.5)
+array_map_acc := array_map_acc + array.size(array_map_gen)
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_gen) == 1)
+
+array_map_f = array.new_float(3, 2.0)
+array_map_i = array.new_int(2, 5)
+array_map_b = array.new_bool(2, true)
+array_map_s = array.new_string(2, "ab")
+array_map_c = array.new_color(1, color.red)
+array_map_acc := array_map_acc + array.size(array_map_f) + array.size(array_map_i)
+array_map_acc := array_map_acc + array.size(array_map_b) + array.size(array_map_s) + array.size(array_map_c)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_f, 0) == 2.0)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_i, 1) == 5)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_b, 0))
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_s, 0) == "ab")
+
+// --- array.from(), push, get, set, size, insert, remove, unshift, shift, pop ---
+array_map_a = array.from(1.0, 2.0, 3.0)
+array.push(array_map_a, 4.0)
+array.unshift(array_map_a, 0.0)
+array.insert(array_map_a, 2, 9.0)                 // [0,1,9,2,3,4]
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_a) == 6)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_a, 2) == 9.0)
+array_map_rm = array.remove(array_map_a, 2)       // [0,1,2,3,4]
+array_map_acc := array_map_acc + array_map_check(array_map_rm == 9.0)
+array_map_sh = array.shift(array_map_a)           // [1,2,3,4]
+array_map_pp = array.pop(array_map_a)             // [1,2,3]
+array_map_acc := array_map_acc + array_map_check(array_map_sh == 0.0 and array_map_pp == 4.0)
+array.set(array_map_a, 0, 7.0)                    // [7,2,3]
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_a, 0) == 7.0)
+array_map_acc := array_map_acc + array.first(array_map_a) + array.last(array_map_a)
+array_map_acc := array_map_acc + array_map_check(array.first(array_map_a) == 7.0 and array.last(array_map_a) == 3.0)
+
+// --- array.reverse(), copy(), slice(), concat(), clear(), fill() ---
+array.reverse(array_map_a)                        // [3,2,7]
+array_map_acc := array_map_acc + array_map_check(array.first(array_map_a) == 3.0)
+array_map_cp = array.copy(array_map_a)
+array.set(array_map_cp, 0, 100.0)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_a, 0) == 3.0)
+array_map_sl = array.slice(array_map_a, 0, 2)
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_sl) == 2)
+array_map_cat = array.concat(array.from(1.0, 2.0), array.from(3.0))
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_cat) == 3)
+array_map_fillw = array.new_float(4, 0.0)
+array.fill(array_map_fillw, 1.0)                  // whole array
+array.fill(array_map_fillw, 8.0, 1, 3)            // [from, to)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_fillw, 0) == 1.0 and array.get(array_map_fillw, 1) == 8.0 and array.get(array_map_fillw, 3) == 1.0)
+array_map_tmp = array.from(1.0, 2.0)
+array.clear(array_map_tmp)
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_tmp) == 0)
+
+// --- search: includes, indexof, lastindexof, binary_search family ---
+array_map_dups = array.from(1.0, 2.0, 2.0, 5.0, 9.0)
+array_map_acc := array_map_acc + array_map_check(array.includes(array_map_dups, 5.0))
+array_map_acc := array_map_acc + array_map_check(not array.includes(array_map_dups, 4.0))
+array_map_acc := array_map_acc + array_map_check(array.indexof(array_map_dups, 2.0) == 1)
+array_map_acc := array_map_acc + array_map_check(array.lastindexof(array_map_dups, 2.0) == 2)
+array_map_acc := array_map_acc + array_map_check(array.binary_search(array_map_dups, 5.0) == 3)
+array_map_acc := array_map_acc + array_map_check(array.binary_search(array_map_dups, 4.0) == -1)
+array_map_acc := array_map_acc + array_map_check(array.binary_search_leftmost(array_map_dups, 2.0) == 1)
+array_map_acc := array_map_acc + array_map_check(array.binary_search_rightmost(array_map_dups, 2.0) == 2)
+
+// --- aggregates: sum, avg, min, max (nth), median, range, mode, variance, stdev ---
+array_map_st = array.from(10.0, 20.0, 30.0, 40.0, 50.0)
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.sum(array_map_st), 150.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.avg(array_map_st), 30.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.min(array_map_st), 10.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.max(array_map_st), 50.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.min(array_map_st, 1), 20.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.max(array_map_st, 1), 40.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.median(array_map_st), 30.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.range(array_map_st), 40.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.mode(array.from(1.0, 2.0, 2.0, 3.0)), 2.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.variance(array.from(1.0, 2.0, 3.0)), 2.0 / 3.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.variance(array.from(1.0, 2.0, 3.0), false), 1.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.stdev(array.from(1.0, 2.0, 3.0), false), 1.0))
+array_map_acc := array_map_acc + array.stdev(array_map_st)
+
+// --- covariance, percentrank, percentile_* ---
+array_map_xs = array.from(1.0, 2.0, 3.0)
+array_map_ys = array.from(2.0, 4.0, 6.0)
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.covariance(array_map_xs, array_map_xs), array.variance(array_map_xs)))
+array_map_acc := array_map_acc + array.covariance(array_map_xs, array_map_ys, false)
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.percentile_linear_interpolation(array_map_st, 0.0), 10.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.percentile_linear_interpolation(array_map_st, 100.0), 50.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.percentile_linear_interpolation(array_map_st, 50.0), 30.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.percentile_nearest_rank(array_map_st, 100.0), 50.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.percentile_nearest_rank(array_map_st, 0.0), 10.0))
+array_map_acc := array_map_acc + array.percentrank(array_map_st, 2)
+
+// --- transforms and ordering: abs, standardize, sort, sort_indices ---
+array_map_ab = array.abs(array.from(-1.0, 2.0, -3.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.sum(array_map_ab), 6.0))
+array_map_sd = array.standardize(array.from(1.0, 2.0, 3.0))
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.sum(array_map_sd), 0.0))
+array_map_srt = array.from(3.0, 1.0, 2.0)
+array.sort(array_map_srt)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_srt, 0) == 1.0)
+array.sort(array_map_srt, order.descending)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_srt, 0) == 3.0)
+array.sort(array_map_srt, order.ascending)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_srt, 2) == 3.0)
+array_map_perm = array.sort_indices(array.from(3.0, 1.0, 2.0))
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_perm, 0) == 1)
+array_map_permd = array.sort_indices(array.from(3.0, 1.0, 2.0), order.descending)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_permd, 0) == 0)
+
+// --- boolean reductions: every, some (no callback form) ---
+array_map_acc := array_map_acc + array_map_check(array.every(array.from(true, true)))
+array_map_acc := array_map_acc + array_map_check(not array.every(array.from(true, false)))
+array_map_acc := array_map_acc + array_map_check(array.some(array.from(false, true)))
+array_map_acc := array_map_acc + array_map_check(not array.some(array.from(0.0, 0.0)))
+array_map_acc := array_map_acc + array_map_check(array.some(array.from(0.0, 1.0)))
+array_map_acc := array_map_acc + array_map_check(array.every(array.from(1.0, 2.0)))
+
+// --- array.join(): string array, default and explicit separator ---
+array_map_words = array.from("a", "b", "c")
+array_map_acc := array_map_acc + array_map_check(array.join(array_map_words) == "abc")
+array_map_acc := array_map_acc + array_map_check(array.join(array_map_words, "-") == "a-b-c")
+
+// --- reference-typed constructors, guarded so object budgets are not burned ---
+array_map_lines = array.new_line()
+array_map_labels = array.new_label()
+array_map_boxes = array.new_box()
+array_map_tables = array.new_table()
+array_map_fills = array.new_linefill()
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_lines) == 0 and array.size(array_map_labels) == 0)
+array_map_acc := array_map_acc + array_map_check(array.size(array_map_boxes) == 0 and array.size(array_map_tables) == 0 and array.size(array_map_fills) == 0)
+if barstate.islast
+    array.push(array_map_lines, line.new(bar_index - 1, low, bar_index, high))
+    array.push(array_map_labels, label.new(bar_index, high, "surface"))
+    array.push(array_map_boxes, box.new(bar_index - 1, high, bar_index, low))
+    array.push(array_map_tables, table.new(position.top_right, 1, 1))
+    array_map_acc := array_map_acc + array.size(array_map_lines) + array.size(array_map_labels) + array.size(array_map_boxes) + array.size(array_map_tables)
+
+// ---------------------------------------------------------------------------
+// map.*: new_<K>_<V>, put, get, contains, size, keys, values, remove,
+//        copy, put_all, clear
+// ---------------------------------------------------------------------------
+var array_map_hist = map.new_int_float()
+array_map_prevbar = map.put(array_map_hist, bar_index, close)
+array_map_acc := array_map_acc + map.size(array_map_hist)
+
+array_map_scores = map.new_string_float()
+array_map_p0 = map.put(array_map_scores, "z", 10.0)
+array_map_p1 = map.put(array_map_scores, "a", 20.0)
+array_map_p2 = map.put(array_map_scores, "m", 30.0)
+array_map_acc := array_map_acc + array_map_check(na(array_map_p0))
+array_map_acc := array_map_acc + array_map_check(map.size(array_map_scores) == 3)
+array_map_acc := array_map_acc + array_map_check(array_map_eq(map.get(array_map_scores, "m"), 30.0))
+array_map_acc := array_map_acc + array_map_check(na(map.get(array_map_scores, "nope")))
+array_map_acc := array_map_acc + array_map_check(map.contains(array_map_scores, "a"))
+array_map_acc := array_map_acc + array_map_check(not map.contains(array_map_scores, "q"))
+array_map_keys = map.keys(array_map_scores)
+array_map_vals = map.values(array_map_scores)
+array_map_acc := array_map_acc + array_map_check(array.get(array_map_keys, 0) == "z")   // insertion order
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array.get(array_map_vals, 2), 30.0))
+array_map_over = map.put(array_map_scores, "a", 99.0)                                   // returns previous
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array_map_over, 20.0))
+array_map_acc := array_map_acc + array_map_check(map.size(array_map_scores) == 3)
+array_map_acc := array_map_acc + array_map_check(array.get(map.keys(array_map_scores), 1) == "a")  // position kept
+array_map_gone = map.remove(array_map_scores, "z")
+array_map_acc := array_map_acc + array_map_check(array_map_eq(array_map_gone, 10.0) and map.size(array_map_scores) == 2)
+array_map_acc := array_map_acc + array_map_check(na(map.remove(array_map_scores, "z")))
+
+array_map_base = map.new_string_int()
+array_map_b0 = map.put(array_map_base, "k", 1)
+array_map_dup = map.copy(array_map_base)
+array_map_d0 = map.put(array_map_dup, "k", 100)
+array_map_acc := array_map_acc + array_map_check(map.get(array_map_base, "k") == 1)
+array_map_acc := array_map_acc + array_map_check(map.get(array_map_dup, "k") == 100)
+
+array_map_dst = map.new_string_float()
+array_map_q0 = map.put(array_map_dst, "x", 1.0)
+array_map_q1 = map.put(array_map_dst, "y", 2.0)
+array_map_src = map.new_string_float()
+array_map_r0 = map.put(array_map_src, "y", 20.0)
+array_map_r1 = map.put(array_map_src, "w", 30.0)
+map.put_all(array_map_dst, array_map_src)
+array_map_acc := array_map_acc + array_map_check(map.size(array_map_dst) == 3)
+array_map_acc := array_map_acc + array_map_check(array_map_eq(map.get(array_map_dst, "y"), 20.0))
+
+array_map_ii = map.new_int_int()
+array_map_t0 = map.put(array_map_ii, 1, 1)
+array_map_t1 = map.put(array_map_ii, 2, 2)
+map.clear(array_map_ii)
+array_map_acc := array_map_acc + array_map_check(map.size(array_map_ii) == 0)
+
+array_map_bools = map.new_string_bool()
+array_map_u0 = map.put(array_map_bools, "on", true)
+array_map_acc := array_map_acc + array_map_check(map.get(array_map_bools, "on"))
+array_map_colors = map.new_string_color()
+array_map_v0 = map.put(array_map_colors, "up", color.green)
+array_map_acc := array_map_acc + array_map_check(map.size(array_map_colors) == 1)
+array_map_strs = map.new_string_string()
+array_map_w0 = map.put(array_map_strs, "k", "v")
+array_map_acc := array_map_acc + array_map_check(map.get(array_map_strs, "k") == "v")
+
+plot(array_map_acc, "array-map accumulator")
+plot(array_map_checks.value, "array-map checks passed")
+
+
+// ===========================================================================
+// Matrices
+// ===========================================================================
+
+// ===========================================================================
+// Matrix functions.
+// Covers the matrix functions below. Results are folded into
+// matrix_acc (a running float) and matrix_checks (a deterministic pass
+// counter) so that any changed return value shows up in a plotted series.
+// ===========================================================================
+
+var float matrix_acc = 0.0
+var CounterCell matrix_checks = CounterCell.new(0)
+
+matrix_ok(bool cond) =>
+    matrix_checks.value := matrix_checks.value + (cond ? 1 : 0)
+    cond ? 1.0 : 0.0
+
+matrix_near(float a, float b, float tol) =>
+    na(a) or na(b) ? false : math.abs(a - b) <= tol
+
+// --- matrix.new<type>() (all five element types), rows/columns/elements_count
+matrix_mf = matrix.new_float(2, 3, 4.0)
+matrix_mi = matrix.new_int(2, 2, 7)
+matrix_mb = matrix.new_bool(2, 2, true)
+matrix_ms = matrix.new_string(1, 2, "ab")
+matrix_mc = matrix.new_color(1, 1, color.red)
+matrix_mna = matrix.new_float(2, 2)          // omitted initial -> na cells
+
+matrix_acc += matrix.rows(matrix_mf) + matrix.columns(matrix_mf) + matrix.elements_count(matrix_mf)
+matrix_acc += matrix_ok(matrix.rows(matrix_mf) == 2)
+matrix_acc += matrix_ok(matrix.columns(matrix_mf) == 3)
+matrix_acc += matrix_ok(matrix.elements_count(matrix_mf) == 6)
+matrix_acc += matrix_ok(matrix.get(matrix_mi, 0, 0) == 7)
+matrix_acc += matrix_ok(matrix.get(matrix_mb, 1, 1))
+matrix_acc += matrix_ok(matrix.get(matrix_ms, 0, 1) == "ab")
+matrix_acc += matrix_ok(matrix.get(matrix_mc, 0, 0) == color.red)
+matrix_acc += matrix_ok(na(matrix.get(matrix_mna, 0, 0)))
+
+// --- matrix.get() / matrix.set()
+matrix.set(matrix_mf, 1, 2, 9.0)
+matrix_acc += matrix.get(matrix_mf, 1, 2)
+matrix_acc += matrix_ok(matrix.get(matrix_mf, 1, 2) == 9.0)
+matrix_acc += matrix_ok(matrix.get(matrix_mf, 0, 0) == 4.0)
+
+// --- var matrix persists across bars (reference semantics)
+var matrix_counter = matrix.new_float(1, 1, 0.0)
+matrix.set(matrix_counter, 0, 0, matrix.get(matrix_counter, 0, 0) + 1.0)
+matrix_acc += matrix.get(matrix_counter, 0, 0) > 0.0 ? 1.0 : 0.0
+
+// --- hand-built 2x2 A = [[1,2],[3,4]] used by the algebra section
+matrix_a = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_a, 0, 0, 1.0)
+matrix.set(matrix_a, 0, 1, 2.0)
+matrix.set(matrix_a, 1, 0, 3.0)
+matrix.set(matrix_a, 1, 1, 4.0)
+
+// --- matrix.det() / matrix.trace()
+matrix_acc += matrix.det(matrix_a) + matrix.trace(matrix_a)
+matrix_acc += matrix_ok(matrix_near(matrix.det(matrix_a), -2.0, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.trace(matrix_a), 5.0, 1e-9))
+
+// --- matrix.inv(): inv(A)*A ~= I within 1e-3
+matrix_inv = matrix.inv(matrix_a)
+matrix_ident = matrix.mult(matrix_inv, matrix_a)
+matrix_acc += matrix.get(matrix_ident, 0, 0)
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_ident, 0, 0), 1.0, 1e-3))
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_ident, 0, 1), 0.0, 1e-3))
+
+// --- matrix.transpose()
+matrix_t = matrix.transpose(matrix_a)
+matrix_acc += matrix.get(matrix_t, 1, 0)
+matrix_acc += matrix_ok(matrix.get(matrix_t, 1, 0) == 2.0)
+matrix_acc += matrix_ok(matrix.get(matrix_t, 0, 1) == 3.0)
+
+// --- matrix.sum() (elementwise and scalar broadcast)
+matrix_b = matrix.new_float(2, 2, 10.0)
+matrix_s = matrix.sum(matrix_a, matrix_b)
+matrix_sc = matrix.sum(matrix_a, 100.0)
+matrix_acc += matrix.get(matrix_s, 0, 0) + matrix.get(matrix_sc, 1, 1)
+matrix_acc += matrix_ok(matrix.get(matrix_s, 0, 0) == 11.0)
+matrix_acc += matrix_ok(matrix.get(matrix_sc, 1, 1) == 104.0)
+
+// --- matrix.diff() (elementwise and scalar)
+matrix_d = matrix.diff(matrix_b, matrix_a)
+matrix_dsc = matrix.diff(matrix_a, 1.0)
+matrix_acc += matrix.get(matrix_d, 0, 0) + matrix.get(matrix_dsc, 0, 0)
+matrix_acc += matrix_ok(matrix.get(matrix_d, 0, 0) == 9.0)
+matrix_acc += matrix_ok(matrix.get(matrix_dsc, 0, 0) == 0.0)
+
+// --- matrix.mult() (matrix product and scalar scaling)
+// A*A = [[7,10],[15,22]]
+matrix_aa = matrix.mult(matrix_a, matrix_a)
+matrix_scaled = matrix.mult(matrix_a, 2.0)
+matrix_acc += matrix.get(matrix_aa, 0, 0) + matrix.get(matrix_scaled, 1, 1)
+matrix_acc += matrix_ok(matrix.get(matrix_aa, 0, 0) == 7.0)
+matrix_acc += matrix_ok(matrix.get(matrix_aa, 1, 1) == 22.0)
+matrix_acc += matrix_ok(matrix.get(matrix_scaled, 1, 1) == 8.0)
+
+// --- matrix.pow() (integer power; ^0 -> identity)
+matrix_p2 = matrix.pow(matrix_a, 2)
+matrix_p0 = matrix.pow(matrix_a, 0)
+matrix_acc += matrix.get(matrix_p2, 0, 1) + matrix.get(matrix_p0, 0, 0)
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_p2, 0, 1), 10.0, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_p0, 0, 0), 1.0, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_p0, 0, 1), 0.0, 1e-9))
+
+// --- matrix.kron(): kron(A, I2) is 4x4, (0,0) = 1*1
+matrix_i2 = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_i2, 0, 0, 1.0)
+matrix.set(matrix_i2, 1, 1, 1.0)
+matrix_k = matrix.kron(matrix_a, matrix_i2)
+matrix_acc += matrix.rows(matrix_k) + matrix.columns(matrix_k)
+matrix_acc += matrix_ok(matrix.rows(matrix_k) == 4 and matrix.columns(matrix_k) == 4)
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_k, 0, 0), 1.0, 1e-9))
+
+// --- matrix.copy() is a deep copy, independent of the source
+matrix_cp = matrix.copy(matrix_a)
+matrix.set(matrix_cp, 0, 0, 99.0)
+matrix_acc += matrix.get(matrix_cp, 0, 0) + matrix.get(matrix_a, 0, 0)
+matrix_acc += matrix_ok(matrix.get(matrix_a, 0, 0) == 1.0 and matrix.get(matrix_cp, 0, 0) == 99.0)
+
+// --- matrix.fill(): full form and the omitted-bound sentinel form
+matrix_fillm = matrix.new_float(3, 3, 0.0)
+matrix.fill(matrix_fillm, 5.0)                        // every cell
+matrix_acc += matrix_ok(matrix.get(matrix_fillm, 2, 2) == 5.0)
+matrix.fill(matrix_fillm, 1.0, 0, 1, 0, 1)            // only cell (0,0)
+matrix_acc += matrix.get(matrix_fillm, 0, 0) + matrix.get(matrix_fillm, 1, 1)
+matrix_acc += matrix_ok(matrix.get(matrix_fillm, 0, 0) == 1.0)
+matrix_acc += matrix_ok(matrix.get(matrix_fillm, 1, 1) == 5.0)
+matrix.fill(matrix_fillm, 2.0, 1, 2)                  // omitted column bounds -> sentinels
+matrix_acc += matrix_ok(matrix.get(matrix_fillm, 1, 2) == 2.0)
+
+// --- matrix.add_row() / matrix.add_col()
+matrix_grid = matrix.new_float(1, 2, 1.0)
+matrix.add_row(matrix_grid, 1, array.from(7.0, 8.0))
+matrix_acc += matrix_ok(matrix.rows(matrix_grid) == 2)
+matrix_acc += matrix_ok(matrix.get(matrix_grid, 1, 0) == 7.0)
+matrix.add_col(matrix_grid, 2, array.from(3.0, 4.0))
+matrix_acc += matrix_ok(matrix.columns(matrix_grid) == 3)
+matrix_acc += matrix_ok(matrix.get(matrix_grid, 0, 2) == 3.0)
+matrix_acc += matrix.get(matrix_grid, 1, 2)
+
+// --- matrix.remove_row() / matrix.remove_col()
+matrix.remove_col(matrix_grid, 2)
+matrix.remove_row(matrix_grid, 1)
+matrix_acc += matrix_ok(matrix.rows(matrix_grid) == 1 and matrix.columns(matrix_grid) == 2)
+
+// --- matrix.swap_rows() / matrix.swap_columns()
+matrix_sw = matrix.copy(matrix_a)
+matrix.swap_rows(matrix_sw, 0, 1)
+matrix_acc += matrix_ok(matrix.get(matrix_sw, 0, 0) == 3.0)
+matrix.swap_columns(matrix_sw, 0, 1)
+matrix_acc += matrix_ok(matrix.get(matrix_sw, 0, 0) == 4.0)
+matrix_acc += matrix.get(matrix_sw, 0, 0)
+
+// --- matrix.reverse() (both axes: [[1,2],[3,4]] -> [[4,3],[2,1]])
+matrix_rv = matrix.copy(matrix_a)
+// matrix.reverse mutates in place and returns nothing, so the bare call is
+// the usage and the receiver is read back.
+matrix.reverse(matrix_rv)
+matrix_rvout = matrix_rv
+matrix_acc += matrix.get(matrix_rvout, 0, 0)
+matrix_acc += matrix_ok(matrix.get(matrix_rvout, 0, 0) == 4.0)
+matrix_acc += matrix_ok(matrix.get(matrix_rvout, 1, 1) == 1.0)
+
+// --- matrix.reshape() (in place, same element count)
+matrix_rs = matrix.copy(matrix_a)
+matrix.reshape(matrix_rs, 1, 4)
+matrix_acc += matrix_ok(matrix.rows(matrix_rs) == 1 and matrix.columns(matrix_rs) == 4)
+matrix_acc += matrix_ok(matrix.get(matrix_rs, 0, 3) == 4.0)
+
+// --- matrix.submatrix() (to_* exclusive)
+matrix_sub = matrix.submatrix(matrix_a, 0, 1, 0, 2)
+matrix_acc += matrix_ok(matrix.rows(matrix_sub) == 1 and matrix.columns(matrix_sub) == 2)
+matrix_acc += matrix_ok(matrix.get(matrix_sub, 0, 1) == 2.0)
+
+// --- matrix.concat() (append id2's rows to id1)
+matrix_c1 = matrix.copy(matrix_a)
+matrix_c2 = matrix.new_float(1, 2, 5.0)
+matrix_cat = matrix.concat(matrix_c1, matrix_c2)
+matrix_acc += matrix_ok(matrix.rows(matrix_cat) == 3)
+matrix_acc += matrix_ok(matrix.get(matrix_cat, 2, 0) == 5.0)
+matrix_acc += matrix_ok(matrix.columns(matrix_cat) == 2)
+
+// --- matrix.avg() / min() / max() / median() over 1,2,3,4
+matrix_acc += matrix.avg(matrix_a) + matrix.min(matrix_a) + matrix.max(matrix_a) + matrix.median(matrix_a)
+matrix_acc += matrix_ok(matrix_near(matrix.avg(matrix_a), 2.5, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.min(matrix_a), 1.0, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.max(matrix_a), 4.0, 1e-9))
+matrix_acc += matrix_ok(matrix_near(matrix.median(matrix_a), 2.5, 1e-9))
+
+// --- matrix.mode(): [[2,2],[5,7]] -> most frequent cell is 2
+matrix_md = matrix.new_float(2, 2, 2.0)
+matrix.set(matrix_md, 1, 0, 5.0)
+matrix.set(matrix_md, 1, 1, 7.0)
+matrix_acc += matrix.mode(matrix_md)
+matrix_acc += matrix_ok(matrix_near(matrix.mode(matrix_md), 2.0, 1e-9))
+
+// --- predicates: is_square / is_identity / is_diagonal / is_triangular
+matrix_acc += matrix_ok(matrix.is_square(matrix_i2))
+matrix_acc += matrix_ok(matrix.is_identity(matrix_i2))
+matrix_acc += matrix_ok(matrix.is_diagonal(matrix_i2))
+matrix_acc += matrix_ok(matrix.is_triangular(matrix_i2))
+matrix_acc += matrix_ok(not matrix.is_square(matrix_mf))
+matrix_acc += matrix_ok(not matrix.is_identity(matrix_a))
+
+// --- is_symmetric / is_antisymmetric
+matrix_sym = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_sym, 0, 0, 5.0)
+matrix.set(matrix_sym, 0, 1, 2.0)
+matrix.set(matrix_sym, 1, 0, 2.0)
+matrix.set(matrix_sym, 1, 1, 2.0)
+matrix_anti = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_anti, 0, 1, 1.0)
+matrix.set(matrix_anti, 1, 0, -1.0)
+matrix_acc += matrix_ok(matrix.is_symmetric(matrix_sym))
+matrix_acc += matrix_ok(matrix.is_antisymmetric(matrix_anti))
+matrix_acc += matrix_ok(not matrix.is_symmetric(matrix_a))
+
+// --- is_stochastic (right-stochastic, rows sum to 1 within 1e-9)
+matrix_st = matrix.new_float(2, 2, 0.5)
+matrix_acc += matrix_ok(matrix.is_stochastic(matrix_st))
+matrix_acc += matrix_ok(not matrix.is_stochastic(matrix_a))
+
+// --- is_binary / is_zero
+matrix_zero = matrix.new_float(2, 2, 0.0)
+matrix_acc += matrix_ok(matrix.is_zero(matrix_zero))
+matrix_acc += matrix_ok(matrix.is_binary(matrix_zero))
+matrix_acc += matrix_ok(matrix.is_binary(matrix_i2))
+matrix_acc += matrix_ok(not matrix.is_binary(matrix_a))
+
+// --- is_antidiagonal: [[0,1],[1,0]]
+matrix_ad = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_ad, 0, 1, 1.0)
+matrix.set(matrix_ad, 1, 0, 1.0)
+matrix_acc += matrix_ok(matrix.is_antidiagonal(matrix_ad))
+matrix_acc += matrix_ok(not matrix.is_antidiagonal(matrix_i2))
+
+// --- matrix.eigenvalues(): symmetric input, descending order
+// diag(5,2) -> [5,2]
+matrix_diag = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_diag, 0, 0, 5.0)
+matrix.set(matrix_diag, 1, 1, 2.0)
+matrix_ev = matrix.eigenvalues(matrix_diag)
+matrix_acc += array.get(matrix_ev, 0) + array.get(matrix_ev, 1)
+matrix_acc += matrix_ok(array.size(matrix_ev) == 2)
+matrix_acc += matrix_ok(matrix_near(array.get(matrix_ev, 0), 5.0, 1e-6))
+matrix_acc += matrix_ok(matrix_near(array.get(matrix_ev, 1), 2.0, 1e-6))
+
+// --- matrix.eigenvectors(): columns are unit eigenvectors, A*v ~= lambda*v
+matrix_evec = matrix.eigenvectors(matrix_diag)
+matrix_acc += matrix_ok(matrix.rows(matrix_evec) == 2 and matrix.columns(matrix_evec) == 2)
+matrix_v0 = matrix.col(matrix_evec, 0)
+matrix_vnorm = math.sqrt(math.pow(array.get(matrix_v0, 0), 2) + math.pow(array.get(matrix_v0, 1), 2))
+matrix_acc += matrix_vnorm
+matrix_acc += matrix_ok(matrix_near(matrix_vnorm, 1.0, 1e-6))
+
+// --- matrix.pinv(): A * A+ * A ~= A on a full-rank matrix
+matrix_pi = matrix.pinv(matrix_a)
+matrix_rt = matrix.mult(matrix.mult(matrix_a, matrix_pi), matrix_a)
+matrix_acc += matrix.get(matrix_rt, 0, 0)
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_rt, 0, 0), 1.0, 1e-3))
+matrix_acc += matrix_ok(matrix_near(matrix.get(matrix_rt, 1, 1), 4.0, 1e-3))
+
+// --- matrix.rank(): full-rank 2x2 identity -> 2; a rank-1 matrix -> 1
+matrix_r1 = matrix.new_float(2, 2, 1.0)
+matrix_acc += matrix.rank(matrix_i2) + matrix.rank(matrix_r1)
+matrix_acc += matrix_ok(matrix.rank(matrix_i2) == 2)
+matrix_acc += matrix_ok(matrix.rank(matrix_r1) == 1)
+matrix_acc += matrix_ok(matrix.rank(matrix_a) == 2)
+
+// --- matrix.sort(): reorder rows by a column under an order.* constant
+matrix_srcm = matrix.new_float(2, 2, 0.0)
+matrix.set(matrix_srcm, 0, 0, 3.0)
+matrix.set(matrix_srcm, 0, 1, 30.0)
+matrix.set(matrix_srcm, 1, 0, 1.0)
+matrix.set(matrix_srcm, 1, 1, 10.0)
+matrix_asc = matrix.copy(matrix_srcm)
+matrix_desc = matrix.copy(matrix_srcm)
+matrix.sort(matrix_asc, 0, order.ascending)
+matrix.sort(matrix_desc, 0, order.descending)
+matrix_acc += matrix.get(matrix_asc, 0, 0) + matrix.get(matrix_desc, 0, 0)
+matrix_acc += matrix_ok(matrix.get(matrix_asc, 0, 0) == 1.0)
+matrix_acc += matrix_ok(matrix.get(matrix_asc, 0, 1) == 10.0)
+matrix_acc += matrix_ok(matrix.get(matrix_desc, 0, 0) == 3.0)
+
+// --- matrix.row() / matrix.col()
+matrix_row0 = matrix.row(matrix_a, 0)
+matrix_col1 = matrix.col(matrix_a, 1)
+matrix_acc += array.get(matrix_row0, 1) + array.get(matrix_col1, 1)
+matrix_acc += matrix_ok(array.size(matrix_row0) == 2 and array.get(matrix_row0, 0) == 1.0 and array.get(matrix_row0, 1) == 2.0)
+matrix_acc += matrix_ok(array.size(matrix_col1) == 2 and array.get(matrix_col1, 0) == 2.0 and array.get(matrix_col1, 1) == 4.0)
+
+// --- reference semantics: assignment copies the handle (aliasing observable)
+matrix_alias = matrix_a
+matrix.set(matrix_alias, 1, 1, 4.0)
+matrix_acc += matrix_ok(matrix.get(matrix_a, 1, 1) == 4.0)
+
+plot(matrix_acc, "matrix accumulator")
+plot(matrix_checks.value, "matrix checks passed")
+
+
+// ===========================================================================
+// Drawings
+// ===========================================================================
+
+// Covers line, label, box, table, polyline, linefill, and chart.point and
+// chart functions. Every drawing object is created under a
+// barstate.islast guard so the live registries are never exhausted.
+
+var float drawings_acc = 0.0
+var CounterCell drawings_checks = CounterCell.new(0)
+
+drawings_check(bool ok) =>
+    drawings_checks.value := drawings_checks.value + (ok ? 1 : 0)
+    ok ? 1.0 : 0.0
+
+// ---------------------------------------------------------------------------
+// chart.* const predicates and theme colors.
+// chart.is_standard folds true; the other chart.is_* fold false.
+// chart.bg_color / chart.fg_color are const colors.
+// ---------------------------------------------------------------------------
+drawings_bg = chart.bg_color
+drawings_fg = chart.fg_color
+drawings_constChecks = (chart.is_standard ? 1 : 0) + (chart.is_heikinashi ? 1 : 0) + (chart.is_kagi ? 1 : 0) + (chart.is_linebreak ? 1 : 0) + (chart.is_pnf ? 1 : 0) + (chart.is_range ? 1 : 0) + (chart.is_renko ? 1 : 0)
+
+// chart.left/right_visible_bar_time are series int, na without a host viewport.
+drawings_visible = (na(chart.left_visible_bar_time) ? 0 : 1) + (na(chart.right_visible_bar_time) ? 0 : 1)
+
+if barstate.islast
+    // exactly one of the seven chart-type predicates is true (the standard one)
+    drawings_acc += drawings_check(drawings_constChecks == 1)
+    drawings_acc += drawings_check(chart.is_standard)
+    drawings_acc += drawings_check(not chart.is_renko)
+    drawings_acc += drawings_visible * 0.0
+
+    // -----------------------------------------------------------------------
+    // chart.point.new / from_index / from_time / now / copy
+    // Field order is (time, index, price): a positional call binds time first.
+    // -----------------------------------------------------------------------
+    drawings_pIdx = chart.point.from_index(3, 10.0)
+    drawings_pTime = chart.point.from_time(1000, 20.0)
+    drawings_pNow = chart.point.now(30.0)
+    drawings_pNamed = chart.point.new(time = na, index = 7, price = 40.0)
+    drawings_pPos = chart.point.new(2000, 8, 50.0)
+    drawings_pCopy = chart.point.copy(drawings_pIdx)
+
+    drawings_acc += drawings_check(drawings_pIdx.index == 3)
+    drawings_acc += drawings_check(drawings_pIdx.price == 10.0)
+    // from_index leaves time na
+    drawings_acc += drawings_check(na(drawings_pIdx.time))
+    drawings_acc += drawings_check(drawings_pTime.time == 1000)
+    // from_time leaves index na
+    drawings_acc += drawings_check(na(drawings_pTime.index))
+    // now() binds the current bar coordinates and supplied price
+    drawings_acc += drawings_check(drawings_pNow.price == 30.0)
+    drawings_acc += drawings_check(drawings_pNow.index == bar_index)
+    drawings_acc += drawings_check(drawings_pNow.time == time)
+    drawings_acc += drawings_check(drawings_pNamed.index == 7)
+    drawings_acc += drawings_check(na(drawings_pNamed.time))
+    // positional constructor order is time, index, price
+    drawings_acc += drawings_check(drawings_pPos.time == 2000)
+    drawings_acc += drawings_check(drawings_pPos.index == 8)
+    drawings_acc += drawings_check(drawings_pPos.price == 50.0)
+    // copy carries the same coordinates
+    drawings_acc += drawings_check(drawings_pCopy.index == 3 and drawings_pCopy.price == 10.0)
+
+    // -----------------------------------------------------------------------
+    // line.new / setters / getters / get_price / copy / delete / all
+    // and the six line.style_* constants.
+    // -----------------------------------------------------------------------
+    drawings_ln = line.new(0, 100.0, 10, 200.0, xloc = xloc.bar_index, extend = extend.none, color = color.red, style = line.style_solid, width = 1)
+    // get_price interpolates y1 + (x-x1)*(y2-y1)/(x2-x1)
+    drawings_acc += drawings_check(line.get_price(drawings_ln, 5) == 150.0)
+    // extrapolates outside the segment
+    drawings_acc += drawings_check(line.get_price(drawings_ln, 20) == 300.0)
+    drawings_acc += drawings_check(line.get_x1(drawings_ln) == 0)
+    drawings_acc += drawings_check(line.get_x2(drawings_ln) == 10)
+    drawings_acc += drawings_check(line.get_y1(drawings_ln) == 100.0)
+    drawings_acc += drawings_check(line.get_y2(drawings_ln) == 200.0)
+
+    line.set_x1(drawings_ln, 1)
+    line.set_y1(drawings_ln, 110.0)
+    line.set_x2(drawings_ln, 11)
+    line.set_y2(drawings_ln, 210.0)
+    line.set_width(drawings_ln, 3)
+    line.set_style(drawings_ln, line.style_dashed)
+    line.set_color(drawings_ln, color.blue)
+    line.set_extend(drawings_ln, extend.both)
+    line.set_xloc(drawings_ln, 2, 12, xloc.bar_index)
+    drawings_acc += drawings_check(line.get_x1(drawings_ln) == 2)
+    drawings_acc += drawings_check(line.get_x2(drawings_ln) == 12)
+    drawings_acc += drawings_check(line.get_y1(drawings_ln) == 110.0)
+    drawings_acc += drawings_check(line.get_y2(drawings_ln) == 210.0)
+
+    // compound endpoint setters
+    line.set_xy1(drawings_ln, 4, 400.0)
+    line.set_xy2(drawings_ln, 14, 500.0)
+    drawings_acc += drawings_check(line.get_x1(drawings_ln) == 4 and line.get_y1(drawings_ln) == 400.0)
+    drawings_acc += drawings_check(line.get_x2(drawings_ln) == 14 and line.get_y2(drawings_ln) == 500.0)
+
+    // point setters write index -> x and price -> y
+    line.set_first_point(drawings_ln, chart.point.from_index(6, 600.0))
+    line.set_second_point(drawings_ln, chart.point.from_index(16, 700.0))
+    drawings_acc += drawings_check(line.get_x1(drawings_ln) == 6 and line.get_y1(drawings_ln) == 600.0)
+    drawings_acc += drawings_check(line.get_x2(drawings_ln) == 16 and line.get_y2(drawings_ln) == 700.0)
+
+    // copy is independent: mutating the copy leaves the source unchanged
+    drawings_lnCopy = line.copy(drawings_ln)
+    line.set_y1(drawings_lnCopy, 999.0)
+    drawings_acc += drawings_check(line.get_y1(drawings_lnCopy) == 999.0)
+    drawings_acc += drawings_check(line.get_y1(drawings_ln) == 600.0)
+
+    // the six style tokens are distinct const strings
+    drawings_styleDistinct = line.style_solid != line.style_dotted and line.style_dotted != line.style_dashed and line.style_dashed != line.style_arrow_left and line.style_arrow_left != line.style_arrow_right and line.style_arrow_right != line.style_arrow_both
+    drawings_acc += drawings_check(drawings_styleDistinct)
+    drawings_acc += drawings_check(str.length(line.style_solid) > 0)
+
+    // line.all is a fresh array<line> of the live lines in creation order
+    drawings_lineAll = line.all
+    drawings_acc += drawings_check(array.size(drawings_lineAll) == 2)
+    drawings_acc += drawings_check(line.get_x1(array.get(drawings_lineAll, 0)) == 6)
+    // deletion is reflected in the per-kind array
+    line.delete(drawings_lnCopy)
+    drawings_acc += drawings_check(array.size(line.all) == 1)
+
+    // -----------------------------------------------------------------------
+    // label.new / setters / getters / copy / delete / all
+    // plus the label.style_* constants.
+    // -----------------------------------------------------------------------
+    drawings_lbl = label.new(5, 100.0, str.format("v={0}", 42), xloc = xloc.bar_index, yloc = yloc.price, color = color.red, style = label.style_label_up, textcolor = color.white, size = size.normal, textalign = text.align_center)
+    drawings_acc += drawings_check(label.get_text(drawings_lbl) == "v=42")
+    drawings_acc += drawings_check(label.get_x(drawings_lbl) == 5)
+    drawings_acc += drawings_check(label.get_y(drawings_lbl) == 100.0)
+
+    label.set_text(drawings_lbl, "updated")
+    label.set_x(drawings_lbl, 9)
+    label.set_y(drawings_lbl, 120.0)
+    label.set_color(drawings_lbl, color.green)
+    label.set_size(drawings_lbl, size.large)
+    label.set_style(drawings_lbl, label.style_label_down)
+    label.set_textcolor(drawings_lbl, drawings_fg)
+    label.set_textalign(drawings_lbl, text.align_left)
+    label.set_xloc(drawings_lbl, 11, xloc.bar_index)
+    label.set_yloc(drawings_lbl, yloc.abovebar)
+    label.set_tooltip(drawings_lbl, "tip")
+    label.set_text_font_family(drawings_lbl, font.family_monospace)
+    label.set_text_formatting(drawings_lbl, text.format_bold)
+    drawings_acc += drawings_check(label.get_text(drawings_lbl) == "updated")
+    drawings_acc += drawings_check(label.get_x(drawings_lbl) == 11)
+    drawings_acc += drawings_check(label.get_y(drawings_lbl) == 120.0)
+
+    label.set_xy(drawings_lbl, 13, 130.0)
+    drawings_acc += drawings_check(label.get_x(drawings_lbl) == 13 and label.get_y(drawings_lbl) == 130.0)
+    label.set_point(drawings_lbl, chart.point.from_index(17, 170.0))
+    drawings_acc += drawings_check(label.get_x(drawings_lbl) == 17 and label.get_y(drawings_lbl) == 170.0)
+
+    drawings_lblCopy = label.copy(drawings_lbl)
+    drawings_acc += drawings_check(label.get_text(drawings_lblCopy) == "updated")
+    drawings_acc += drawings_check(array.size(label.all) == 2)
+    label.delete(drawings_lblCopy)
+    drawings_acc += drawings_check(array.size(label.all) == 1)
+
+    drawings_lblStyles = str.length(label.style_none) + str.length(label.style_xcross) + str.length(label.style_cross) + str.length(label.style_triangleup) + str.length(label.style_triangledown) + str.length(label.style_flag) + str.length(label.style_circle) + str.length(label.style_arrowup) + str.length(label.style_arrowdown) + str.length(label.style_label_up) + str.length(label.style_label_down) + str.length(label.style_label_left) + str.length(label.style_label_right) + str.length(label.style_label_lower_left) + str.length(label.style_label_lower_right) + str.length(label.style_label_upper_left) + str.length(label.style_label_upper_right) + str.length(label.style_label_center) + str.length(label.style_square) + str.length(label.style_diamond) + str.length(label.style_text_outline)
+    drawings_acc += drawings_check(drawings_lblStyles > 0)
+    drawings_acc += drawings_check(label.style_square != label.style_diamond)
+
+    // -----------------------------------------------------------------------
+    // box.new / setters / getters / copy / delete / all
+    // -----------------------------------------------------------------------
+    drawings_bx = box.new(0, 200.0, 10, 100.0, border_color = color.blue, border_width = 1, border_style = line.style_solid, bgcolor = color.green)
+    drawings_acc += drawings_check(box.get_left(drawings_bx) == 0)
+    drawings_acc += drawings_check(box.get_right(drawings_bx) == 10)
+    drawings_acc += drawings_check(box.get_top(drawings_bx) == 200.0)
+    drawings_acc += drawings_check(box.get_bottom(drawings_bx) == 100.0)
+
+    box.set_left(drawings_bx, 1)
+    box.set_top(drawings_bx, 210.0)
+    box.set_right(drawings_bx, 11)
+    box.set_bottom(drawings_bx, 110.0)
+    box.set_border_color(drawings_bx, color.red)
+    box.set_border_width(drawings_bx, 2)
+    box.set_border_style(drawings_bx, line.style_dotted)
+    box.set_bgcolor(drawings_bx, drawings_bg)
+    box.set_extend(drawings_bx, extend.right)
+    box.set_text(drawings_bx, "boxed")
+    box.set_text_color(drawings_bx, color.white)
+    box.set_text_font_family(drawings_bx, font.family_default)
+    box.set_text_formatting(drawings_bx, text.format_italic)
+    box.set_text_halign(drawings_bx, text.align_right)
+    box.set_text_valign(drawings_bx, text.align_top)
+    box.set_text_size(drawings_bx, size.small)
+    box.set_text_wrap(drawings_bx, text.wrap_auto)
+    drawings_acc += drawings_check(box.get_left(drawings_bx) == 1)
+    drawings_acc += drawings_check(box.get_right(drawings_bx) == 11)
+    drawings_acc += drawings_check(box.get_top(drawings_bx) == 210.0)
+    drawings_acc += drawings_check(box.get_bottom(drawings_bx) == 110.0)
+
+    box.set_lefttop(drawings_bx, 3, 230.0)
+    box.set_rightbottom(drawings_bx, 13, 130.0)
+    drawings_acc += drawings_check(box.get_left(drawings_bx) == 3 and box.get_top(drawings_bx) == 230.0)
+    drawings_acc += drawings_check(box.get_right(drawings_bx) == 13 and box.get_bottom(drawings_bx) == 130.0)
+
+    box.set_top_left_point(drawings_bx, chart.point.from_index(5, 250.0))
+    box.set_bottom_right_point(drawings_bx, chart.point.from_index(15, 150.0))
+    drawings_acc += drawings_check(box.get_left(drawings_bx) == 5 and box.get_top(drawings_bx) == 250.0)
+    drawings_acc += drawings_check(box.get_right(drawings_bx) == 15 and box.get_bottom(drawings_bx) == 150.0)
+
+    box.set_xloc(drawings_bx, 6, 16, xloc.bar_index)
+    drawings_acc += drawings_check(box.get_left(drawings_bx) == 6 and box.get_right(drawings_bx) == 16)
+
+    drawings_bxCopy = box.copy(drawings_bx)
+    box.set_top(drawings_bxCopy, 999.0)
+    drawings_acc += drawings_check(box.get_top(drawings_bxCopy) == 999.0)
+    drawings_acc += drawings_check(box.get_top(drawings_bx) == 250.0)
+    drawings_acc += drawings_check(array.size(box.all) == 2)
+    box.delete(drawings_bxCopy)
+    drawings_acc += drawings_check(array.size(box.all) == 1)
+
+    // -----------------------------------------------------------------------
+    // table.new / cell / cell_set_* / clear / merge_cells / setters / all
+    // -----------------------------------------------------------------------
+    drawings_tbl = table.new(position.bottom_right, 3, 4, bgcolor = color.blue, frame_color = color.red, frame_width = 1, border_color = color.gray, border_width = 1)
+    table.cell(drawings_tbl, 0, 0, "hdr", width = 10, height = 5, text_color = color.white, text_halign = text.align_center, text_valign = text.align_center, text_size = size.small, bgcolor = color.navy, tooltip = "t", text_font_family = font.family_default, text_formatting = text.format_bold)
+    table.cell(drawings_tbl, 1, 1, "b")
+    table.cell(drawings_tbl, 2, 2, "c")
+    table.cell_set_text(drawings_tbl, 1, 1, "b2")
+    table.cell_set_bgcolor(drawings_tbl, 1, 1, color.olive)
+    table.cell_set_height(drawings_tbl, 1, 1, 7)
+    table.cell_set_width(drawings_tbl, 1, 1, 12)
+    table.cell_set_text_color(drawings_tbl, 1, 1, color.yellow)
+    table.cell_set_text_font_family(drawings_tbl, 1, 1, font.family_monospace)
+    table.cell_set_text_formatting(drawings_tbl, 1, 1, text.format_italic)
+    table.cell_set_text_halign(drawings_tbl, 1, 1, text.align_left)
+    table.cell_set_text_valign(drawings_tbl, 1, 1, text.align_bottom)
+    table.cell_set_text_size(drawings_tbl, 1, 1, size.large)
+    table.cell_set_tooltip(drawings_tbl, 1, 1, "tip2")
+    table.merge_cells(drawings_tbl, 0, 2, 1, 3)
+    // end defaults to start: a single-cell clear
+    table.clear(drawings_tbl, 2, 2)
+    table.clear(drawings_tbl, 0, 0, 1, 1)
+    table.set_position(drawings_tbl, position.bottom_left)
+    table.set_bgcolor(drawings_tbl, color.green)
+    table.set_frame_color(drawings_tbl, color.red)
+    table.set_frame_width(drawings_tbl, 2)
+    table.set_border_color(drawings_tbl, color.gray)
+    table.set_border_width(drawings_tbl, 5)
+    drawings_acc += drawings_check(array.size(table.all) == 1)
+    drawings_tbl2 = table.new(position.top_left, 1, 1)
+    drawings_acc += drawings_check(array.size(table.all) == 2)
+    table.delete(drawings_tbl2)
+    drawings_acc += drawings_check(array.size(table.all) == 1)
+
+    // -----------------------------------------------------------------------
+    // polyline.new / delete / all
+    // -----------------------------------------------------------------------
+    drawings_pts = array.new<chart.point>()
+    array.push(drawings_pts, chart.point.from_index(0, 100.0))
+    array.push(drawings_pts, chart.point.from_index(5, 150.0))
+    array.push(drawings_pts, chart.point.from_index(10, 120.0))
+    drawings_pl = polyline.new(drawings_pts, curved = false, closed = true, xloc = xloc.bar_index, line_color = color.orange, fill_color = color.new(color.orange, 80), line_style = line.style_solid, line_width = 2)
+    drawings_acc += drawings_check(array.size(polyline.all) == 1)
+    drawings_pl2 = polyline.new(drawings_pts)
+    drawings_acc += drawings_check(array.size(polyline.all) == 2)
+    polyline.delete(drawings_pl2)
+    drawings_acc += drawings_check(array.size(polyline.all) == 1)
+    drawings_acc += drawings_check(array.size(drawings_pts) == 3)
+
+    // -----------------------------------------------------------------------
+    // linefill.new / get_line1 / get_line2 / get_color / set_color /
+    //      delete / all
+    // -----------------------------------------------------------------------
+    drawings_la = line.new(0, 100.0, 10, 110.0)
+    drawings_lb = line.new(0, 200.0, 10, 210.0)
+    drawings_lf = linefill.new(drawings_la, drawings_lb, color.red)
+    drawings_acc += drawings_check(line.get_y1(linefill.get_line1(drawings_lf)) == 100.0)
+    drawings_acc += drawings_check(line.get_y1(linefill.get_line2(drawings_lf)) == 200.0)
+    drawings_acc += drawings_check(linefill.get_color(drawings_lf) == color.red)
+    linefill.set_color(drawings_lf, color.blue)
+    drawings_acc += drawings_check(linefill.get_color(drawings_lf) == color.blue)
+    drawings_acc += drawings_check(array.size(linefill.all) == 1)
+    linefill.delete(drawings_lf)
+    drawings_acc += drawings_check(array.size(linefill.all) == 0)
+
+    // clean up the remaining lines so the registry stays small
+    line.delete(drawings_la)
+    line.delete(drawings_lb)
+    line.delete(drawings_ln)
+
+plot(drawings_acc, "drawings_acc")
+plot(drawings_checks.value, "drawings_checks")
+
+
+// ===========================================================================
+// Context constants
+// ===========================================================================
+
+// Covers barstate, syminfo, timeframe, session, dayofweek, plot and display
+// constants, miscellaneous constant namespaces, newer namespaces, and runtime
+// edge cases.
+
+var float context_constants_acc = 0.0
+var CounterCell context_constants_checks = CounterCell.new(0)
+
+context_constants_check(bool ok) =>
+    context_constants_checks.value := context_constants_checks.value + (ok ? 1 : 0)
+    ok ? 1.0 : 0.0
+
+// ---------------------------------------------------------------------------
+// barstate.*
+// barstate.isconfirmed, .isfirst, .ishistory, .islast,
+// .islastconfirmedhistory, .isnew, .isrealtime
+// ---------------------------------------------------------------------------
+context_constants_bs = (barstate.isconfirmed ? 1.0 : 0.0) + (barstate.isfirst ? 2.0 : 0.0) + (barstate.ishistory ? 4.0 : 0.0) + (barstate.islast ? 8.0 : 0.0) + (barstate.islastconfirmedhistory ? 16.0 : 0.0) + (barstate.isnew ? 32.0 : 0.0) + (barstate.isrealtime ? 64.0 : 0.0)
+context_constants_acc := context_constants_acc + context_constants_bs
+
+// Deterministic truth-table checks for a history-only run.
+context_constants_acc := context_constants_acc + context_constants_check(barstate.isfirst == (bar_index == 0))
+context_constants_acc := context_constants_acc + context_constants_check(barstate.ishistory != barstate.isrealtime)
+context_constants_acc := context_constants_acc + context_constants_check(barstate.isnew)
+context_constants_acc := context_constants_acc + context_constants_check(barstate.isconfirmed)
+context_constants_acc := context_constants_acc + context_constants_check(barstate.islastconfirmedhistory == barstate.islast)
+
+// ---------------------------------------------------------------------------
+// syminfo.* variables (strings, numerics, fundamentals) and the
+// syminfo.prefix()/syminfo.ticker() function forms.
+// ---------------------------------------------------------------------------
+context_constants_symstr = str.length(syminfo.basecurrency) + str.length(syminfo.country) + str.length(syminfo.currency) + str.length(syminfo.description) + str.length(syminfo.industry) + str.length(syminfo.main_tickerid) + str.length(syminfo.prefix) + str.length(syminfo.root) + str.length(syminfo.sector) + str.length(syminfo.session) + str.length(syminfo.ticker) + str.length(syminfo.tickerid) + str.length(syminfo.timezone) + str.length(syminfo.type) + str.length(syminfo.volumetype)
+context_constants_acc := context_constants_acc + context_constants_symstr
+
+context_constants_symnum = syminfo.mincontract + syminfo.minmove + syminfo.mintick + syminfo.pointvalue + syminfo.pricescale
+context_constants_acc := context_constants_acc + context_constants_symnum
+context_constants_acc := context_constants_acc + context_constants_check(not na(syminfo.mintick))
+context_constants_acc := context_constants_acc + context_constants_check(syminfo.mintick == syminfo.minmove / float(syminfo.pricescale))
+
+// Fundamentals: na by default when the host supplies nothing.
+context_constants_fund1 = (na(syminfo.employees) ? 0.0 : 1.0) + (na(syminfo.shareholders) ? 0.0 : 1.0) + (na(syminfo.shares_outstanding_float) ? 0.0 : 1.0) + (na(syminfo.shares_outstanding_total) ? 0.0 : 1.0) + (na(syminfo.expiration_date) ? 0.0 : 1.0)
+context_constants_fund2 = (na(syminfo.recommendations_buy) ? 0.0 : 1.0) + (na(syminfo.recommendations_buy_strong) ? 0.0 : 1.0) + (na(syminfo.recommendations_date) ? 0.0 : 1.0) + (na(syminfo.recommendations_hold) ? 0.0 : 1.0) + (na(syminfo.recommendations_sell) ? 0.0 : 1.0) + (na(syminfo.recommendations_sell_strong) ? 0.0 : 1.0) + (na(syminfo.recommendations_total) ? 0.0 : 1.0)
+context_constants_fund3 = (na(syminfo.target_price_average) ? 0.0 : 1.0) + (na(syminfo.target_price_date) ? 0.0 : 1.0) + (na(syminfo.target_price_estimates) ? 0.0 : 1.0) + (na(syminfo.target_price_high) ? 0.0 : 1.0) + (na(syminfo.target_price_low) ? 0.0 : 1.0) + (na(syminfo.target_price_median) ? 0.0 : 1.0)
+context_constants_acc := context_constants_acc + context_constants_fund1 + context_constants_fund2 + context_constants_fund3
+
+// syminfo.prefix() / syminfo.ticker(): split a ticker id.
+context_constants_acc := context_constants_acc + context_constants_check(syminfo.prefix("EXCHANGE:ACME") == "EXCHANGE")
+context_constants_acc := context_constants_acc + context_constants_check(syminfo.ticker("EXCHANGE:ACME") == "ACME")
+context_constants_acc := context_constants_acc + context_constants_check(syminfo.ticker("ACME") == "ACME")
+context_constants_acc := context_constants_acc + context_constants_check(na(syminfo.prefix("ACME")))
+
+// ---------------------------------------------------------------------------
+// timeframe.*
+// ---------------------------------------------------------------------------
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.period == "1D")
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.main_period == timeframe.period)
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.multiplier == 1)
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.isdaily)
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.isdwm)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.isintraday)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.isminutes)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.ismonthly)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.isseconds)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.isticks)
+context_constants_acc := context_constants_acc + context_constants_check(not timeframe.isweekly)
+
+// timeframe.in_seconds / from_seconds round trip.
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.in_seconds("1W") == 604800)
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.in_seconds(timeframe.period) == 86400)
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.from_seconds(300) == "5")
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.from_seconds(86400) == "1D")
+context_constants_acc := context_constants_acc + context_constants_check(timeframe.from_seconds(30) == "30S")
+
+// timeframe.change(): true on the first chart bar of each higher-tf bucket.
+context_constants_acc := context_constants_acc + (timeframe.change("1W") ? 1.0 : 0.0)
+context_constants_acc := context_constants_acc + (timeframe.change("1M") ? 1.0 : 0.0)
+
+// ---------------------------------------------------------------------------
+// session.*
+// ---------------------------------------------------------------------------
+context_constants_acc := context_constants_acc + context_constants_check(session.isfirstbar == (bar_index == 0))
+context_constants_acc := context_constants_acc + context_constants_check(session.isfirstbar_regular == session.isfirstbar)
+context_constants_acc := context_constants_acc + context_constants_check(session.islastbar_regular == session.islastbar)
+context_constants_acc := context_constants_acc + context_constants_check(session.ismarket)
+context_constants_acc := context_constants_acc + context_constants_check(not session.ispremarket)
+context_constants_acc := context_constants_acc + context_constants_check(not session.ispostmarket)
+context_constants_acc := context_constants_acc + (session.islastbar ? 1.0 : 0.0)
+context_constants_acc := context_constants_acc + str.length(session.regular) + str.length(session.extended)
+context_constants_acc := context_constants_acc + context_constants_check(session.regular != session.extended)
+
+// ---------------------------------------------------------------------------
+// dayofweek.* (const int, numbered 1..7)
+// ---------------------------------------------------------------------------
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.sunday == 1)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.monday == 2)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.tuesday == 3)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.wednesday == 4)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.thursday == 5)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.friday == 6)
+context_constants_acc := context_constants_acc + context_constants_check(dayofweek.saturday == 7)
+context_constants_dow = dayofweek.sunday + dayofweek.monday + dayofweek.tuesday + dayofweek.wednesday + dayofweek.thursday + dayofweek.friday + dayofweek.saturday
+context_constants_acc := context_constants_acc + context_constants_dow
+context_constants_acc := context_constants_acc + context_constants_check(context_constants_dow == 28)
+
+// ---------------------------------------------------------------------------
+// Plot & display constants: plot.style_*, plot.linestyle_*, display.*,
+// format.*, scale.*, location.*, shape.*, size.*, extend.*, xloc.*, yloc.*
+// ---------------------------------------------------------------------------
+context_constants_plotstyles = str.length(plot.style_line) + str.length(plot.style_linebr) + str.length(plot.style_stepline) + str.length(plot.style_stepline_diamond) + str.length(plot.style_steplinebr) + str.length(plot.style_histogram) + str.length(plot.style_cross) + str.length(plot.style_area) + str.length(plot.style_areabr) + str.length(plot.style_columns) + str.length(plot.style_circles)
+context_constants_linestyles = str.length(plot.linestyle_solid) + str.length(plot.linestyle_dotted) + str.length(plot.linestyle_dashed)
+context_constants_acc := context_constants_acc + context_constants_plotstyles + context_constants_linestyles
+context_constants_acc := context_constants_acc + context_constants_check(plot.style_line != plot.style_histogram)
+context_constants_acc := context_constants_acc + context_constants_check(plot.linestyle_solid != plot.linestyle_dashed)
+
+// display.* values are plot_display destination sets, not strings, so
+// str.length() is not applied to them. They contribute a fixed value below.
+// The display.* constants are used in the plots at the end of this file.
+context_constants_display = 92
+context_constants_acc := context_constants_acc + context_constants_display
+
+context_constants_scale = str.length(scale.left) + str.length(scale.right) + str.length(scale.none)
+context_constants_acc := context_constants_acc + context_constants_scale
+
+context_constants_location = str.length(location.abovebar) + str.length(location.belowbar) + str.length(location.top) + str.length(location.bottom) + str.length(location.absolute)
+context_constants_acc := context_constants_acc + context_constants_location
+
+context_constants_shape = str.length(shape.xcross) + str.length(shape.cross) + str.length(shape.circle) + str.length(shape.triangleup) + str.length(shape.triangledown) + str.length(shape.flag) + str.length(shape.arrowup) + str.length(shape.arrowdown) + str.length(shape.square) + str.length(shape.diamond) + str.length(shape.labelup) + str.length(shape.labeldown)
+context_constants_acc := context_constants_acc + context_constants_shape
+
+context_constants_size = str.length(size.auto) + str.length(size.tiny) + str.length(size.small) + str.length(size.normal) + str.length(size.large) + str.length(size.huge)
+context_constants_acc := context_constants_acc + context_constants_size
+
+context_constants_extend = str.length(extend.none) + str.length(extend.left) + str.length(extend.right) + str.length(extend.both)
+context_constants_acc := context_constants_acc + context_constants_extend
+
+context_constants_locs = str.length(xloc.bar_index) + str.length(xloc.bar_time) + str.length(yloc.price) + str.length(yloc.abovebar) + str.length(yloc.belowbar)
+context_constants_acc := context_constants_acc + context_constants_locs
+context_constants_acc := context_constants_acc + context_constants_check(xloc.bar_index != xloc.bar_time)
+context_constants_acc := context_constants_acc + context_constants_check(yloc.abovebar != yloc.belowbar)
+
+// format.* as str.tostring's format argument: percent, volume and mintick
+// behaviour.
+context_constants_acc := context_constants_acc + context_constants_check(str.tostring(0.25, format.percent) == "25.00%")
+context_constants_acc := context_constants_acc + str.length(str.tostring(1500000.0, format.volume))
+context_constants_acc := context_constants_acc + str.length(str.tostring(1.23456, format.mintick))
+context_constants_acc := context_constants_acc + str.length(str.tostring(1.23456, format.inherit))
+context_constants_acc := context_constants_acc + str.length(str.tostring(1.23456, format.price))
+
+// ---------------------------------------------------------------------------
+// Miscellaneous constant namespaces: barmerge.*, position.*, text.*,
+// font.*, alert.freq_*, adjustment.*, dividends.*, earnings.*, splits.*,
+// currency.*
+// ---------------------------------------------------------------------------
+context_constants_barmerge = str.length(barmerge.gaps_off) + str.length(barmerge.gaps_on) + str.length(barmerge.lookahead_off) + str.length(barmerge.lookahead_on)
+context_constants_acc := context_constants_acc + context_constants_barmerge
+context_constants_acc := context_constants_acc + context_constants_check(barmerge.gaps_off != barmerge.gaps_on)
+context_constants_acc := context_constants_acc + context_constants_check(barmerge.lookahead_off != barmerge.lookahead_on)
+
+context_constants_position = str.length(position.top_left) + str.length(position.top_center) + str.length(position.top_right) + str.length(position.middle_left) + str.length(position.middle_center) + str.length(position.middle_right) + str.length(position.bottom_left) + str.length(position.bottom_center) + str.length(position.bottom_right)
+context_constants_acc := context_constants_acc + context_constants_position
+
+context_constants_text = str.length(text.align_left) + str.length(text.align_center) + str.length(text.align_right) + str.length(text.align_top) + str.length(text.align_bottom) + str.length(text.wrap_auto) + str.length(text.wrap_none)
+context_constants_acc := context_constants_acc + context_constants_text
+// Formatting flags have nominal text_format type; test their identity and union.
+context_constants_acc := context_constants_acc + context_constants_check(text.format_none != text.format_bold)
+context_constants_acc := context_constants_acc + context_constants_check(text.format_none != text.format_italic)
+context_constants_acc := context_constants_acc + context_constants_check(text.format_bold + text.format_italic == text.format_italic + text.format_bold)
+
+context_constants_font = str.length(font.family_default) + str.length(font.family_monospace)
+context_constants_acc := context_constants_acc + context_constants_font
+
+context_constants_alertfreq = str.length(alert.freq_all) + str.length(alert.freq_once_per_bar) + str.length(alert.freq_once_per_bar_close)
+context_constants_acc := context_constants_acc + context_constants_alertfreq
+context_constants_acc := context_constants_acc + context_constants_check(alert.freq_all != alert.freq_once_per_bar)
+
+context_constants_corpactions = str.length(adjustment.dividends) + str.length(adjustment.none) + str.length(adjustment.splits) + str.length(dividends.gross) + str.length(dividends.net) + str.length(earnings.actual) + str.length(earnings.estimate) + str.length(earnings.standardized) + str.length(splits.denominator) + str.length(splits.numerator)
+context_constants_acc := context_constants_acc + context_constants_corpactions
+
+// currency.* folds to the bare ISO code.
+context_constants_acc := context_constants_acc + context_constants_check(currency.USD == "USD")
+context_constants_acc := context_constants_acc + context_constants_check(currency.NONE == "NONE")
+context_constants_acc := context_constants_acc + context_constants_check(currency.EUR == "EUR")
+context_constants_acc := context_constants_acc + context_constants_check(currency.BTC == "BTC")
+context_constants_acc := context_constants_acc + context_constants_check(currency.USDT == "USDT")
+context_constants_ccy1 = str.length(currency.AED) + str.length(currency.ARS) + str.length(currency.AUD) + str.length(currency.BDT) + str.length(currency.BHD) + str.length(currency.BRL) + str.length(currency.CAD) + str.length(currency.CHF) + str.length(currency.CLP) + str.length(currency.CNY) + str.length(currency.COP) + str.length(currency.CZK) + str.length(currency.DKK) + str.length(currency.EGP)
+context_constants_ccy2 = str.length(currency.ETH) + str.length(currency.GBP) + str.length(currency.HKD) + str.length(currency.HUF) + str.length(currency.IDR) + str.length(currency.ILS) + str.length(currency.INR) + str.length(currency.ISK) + str.length(currency.JPY) + str.length(currency.KES) + str.length(currency.KRW) + str.length(currency.KWD) + str.length(currency.LKR) + str.length(currency.MAD)
+context_constants_ccy3 = str.length(currency.MXN) + str.length(currency.MYR) + str.length(currency.NGN) + str.length(currency.NOK) + str.length(currency.NZD) + str.length(currency.PEN) + str.length(currency.PHP) + str.length(currency.PKR) + str.length(currency.PLN) + str.length(currency.QAR) + str.length(currency.RON) + str.length(currency.RSD) + str.length(currency.RUB) + str.length(currency.SAR)
+context_constants_ccy4 = str.length(currency.SEK) + str.length(currency.SGD) + str.length(currency.THB) + str.length(currency.TND) + str.length(currency.TRY) + str.length(currency.TWD) + str.length(currency.VES) + str.length(currency.VND) + str.length(currency.ZAR)
+context_constants_acc := context_constants_acc + context_constants_ccy1 + context_constants_ccy2 + context_constants_ccy3 + context_constants_ccy4
+
+// ---------------------------------------------------------------------------
+// Newer namespaces: footprint.*(), volume_row.*(),
+// backadjustment.*, settlement_as_close.*, order.*
+// ---------------------------------------------------------------------------
+context_constants_fp = request.footprint(syminfo.tickerid)
+context_constants_fpscalars = (na(footprint.buy_volume(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.sell_volume(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.total_volume(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.delta(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.poc(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.vah(context_constants_fp)) ? 0.0 : 1.0) + (na(footprint.val(context_constants_fp)) ? 0.0 : 1.0)
+context_constants_acc := context_constants_acc + context_constants_fpscalars
+// Default host: no order-flow feed, so every scalar accessor is na.
+context_constants_acc := context_constants_acc + context_constants_check(context_constants_fpscalars == 0.0)
+
+context_constants_rows = footprint.rows(context_constants_fp)
+context_constants_acc := context_constants_acc + array.size(context_constants_rows)
+context_constants_acc := context_constants_acc + context_constants_check(array.size(context_constants_rows) == 0)
+
+context_constants_vr = footprint.get_row_by_price(context_constants_fp, close)
+context_constants_acc := context_constants_acc + context_constants_check(na(context_constants_vr))
+if not na(context_constants_vr)
+    context_constants_vrsum = (na(volume_row.buy_volume(context_constants_vr)) ? 0.0 : 1.0) + (na(volume_row.sell_volume(context_constants_vr)) ? 0.0 : 1.0) + (na(volume_row.total_volume(context_constants_vr)) ? 0.0 : 1.0) + (na(volume_row.delta(context_constants_vr)) ? 0.0 : 1.0) + (na(volume_row.up_price(context_constants_vr)) ? 0.0 : 1.0) + (na(volume_row.down_price(context_constants_vr)) ? 0.0 : 1.0) + (volume_row.has_buy_imbalance(context_constants_vr) ? 1.0 : 0.0) + (volume_row.has_sell_imbalance(context_constants_vr) ? 1.0 : 0.0)
+    context_constants_acc := context_constants_acc + context_constants_vrsum
+
+context_constants_adjconsts = str.length(backadjustment.inherit) + str.length(backadjustment.on) + str.length(backadjustment.off) + str.length(settlement_as_close.inherit) + str.length(settlement_as_close.on) + str.length(settlement_as_close.off)
+context_constants_acc := context_constants_acc + context_constants_adjconsts
+context_constants_acc := context_constants_acc + context_constants_check(backadjustment.on != backadjustment.off)
+context_constants_acc := context_constants_acc + context_constants_check(settlement_as_close.on != settlement_as_close.off)
+
+// order.* are int-valued sort-order constants (ascending = 0, descending = 1).
+context_constants_acc := context_constants_acc + context_constants_check(order.ascending == 0)
+context_constants_acc := context_constants_acc + context_constants_check(order.descending == 1)
+context_constants_sorted = array.from(3.0, 1.0, 2.0)
+array.sort(context_constants_sorted, order.ascending)
+context_constants_acc := context_constants_acc + context_constants_check(array.get(context_constants_sorted, 0) == 1.0)
+array.sort(context_constants_sorted, order.descending)
+context_constants_acc := context_constants_acc + context_constants_check(array.get(context_constants_sorted, 0) == 3.0)
+
+// ---------------------------------------------------------------------------
+// Runtime behaviour
+// ---------------------------------------------------------------------------
+// NA arithmetic and comparison propagate na.
+context_constants_naval = float(na)
+context_constants_acc := context_constants_acc + context_constants_check(na(context_constants_naval + 1.0))
+context_constants_acc := context_constants_acc + context_constants_check(na(context_constants_naval * 2.0))
+// na if-condition is treated as false.
+context_constants_nabranch = if context_constants_naval > 0.0
+    1.0
+else
+    2.0
+context_constants_acc := context_constants_acc + context_constants_check(context_constants_nabranch == 2.0)
+
+// Kleene logic + laziness: a decisive lhs skips the rhs.
+context_constants_acc := context_constants_acc + context_constants_check(true or (1 / 0 == 0))
+context_constants_acc := context_constants_acc + context_constants_check(not (false and (1 / 0 == 0)))
+
+// int/float promotion: mixed promotes to float, and int / int keeps its
+// fraction too.
+context_constants_acc := context_constants_acc + context_constants_check(7 / 2 == 3.5)
+context_constants_acc := context_constants_acc + context_constants_check(7 / 2.0 == 3.5)
+context_constants_acc := context_constants_acc + context_constants_check(-7 / 2 == -3.5)
+
+// Division / modulo by zero is na.
+context_constants_acc := context_constants_acc + context_constants_check(na(1 / 0))
+context_constants_acc := context_constants_acc + context_constants_check(na(1 % 0))
+context_constants_acc := context_constants_acc + context_constants_check(na(1.0 / 0.0))
+
+// var persistence across bars, and varip intrabar persistence.
+var int context_constants_varcount = 0
+context_constants_varcount := context_constants_varcount + 1
+varip int context_constants_varipcount = 0
+context_constants_varipcount := context_constants_varipcount + 1
+context_constants_acc := context_constants_acc + context_constants_check(context_constants_varcount == bar_index + 1)
+context_constants_acc := context_constants_acc + context_constants_check(context_constants_varipcount >= context_constants_varcount)
+
+// max_bars_back / history-offset behavior: an offset before bar 0 reads na.
+context_constants_acc := context_constants_acc + context_constants_check(bar_index == 0 ? na(close[1]) : not na(close[1]))
+
+// Global-scope-only effect calls: plot() calls are kept at global scope in this
+// fixture, so the local-scope diagnostic (E0254) is not exercised here.
+
+// ---------------------------------------------------------------------------
+// Drawing-object sinks, guarded to the last bar so the
+// object limits are never exhausted.
+// ---------------------------------------------------------------------------
+if barstate.islast
+    context_constants_lbl = label.new(bar_index, close, "ctx", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, size = size.small, textalign = text.align_center)
+    label.delete(context_constants_lbl)
+    context_constants_tbl = table.new(position.middle_center, 1, 1)
+    table.cell(context_constants_tbl, 0, 0, str.tostring(context_constants_checks.value), text_size = size.tiny, text_halign = text.align_right, text_valign = text.align_bottom)
+    context_constants_ln = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, style = line.style_dotted)
+    line.delete(context_constants_ln)
+
+// ---------------------------------------------------------------------------
+// Observable outputs.
+// ---------------------------------------------------------------------------
+plot(context_constants_acc, "context_constants_acc", style = plot.style_line, display = display.pane + display.price_scale + display.status_line + display.data_window)
+plot(context_constants_checks.value, "context_constants_checks", style = plot.style_stepline, display = display.all - display.pane - display.price_scale - display.status_line + display.none)
+plotshape(barstate.islast, "context_constants_last", style = shape.triangleup, location = location.abovebar, size = size.tiny)
+
+// ======================================================================
+// Math: floor, ceil and random forms
+// ======================================================================
+
+// Top-level identifiers in this section share one prefix.
+//
+// Covers these forms of math.floor(), math.ceil() and math.random():
+//   * math.floor() on an int argument (the result is the argument itself)
+//   * math.ceil()  on an int argument (same rule)
+//   * math.random() with the seed omitted, and with min/max defaulted
+
+var float gap_2_01_2_05_acc = 0.0
+int gap_2_01_2_05_checks = 0
+
+gap_2_01_2_05_hit(bool ok) =>
+    ok ? 1 : 0
+
+// ------------------------------------------------ math.floor / math.ceil ----
+// Int-input identity form: the result is the argument itself, unchanged in
+// sign and magnitude.
+gap_2_01_2_05_floorIntP = math.floor(7)
+gap_2_01_2_05_floorIntN = math.floor(-7)
+gap_2_01_2_05_floorIntZ = math.floor(0)
+gap_2_01_2_05_ceilIntP = math.ceil(7)
+gap_2_01_2_05_ceilIntN = math.ceil(-7)
+gap_2_01_2_05_ceilIntZ = math.ceil(0)
+
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_floorIntP == 7)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_floorIntN == -7)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_floorIntZ == 0)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_ceilIntP == 7)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_ceilIntN == -7)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_ceilIntZ == 0)
+
+// An int-typed variable, not just a literal, so the identity rule is exercised
+// on a value that the constant folder cannot reduce to a literal.
+var int gap_2_01_2_05_intVar = 13
+gap_2_01_2_05_floorVar = math.floor(gap_2_01_2_05_intVar)
+gap_2_01_2_05_ceilVar = math.ceil(gap_2_01_2_05_intVar)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_floorVar == 13)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_ceilVar == 13)
+
+// A series int argument (bar_index) keeps the identity rule under a non-const
+// input as well.
+gap_2_01_2_05_floorBar = math.floor(bar_index)
+gap_2_01_2_05_ceilBar = math.ceil(bar_index)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_floorBar == bar_index)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_ceilBar == bar_index)
+
+// ------------------------------------------------------------ math.random ----
+// Seedless form: a counter-based splitmix64 stream keyed by the optional seed
+// (a fixed default when omitted). The draw itself is not pinned, so only the
+// output range is asserted.
+gap_2_01_2_05_randNoSeed = math.random(0, 1)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_randNoSeed >= 0 and gap_2_01_2_05_randNoSeed < 1)
+
+// Explicit min/max, no seed, over a wider interval.
+gap_2_01_2_05_randNoSeedWide = math.random(10.0, 20.0)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_randNoSeedWide >= 10.0 and gap_2_01_2_05_randNoSeedWide < 20.0)
+
+// Fully defaulted form: min = 0, max = 1, seed omitted.
+gap_2_01_2_05_randDefault = math.random()
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_randDefault >= 0 and gap_2_01_2_05_randDefault < 1)
+
+// max supplied, min defaulted to 0.
+gap_2_01_2_05_randMaxOnly = math.random(max = 5.0)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_randMaxOnly >= 0 and gap_2_01_2_05_randMaxOnly < 5.0)
+
+// The unseeded stream is still a stream: a second draw is taken so the counter
+// advances and the value is observable rather than discarded.
+gap_2_01_2_05_randNoSeed2 = math.random(0, 1)
+gap_2_01_2_05_checks += gap_2_01_2_05_hit(gap_2_01_2_05_randNoSeed2 >= 0 and gap_2_01_2_05_randNoSeed2 < 1)
+
+// ---------------------------------------------------------------- output ----
+gap_2_01_2_05_acc := gap_2_01_2_05_acc + gap_2_01_2_05_floorIntP + gap_2_01_2_05_ceilIntN + gap_2_01_2_05_floorVar + gap_2_01_2_05_ceilVar + gap_2_01_2_05_randNoSeed + gap_2_01_2_05_randNoSeedWide + gap_2_01_2_05_randDefault + gap_2_01_2_05_randMaxOnly + gap_2_01_2_05_randNoSeed2 + gap_2_01_2_05_floorBar + gap_2_01_2_05_ceilBar
+
+plot(gap_2_01_2_05_acc, "gap 2-05 accumulator", display = display.none)
+plot(gap_2_01_2_05_checks, "gap 2-05 checks", display = display.none)
+
+if barstate.islast
+    label.new(bar_index, high, str.tostring(gap_2_01_2_05_checks) + " checks")
+
+// ======================================================================
+// Request, strategy, input, log, ticker, and context constants
+// ======================================================================
+
+// ===========================================================================
+// Top-level identifiers in this section share one prefix.
+//
+// The eight volume_row.*() accessors are NOT here: with no host order-flow
+// feed there is no reachable non-na `volume_row`, and calling any accessor on
+// the na row aborts the run with the `na_field_access` runtime error.
+// ===========================================================================
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(bool ok) =>
+    ok ? 1.0 : 0.0
+
+var float gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc = 0.0
+
+// ---------------------------------------------------------------------------
+// settlement_as_close.*: the `settlement_as_close`
+// parameter of ticker.new()/ticker.modify(), folded into the ticker-id.
+// ---------------------------------------------------------------------------
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_inh = ticker.new("TEST", "ACME", settlement_as_close = settlement_as_close.inherit)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_on = ticker.new("TEST", "ACME", settlement_as_close = settlement_as_close.on)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_off = ticker.modify(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_inh, settlement_as_close = settlement_as_close.off)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + str.length(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_inh) + str.length(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_on) + str.length(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_off)
+
+// The three modes are distinct tokens folded into the canonical ticker-id, so
+// the resulting ids differ pairwise.
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c1 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_on != gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_off)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c2 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_on != gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_inh)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c3 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_inh != gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_tk_off)
+
+// ---------------------------------------------------------------------------
+// input.enum(): the exact-options overload, which validates the option
+// index and guards the non-member case.
+// ---------------------------------------------------------------------------
+enum GapModeTwoTenTwoThirty
+    fast = "Fast"
+    slow = "Slow"
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_mode = input.enum(GapModeTwoTenTwoThirty.fast, "Mode Enum Options", options = [GapModeTwoTenTwoThirty.fast, GapModeTwoTenTwoThirty.slow], group = "Enum")
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + (gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_mode == GapModeTwoTenTwoThirty.fast ? 1.0 : 2.0)
+// With no host override the declared default member is selected.
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c4 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_mode == GapModeTwoTenTwoThirty.fast)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c5 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_mode != GapModeTwoTenTwoThirty.slow)
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c1 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c2 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c3 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c4 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c5
+
+if barstate.islast
+    label.new(bar_index, high, str.tostring(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks))
+
+plot(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc, "gap acc")
+plot(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks, "gap checks")
+
+// ======================================================================
+// Language core and runtime behaviour
+// ======================================================================
+
+// Top-level identifiers in this section share one prefix.
+//
+// `calc_on_every_tick` is accepted and const-folded on indicator(...).
+
+var float gap_s1_s3_acc = 0.0
+var float gap_s1_s3_checks = 0.0
+
+gap_s1_s3_chk(cond, weight = 1.0) => cond ? weight : 0.0
+
+// ---------------------------------------------------------------------------
+// doc-comment annotations written AS annotations, not merely named inside a
+// comment: //@function, //@param, //@returns preceding a function declaration,
+// and //@description / //@type / //@field preceding a UDT declaration. They are
+// phase tokens: parsed and skipped like any `//` comment, so the annotated
+// declaration must still behave exactly as an unannotated one.
+// ---------------------------------------------------------------------------
+//@function Doubles its argument.
+//@param x the value to double
+//@returns twice x
+gap_s1_s3_dbl(x) =>
+    x * 2
+
+//@description A documented user-defined type.
+//@type a two-field record
+type gap_s1_s3_pt
+    //@field px the x coordinate
+    float px
+    //@field py the y coordinate
+    float py
+
+// The annotated function still computes: dbl(21) == 42.
+gap_s1_s3_acc := gap_s1_s3_acc + gap_s1_s3_dbl(1.5)
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(gap_s1_s3_dbl(21) == 42)
+
+// The annotated type still constructs and reads back.
+gap_s1_s3_p = gap_s1_s3_pt.new(3.0, 4.0)
+gap_s1_s3_acc := gap_s1_s3_acc + gap_s1_s3_p.px + gap_s1_s3_p.py
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(gap_s1_s3_p.px == 3.0 and gap_s1_s3_p.py == 4.0)
+
+// ---------------------------------------------------------------------------
+// `box`, a box-typed declaration initialized from the constructor, with a
+// getter reading a field back. Not the annotation-bound-to-na form.
+// ---------------------------------------------------------------------------
+var float gap_s1_s3_box_top = na
+if barstate.islast
+    box gap_s1_s3_bx = box.new(bar_index - 5, high, bar_index, low)
+    gap_s1_s3_box_top := box.get_top(gap_s1_s3_bx)
+    gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(gap_s1_s3_box_top == high)
+    box.delete(gap_s1_s3_bx)
+
+gap_s1_s3_acc := gap_s1_s3_acc + nz(gap_s1_s3_box_top)
+
+// ---------------------------------------------------------------------------
+// Overflow: checked int overflow yields na, as does negating i64::MIN. The
+// operands are made series-valued so the constant folder cannot see them.
+// ---------------------------------------------------------------------------
+gap_s1_s3_zero = math.min(0, int(math.sign(volume)) * 0)
+gap_s1_s3_imax = 9223372036854775807 + gap_s1_s3_zero
+gap_s1_s3_imin = -9223372036854775807 - 1 + gap_s1_s3_zero
+gap_s1_s3_mul_ovf = gap_s1_s3_imax * 2
+gap_s1_s3_add_ovf = gap_s1_s3_imax + 1
+gap_s1_s3_neg_ovf = -gap_s1_s3_imin
+
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(na(gap_s1_s3_mul_ovf))
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(na(gap_s1_s3_add_ovf))
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(na(gap_s1_s3_neg_ovf))
+// A non-overflowing multiply of the same shape is finite, proving the check is
+// the overflow and not the shape of the expression.
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(not na((gap_s1_s3_imax / 4) * 2))
+gap_s1_s3_acc := gap_s1_s3_acc + nz(gap_s1_s3_mul_ovf, 0.0) + nz(gap_s1_s3_neg_ovf, 0.0)
+
+// ---------------------------------------------------------------------------
+// na serializes to JSON `null` in plot output: a deliberately-na series
+// reaches the output stream. `gap_s1_s3_na_series` is na on every bar whose
+// bar_index is even, finite otherwise, so both a null and a number appear.
+// ---------------------------------------------------------------------------
+gap_s1_s3_na_series = bar_index % 2 == 0 ? float(na) : close
+gap_s1_s3_checks := gap_s1_s3_checks + gap_s1_s3_chk(na(gap_s1_s3_na_series) == (bar_index % 2 == 0))
+gap_s1_s3_acc := gap_s1_s3_acc + nz(gap_s1_s3_na_series)
+
+plot(gap_s1_s3_na_series, "gap_s1_s3_na_series", display = display.data_window)
+plot(gap_s1_s3_acc, "gap_s1_s3_acc", style = plot.style_line)
+plot(gap_s1_s3_checks, "gap_s1_s3_checks", style = plot.style_stepline, display = display.data_window)
+
+// ======================================================================
+// Array, matrix, map, and str checks
+// ======================================================================
+
+// Expected values below are asserted directly in the checks.
+//
+// Top-level names here share one prefix.
+
+var int gap_array_matrix_map_str_checks = 0
+var float gap_array_matrix_map_str_acc = 0.0
+
+gap_array_matrix_map_str_hit(bool ok) =>
+    ok ? 1 : 0
+
+gap_array_matrix_map_str_eq(float a, float b) =>
+    not na(a) and not na(b) and math.abs(a - b) < 1e-9
+
+// ---------------------------------------------------------------------------
+// str.match(): lookbehind. The regex engine supports it; a backtracking-free
+// engine would not, so this is the form worth pinning.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_lb = str.match("a1b2", "(?<=a)[0-9]")
+gap_array_matrix_map_str_lbmiss = str.match("b1", "(?<=a)[0-9]")
+gap_array_matrix_map_str_lbneg = str.match("a1b2", "(?<!a)[0-9]")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_lb == "1")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_lbmiss == "")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_lbneg == "2")
+gap_array_matrix_map_str_acc += str.length(gap_array_matrix_map_str_lb)
+
+// ---------------------------------------------------------------------------
+// str.tostring() with DecimalFormat-style patterns: `0` digit slots, `,`
+// grouping, `%` scaling, and literal prefix/suffix.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_tsZero = str.tostring(1.005, "0.00")            // zero-pad fraction
+gap_array_matrix_map_str_tsPad = str.tostring(42.0, "0000")              // zero-pad integer part
+gap_array_matrix_map_str_tsGroup = str.tostring(1234567.891, "#,##0.00") // `,` grouping
+gap_array_matrix_map_str_tsPct = str.tostring(0.1234, "#.##%")           // `%` scales by 100
+gap_array_matrix_map_str_tsPre = str.tostring(5.678, "USD #.##")         // literal prefix
+gap_array_matrix_map_str_tsSuf = str.tostring(5.678, "#.## pts")         // literal suffix
+gap_array_matrix_map_str_tsNeg = str.tostring(-1.34, "$#,##0.00")        // sign before prefix
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsZero == "1.00")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsPad == "0042")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsGroup == "1,234,567.89")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsPct == "12.34%")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsPre == "USD 5.68")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsSuf == "5.68 pts")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_tsNeg == "-$1.34")
+gap_array_matrix_map_str_acc += str.length(gap_array_matrix_map_str_tsGroup)
+
+// ---------------------------------------------------------------------------
+// str.format(): custom DecimalFormat patterns beyond `#`/`.`, plus the
+// whitespace rule (keyword styles trim, custom patterns keep whitespace as
+// literal text).
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_fmtZero = str.format("{0,number,00.00}", 1.5)
+gap_array_matrix_map_str_fmtGroup = str.format("{0,number,#,##0.00}", 1234567.891)
+gap_array_matrix_map_str_fmtPct = str.format("{0,number,#.##%}", 0.1234)
+gap_array_matrix_map_str_fmtPre = str.format("{0,number,$#,##0.00}", -1.34)
+gap_array_matrix_map_str_fmtSuf = str.format("{0,number,#.## pts}", 5.678)
+gap_array_matrix_map_str_fmtWs = str.format("{0,number, #.## }", 5.678)   // kept verbatim
+gap_array_matrix_map_str_fmtKwWs = str.format("{0,number, integer }", 1.34) // trimmed
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtZero == "01.50")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtGroup == "1,234,567.89")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtPct == "12.34%")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtPre == "-$1.34")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtSuf == "5.68 pts")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtWs == " 5.68 ")
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_fmtKwWs == "1")
+gap_array_matrix_map_str_acc += str.length(gap_array_matrix_map_str_fmtWs)
+
+// ---------------------------------------------------------------------------
+// array.from(): mixed int/float args widen to array<float>.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_mixed = array.from(1, 2.5)
+gap_array_matrix_map_str_mixed3 = array.from(1, 2.5, 3)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(array.size(gap_array_matrix_map_str_mixed) == 2)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.get(gap_array_matrix_map_str_mixed, 0), 1.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.sum(gap_array_matrix_map_str_mixed), 3.5))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.sum(gap_array_matrix_map_str_mixed3), 6.5))
+gap_array_matrix_map_str_acc += array.sum(gap_array_matrix_map_str_mixed3)
+
+// ---------------------------------------------------------------------------
+// array.new_float(): int `initial` widens to float; zero-arg default form
+// `(size = 0, initial = na)`.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_fInt = array.new_float(3, 2)
+array.push(gap_array_matrix_map_str_fInt, 7)                 // int literal into a float array
+gap_array_matrix_map_str_fEmpty = array.new_float()
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(array.size(gap_array_matrix_map_str_fInt) == 4)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.get(gap_array_matrix_map_str_fInt, 0), 2.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.get(gap_array_matrix_map_str_fInt, 3), 7.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(array.sum(gap_array_matrix_map_str_fInt), 13.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(array.size(gap_array_matrix_map_str_fEmpty) == 0)
+gap_array_matrix_map_str_acc += array.sum(gap_array_matrix_map_str_fInt)
+
+// ---------------------------------------------------------------------------
+// array.percentile_linear_interpolation(): the percentage coerces int -> float
+// Same receiver and results as the float-literal calls.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_st = array.from(10.0, 20.0, 30.0, 40.0, 50.0)
+gap_array_matrix_map_str_p50 = array.percentile_linear_interpolation(gap_array_matrix_map_str_st, 50)
+gap_array_matrix_map_str_p0 = array.percentile_linear_interpolation(gap_array_matrix_map_str_st, 0)
+gap_array_matrix_map_str_p100 = array.percentile_linear_interpolation(gap_array_matrix_map_str_st, 100)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(gap_array_matrix_map_str_p50, 30.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(gap_array_matrix_map_str_p0, 10.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(gap_array_matrix_map_str_p100, 50.0))
+gap_array_matrix_map_str_acc += gap_array_matrix_map_str_p50
+
+// ---------------------------------------------------------------------------
+// array.every() / array.some() on an empty receiver: vacuous truth / false.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_none = array.new_float()
+gap_array_matrix_map_str_noneB = array.new_bool()
+gap_array_matrix_map_str_everyEmpty = array.every(gap_array_matrix_map_str_none)
+gap_array_matrix_map_str_someEmpty = array.some(gap_array_matrix_map_str_none)
+gap_array_matrix_map_str_everyEmptyB = array.every(gap_array_matrix_map_str_noneB)
+gap_array_matrix_map_str_someEmptyB = array.some(gap_array_matrix_map_str_noneB)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_everyEmpty)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(not gap_array_matrix_map_str_someEmpty)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_everyEmptyB)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(not gap_array_matrix_map_str_someEmptyB)
+gap_array_matrix_map_str_acc += gap_array_matrix_map_str_everyEmpty ? 1.0 : 0.0
+
+// ---------------------------------------------------------------------------
+// map.put(): int -> float value widening.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_wide = map.new_string_float()
+gap_array_matrix_map_str_w0 = map.put(gap_array_matrix_map_str_wide, "k", 5)      // int value into a float map
+gap_array_matrix_map_str_w1 = map.put(gap_array_matrix_map_str_wide, "k", 6)      // overwrite, previous returned
+gap_array_matrix_map_str_wideI = map.new_int_float()
+gap_array_matrix_map_str_w2 = map.put(gap_array_matrix_map_str_wideI, 1, 3)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(na(gap_array_matrix_map_str_w0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(gap_array_matrix_map_str_w1, 5.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(map.get(gap_array_matrix_map_str_wide, "k"), 6.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(map.size(gap_array_matrix_map_str_wide) == 1)
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(na(gap_array_matrix_map_str_w2) and gap_array_matrix_map_str_eq(map.get(gap_array_matrix_map_str_wideI, 1), 3.0))
+gap_array_matrix_map_str_acc += map.get(gap_array_matrix_map_str_wide, "k")
+
+// ---------------------------------------------------------------------------
+// matrix.fill(): the `-1` "to the last row/column" sentinel for an omitted
+// trailing bound. matrix.fill takes no named arguments in this implementation,
+// so a skipped middle bound cannot be expressed; the reachable forms are the
+// odd-arity prefix forms.
+// ---------------------------------------------------------------------------
+gap_array_matrix_map_str_m = matrix.new_float(3, 3, 0.0)
+matrix.fill(gap_array_matrix_map_str_m, 3.0, 0, 3, 1)   // to_column omitted -> -1, i.e. cols 1..last
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m, 0, 0), 0.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m, 0, 1), 3.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m, 2, 2), 3.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m, 2, 0), 0.0))
+
+gap_array_matrix_map_str_m2 = matrix.new_float(3, 3, 0.0)
+matrix.fill(gap_array_matrix_map_str_m2, 4.0, 1)        // to_row omitted -> -1, all columns
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m2, 0, 0), 0.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m2, 1, 0), 4.0))
+gap_array_matrix_map_str_checks += gap_array_matrix_map_str_hit(gap_array_matrix_map_str_eq(matrix.get(gap_array_matrix_map_str_m2, 2, 2), 4.0))
+
+gap_array_matrix_map_str_acc += matrix.get(gap_array_matrix_map_str_m, 2, 2) + matrix.get(gap_array_matrix_map_str_m2, 1, 0)
+
+// ---------------------------------------------------------------------------
+// Observable surface.
+// ---------------------------------------------------------------------------
+if barstate.islast
+    label.new(bar_index, high, str.format("checks {0,number,#,##0}", gap_array_matrix_map_str_checks))
+
+plot(gap_array_matrix_map_str_checks, "gap checks")
+plot(gap_array_matrix_map_str_acc, "gap acc")

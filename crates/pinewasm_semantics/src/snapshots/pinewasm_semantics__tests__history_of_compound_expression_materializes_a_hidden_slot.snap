@@ -1,0 +1,18 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 263
+expression: dump
+---
+HirProgram indicator="X"
+  symbol 0 `%h0`: series float (slot 0, synthetic)
+  symbol 1 `x`: series float (slot 1)
+  plot slot 0 title="<none>"
+  Assign `x` (sym 1)
+    MaterializeHistory slot0[1] : series float
+      Binary `-` : series float
+        ReadBuiltin close[0] : series float
+        ReadBuiltin open[0] : series float
+  Plot slot 0
+    ReadVar `x`[0] (sym 1) : series float
+    Color Color
+      ConstColor #2196F3 : const color

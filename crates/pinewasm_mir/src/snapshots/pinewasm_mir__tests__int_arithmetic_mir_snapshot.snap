@@ -1,0 +1,29 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"Ints\\\")\\nx = 7 % 3 + -4 / 2\\ny = x + 0.5\\nplot(x)\\n\")"
+---
+MirBody title="Ints" slots=2 plots=1 values=15
+  slot 0 `x`
+  slot 1 `y`
+  plot 0 title="<none>"
+bb0:
+  v0 = const 7
+  v1 = const 3
+  v2 = binary `%` v0, v1 (int)
+  v3 = const 4
+  v4 = unary `-` v3 (int)
+  v5 = const 2
+  v6 = binary `/` v4, v5 (int)
+  v7 = binary `+` v2, v6 (int)
+  store_user_current slot0, v7
+  v8 = read_user slot0[0]
+  v9 = int_to_float v8
+  v10 = const 0.5
+  v11 = binary `+` v9, v10
+  store_user_current slot1, v11
+  v12 = read_user slot0[0]
+  v13 = int_to_float v12
+  v14 = const #2196F3
+  plot p0, v13
+    color Color v14
+  return

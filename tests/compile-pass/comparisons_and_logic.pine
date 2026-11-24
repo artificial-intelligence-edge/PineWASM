@@ -1,0 +1,6 @@
+//@version=6
+indicator("Logic")
+up = close > open
+strong = up and volume > 0
+weak = up or not (close >= open)
+plot(strong ? close : na, "strong close")

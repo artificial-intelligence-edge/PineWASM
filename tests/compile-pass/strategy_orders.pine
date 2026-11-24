@@ -1,0 +1,23 @@
+//@version=6
+strategy("Order primitives", initial_capital=10000, default_qty_value=1, pyramiding=1)
+
+// Order primitives: place a market entry, a resting limit and stop entry,
+// an exit bracket, and the close/cancel management calls. The broker emulator
+// fills these on later bars and reports the trades/position/equity through
+// RunOutcome.strategy.
+
+// Enter long at the next bar's open on the first bar.
+if bar_index == 0
+    strategy.entry("Long", strategy.long)
+
+// A resting buy stop and a take-profit / stop-loss bracket for the open long.
+if bar_index == 1
+    strategy.order("Stop", strategy.long, stop=12.0)
+    strategy.exit("Bracket", from_entry="Long", limit=13.0, stop=9.0)
+
+// Cancel a still-pending order and flatten everything at the end.
+if bar_index == 2
+    strategy.cancel("Stop")
+    strategy.close_all()
+
+plot(close)

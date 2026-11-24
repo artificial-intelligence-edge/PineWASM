@@ -1,0 +1,4 @@
+blank_issues_enabled: false
+# Security reporting is defined in SECURITY.md and each issue template.
+# Keep external contact buttons empty until a verified HTTPS destination exists.
+contact_links: []

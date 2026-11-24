@@ -1,0 +1,2244 @@
+name: CI
+
+on:
+  # Every merge updates main and starts a full validation run.
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run every validation domain without reusing earlier successful results.
+        type: boolean
+        default: false
+
+# Main pushes and manual runs share one group per branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref_name }}
+  # Finish an active main run so later pushes have a validated ancestor. Actions
+  # retains only the newest pending main run.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CI_DISABLE_REUSE: ${{ inputs.full || 'false' }}
+  PINEWASM_ACTIONLINT_VERSION: "1.7.12"
+  PINEWASM_CARGO_DENY_VERSION: "0.20.2"
+  PINEWASM_GITLEAKS_VERSION: "8.30.1"
+  PINEWASM_NODE_VERSION: "24"
+  PINEWASM_RUST_VERSION: "1.97.1"
+  PINEWASM_WASM_BINDGEN_CLI_VERSION: "0.2.127"
+  PINEWASM_TYPESCRIPT_VERSION: "5.9.3"
+  PINEWASM_BINARYEN_VERSION: "131"
+  CI_HEAD_SHA: ${{ github.sha }}
+
+# Every job uses reviewed GitHub-hosted runner images. Exact repository identity
+# and main-branch guards prevent forks or copies from reporting these checks as
+# PineWASM's own.
+jobs:
+  plan:
+    name: Select affected validation
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    # Covers a cold xtask build on a two-core hosted runner; a timeout here
+    # skips every downstream job and fails the whole run.
+    timeout-minutes: 20
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      rust: ${{ steps.plan.outputs.rust }}
+      docs: ${{ steps.plan.outputs.docs }}
+      runtime: ${{ steps.plan.outputs.runtime }}
+      safety: ${{ steps.plan.outputs.safety }}
+      wasm: ${{ steps.plan.outputs.wasm }}
+      adversarial: ${{ steps.plan.outputs.adversarial }}
+      msrv: ${{ steps.plan.outputs.msrv }}
+      full: ${{ steps.plan.outputs.full }}
+      range_base: ${{ steps.range.outputs.base }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Restore Rust build cache
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Reject an unavailable Windows job
+        if: vars.ENABLE_WINDOWS_CI == 'true'
+        run: |
+          echo 'Windows CI requested, but no approved Windows validation lane is configured.' >&2
+          exit 1
+
+      - name: Plan from the last successful integrated tree
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_BASE_SHA: ${{ github.event.before || 'none' }}
+          CI_FORCE_FULL: ${{ github.event_name == 'push' || inputs.full || 'false' }}
+        run: cargo run --locked -p pinewasm_xtask -- ci-plan --github-output "$GITHUB_OUTPUT"
+
+      # Check every commit since the last successful main run. Failed lookups
+      # stop validation rather than silently accepting an empty range.
+      - name: Find the commits this run checks
+        id: range
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: cargo run --locked -p pinewasm_xtask -- ci-range-base --github-output "$GITHUB_OUTPUT"
+
+  guard:
+    needs: [plan]
+    name: Repository boundary check
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    # The guard checks the checked-out tree and every immutable PR commit, so
+    # runtime scales with the introduced range: a fixed cost for the tree
+    # checks plus a per-commit cost for each introduced tree. The budget also
+    # covers a cold xtask build on a two-core hosted runner and keeps headroom
+    # for long commit ranges rather than reporting a cut run as
+    # cancelled.
+    timeout-minutes: 45
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache repository policy dependencies
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          # These jobs compile the same xtask dependencies in fresh runners.
+          # Share dependency artifacts; all policy checks still execute.
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Validate changed repository-check machinery
+        if: needs.plan.outputs.full == 'true'
+        run: cargo run --locked -p pinewasm_xtask -- check-public-boundary --self-test
+
+      - name: Enforce the repository tree and introduced-commit checks
+        env:
+          # Use the verified baseline, including commits from failed earlier runs.
+          BASE_SHA: ${{ needs.plan.outputs.range_base }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- check-public-boundary
+          if [[ -z "${BASE_SHA}" ]]; then
+            echo '::error::No base commit for the range checks; the plan job must resolve it for main runs.'
+            exit 1
+          fi
+          cargo run --locked -p pinewasm_xtask -- check-public-boundary --git-range "${BASE_SHA}" "${HEAD_SHA}"
+          # Require one SemVer step per first-parent change.
+          cargo run --locked -p pinewasm_xtask -- check-compiler-version --first-parent "${BASE_SHA}" "${HEAD_SHA}"
+
+      - name: Validate coverage claims, documentation links, and the diagnostic registry
+        run: cargo run --locked -p pinewasm_xtask -- check-coverage
+
+      # Manifest closure only: this job never measures. A suite that named a
+      # job the runner cannot enter would otherwise fail later, during
+      # measurement, instead of on the pull request that introduced it.
+      - name: Validate the subject-tier benchmark manifest
+        run: cargo run --locked -p pinewasm_xtask -- benchmark-subject-check
+
+  workflow-policy:
+    needs: [plan]
+    name: Workflow policy lint
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    # A cold policy cache compiles xtask before actionlint; a timeout here
+    # skips every downstream job and fails the whole run.
+    timeout-minutes: 20
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Verify policy preflight and native cache recovery checks
+        run: python3 -B -m unittest discover -s .github/ci -p 'test_*.py'
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache repository policy dependencies
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          # These jobs compile the same xtask dependencies in fresh runners.
+          # Share dependency artifacts; all policy checks still execute.
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Install checksum-verified actionlint
+        run: |
+          actionlint_root="${RUNNER_TEMP}/actionlint/${PINEWASM_ACTIONLINT_VERSION}"
+          cargo run --locked -p pinewasm_xtask -- install-actionlint \
+            "${PINEWASM_ACTIONLINT_VERSION}" "${actionlint_root}"
+          echo "${actionlint_root}/bin" >> "${GITHUB_PATH}"
+
+      - name: Lint GitHub Actions workflows
+        run: actionlint
+
+      - name: Require immutable action pins and complete MSRV fixtures
+        run: cargo run --locked -p pinewasm_xtask -- check-workflow-pins
+
+  secret-scan:
+    needs: [plan]
+    name: Repository tree and introduced-commit secret scan
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 20
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache repository policy dependencies
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          # These jobs compile the same xtask dependencies in fresh runners.
+          # Share dependency artifacts; all policy checks still execute.
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Restore checksum-verified Gitleaks
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/gitleaks/${{ env.PINEWASM_GITLEAKS_VERSION }}
+          key: gitleaks-${{ runner.os }}-${{ runner.arch }}-${{ env.PINEWASM_GITLEAKS_VERSION }}
+
+      - name: Install checksum-verified Gitleaks
+        run: |
+          gitleaks_root="${RUNNER_TOOL_CACHE}/gitleaks/${PINEWASM_GITLEAKS_VERSION}"
+          cargo run --locked -p pinewasm_xtask -- install-gitleaks \
+            "${PINEWASM_GITLEAKS_VERSION}" "${gitleaks_root}"
+          echo "${gitleaks_root}/bin" >> "${GITHUB_PATH}"
+
+      - name: Validate changed check-secrets machinery
+        if: needs.plan.outputs.full == 'true'
+        run: cargo run --locked -p pinewasm_xtask -- check-secrets --self-test
+
+      - name: Scan the repository tree and every introduced commit
+        env:
+          # Use the verified baseline, including commits from failed earlier runs.
+          BASE_SHA: ${{ needs.plan.outputs.range_base }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- check-secrets
+          if [[ -z "${BASE_SHA}" ]]; then
+            echo '::error::No base commit for the range checks; the plan job must resolve it for main runs.'
+            exit 1
+          fi
+          cargo run --locked -p pinewasm_xtask -- check-secrets --git-range "${BASE_SHA}" "${HEAD_SHA}"
+
+  dco:
+    needs: [plan]
+    name: Developer Certificate of Origin sign-off
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    # The check itself takes seconds; the budget is a cold xtask build.
+    timeout-minutes: 20
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: |
+          set -euo pipefail
+          rust_cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
+          export PATH="${rust_cargo_bin}:${PATH}"
+          if ! command -v rustup >/dev/null 2>&1; then
+            rustup_installer="${RUNNER_TEMP}/pinewasm-rustup-init.sh"
+            curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
+              https://sh.rustup.rs --output "${rustup_installer}"
+            sh "${rustup_installer}" -y --no-modify-path --profile minimal --default-toolchain none
+          fi
+          printf '%s\n' "${rust_cargo_bin}" >> "${GITHUB_PATH}"
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache repository policy dependencies
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          # These jobs compile the same xtask dependencies in fresh runners.
+          # Share dependency artifacts; all policy checks still execute.
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Validate changed check-dco machinery
+        if: needs.plan.outputs.full == 'true'
+        run: cargo run --locked -p pinewasm_xtask -- check-dco --self-test
+
+      - name: Require a matching Signed-off-by on every introduced commit
+        env:
+          # Use the verified baseline, including commits from failed earlier runs.
+          BASE_SHA: ${{ needs.plan.outputs.range_base }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ -z "${BASE_SHA}" ]]; then
+            echo '::error::No base commit for the range checks; the plan job must resolve it for main runs.'
+            exit 1
+          fi
+          cargo run --locked -p pinewasm_xtask -- check-dco "${BASE_SHA}" "${HEAD_SHA}"
+
+  dependency-policy:
+    # Finish inexpensive preflight checks before occupying a validation runner.
+    # Default success() handling suppresses this job if any preflight fails.
+    needs: [plan, dco, workflow-policy, secret-scan]
+    name: Rust advisories, licenses, and dependency sources
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') }}
+    runs-on: "ubuntu-24.04"
+    # A cold run builds the pinned cargo-deny from source before any check.
+    timeout-minutes: 60
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+          rustup default "${PINEWASM_RUST_VERSION}"
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts and installed tools
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Restore pinned cargo-deny executable
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/pinewasm-cargo-deny-${{ env.PINEWASM_CARGO_DENY_VERSION }}-${{ env.PINEWASM_RUST_VERSION }}
+          key: cargo-deny-${{ runner.os }}-${{ runner.arch }}-${{ env.PINEWASM_CARGO_DENY_VERSION }}-${{ env.PINEWASM_RUST_VERSION }}
+
+      - name: Install pinned cargo-deny
+        run: |
+          tool_root="${RUNNER_TOOL_CACHE}/pinewasm-cargo-deny-${PINEWASM_CARGO_DENY_VERSION}-${PINEWASM_RUST_VERSION}"
+          if [[ ! -x "$tool_root/bin/cargo-deny" ]] || [[ "$("$tool_root/bin/cargo-deny" --version)" != "cargo-deny ${PINEWASM_CARGO_DENY_VERSION}" ]]; then
+            cargo install cargo-deny --version "${PINEWASM_CARGO_DENY_VERSION}" --locked --root "$tool_root"
+          fi
+          echo "$tool_root/bin" >> "$GITHUB_PATH"
+
+      - name: Enforce advisory, license, duplicate, and source policy
+        run: |
+          cargo deny check
+          # The runtime subset intentionally shares the complete workspace allowlist.
+          cargo deny --manifest-path crates/pinewasm_aot/runtime/Cargo.toml check -A license-not-encountered -A unmatched-skip
+
+      - name: Verify the generated backend dependency notice
+        run: cargo run --locked -p pinewasm_xtask -- generate-licenses --check
+
+  rust:
+    needs: [plan, dco, workflow-policy, secret-scan]
+    name: Rust quality and workspace tests (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-x64, macos-arm64]
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') && needs.plan.outputs.rust == 'true' }}
+    # The platform-to-runner table is fixed in this workflow. No repository
+    # variable, input or secret can redirect a job.
+    runs-on: ${{ fromJSON('{"linux-x64":"ubuntu-24.04","macos-arm64":"macos-15"}')[matrix.platform] }}
+    # Full invalidation may need a cold bootstrap before serial lint/docs/tests.
+    # Give that necessary work headroom instead of cancelling and repeating it.
+    # macOS runs only the default-feature tests, so it keeps a tighter bound.
+    timeout-minutes: ${{ matrix.platform == 'macos-arm64' && 90 || (needs.plan.outputs.full == 'true' && 240 || 120) }}
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+      # Keep incremental state disabled and bound native test output size.
+      # Omit native debug symbols to bound hosted disk use. Debug assertions
+      # remain enabled. xtask removes these profile overrides from artifact
+      # builds, so release bytes are unaffected.
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: ${{ matrix.platform == 'macos-arm64' && 'macOS' || 'Linux' }}
+          EXPECTED_RUNNER_ARCH: ${{ matrix.platform == 'macos-arm64' && 'ARM64' || 'X64' }}
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+          clean: ${{ runner.os == 'Windows' }}
+
+      - name: Report native workspace disk
+        run: df -h .
+
+      - name: Prepare an exclusive native cache workspace
+        id: native_workspace
+        if: runner.os != 'Windows'
+        run: python3 -B .github/ci/native_cache.py prepare
+
+      # Bootstrap native runners through the official installer when an image
+      # ships without rustup, without adding an action outside the repository's
+      # permitted set.
+      - name: Install pinned Rust toolchain
+        run: |
+          set -euo pipefail
+          rust_cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
+          export PATH="${rust_cargo_bin}:${PATH}"
+          if ! command -v rustup >/dev/null 2>&1; then
+            rustup_installer="${RUNNER_TEMP}/pinewasm-rustup-init.sh"
+            curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
+              https://sh.rustup.rs --output "${rustup_installer}"
+            sh "${rustup_installer}" -y --no-modify-path --profile minimal --default-toolchain none
+          fi
+          printf '%s\n' "${rust_cargo_bin}" >> "${GITHUB_PATH}"
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal --component rustfmt --component clippy
+          rustup default "${PINEWASM_RUST_VERSION}"
+
+      # Cargo still checks locked registry inputs on each run. Native build
+      # outputs use the bounded cache below; post-job cache maintenance is not used.
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Windows registry downloads
+        if: runner.os == 'Windows'
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The toolchain installer owns rustup and Cargo executables.
+          cache-bin: "false"
+          cache-targets: "false"
+
+      - name: Restore native build outputs by source revision
+        if: runner.os != 'Windows' && steps.native_workspace.outputs.warm != 'true'
+        id: native_cache
+        continue-on-error: true
+        timeout-minutes: 2
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps/*.rlib
+            target/debug/deps/*.rmeta
+            target/debug/deps/*.d
+            target/debug/deps/*.so
+            target/debug/deps/*.dylib
+            target/debug/deps/*.dll
+            target/debug/deps/pinewasm_xtask-*
+            target/debug/pinewasm_xtask*
+          key: native-v3-${{ runner.os }}-${{ runner.arch }}-${{ matrix.platform }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.cargo/config.toml') }}-${{ github.sha }}
+          restore-keys: |
+            native-v3-${{ runner.os }}-${{ runner.arch }}-${{ matrix.platform }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.cargo/config.toml') }}-
+
+      - name: Discard an incomplete native cache restore
+        if: steps.native_cache.outcome == 'failure'
+        run: |
+          python3 -B .github/ci/native_cache.py recover
+          cargo clean
+
+      - name: Preserve prepared native inputs for incremental retries
+        if: runner.os != 'Windows'
+        run: python3 -B .github/ci/native_cache.py checkpoint
+
+      - name: Verify cached builds do not hide source changes or compile errors
+        if: runner.os != 'Windows' && needs.plan.outputs.full == 'true'
+        env:
+          NATIVE_CACHE_CARGO_CHECK: '1'
+        run: python3 -B -m unittest discover -s .github/ci -p 'test_native_cache.py'
+
+      - name: Require selected checks on this GitHub-hosted runner
+        id: reuse
+        env:
+          CI_DISABLE_REUSE: "true"
+        run: cargo run --locked -p pinewasm_xtask -- ci-reuse --lane "rust-${{ matrix.platform }}" --github-output "$GITHUB_OUTPUT"
+
+      - name: Install Wasm target for binding lint
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Check formatting
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: cargo fmt --all --check
+
+      - name: Lint with zero warnings
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage lint
+
+      - name: Check Rust documentation, facade re-exports, and examples
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64' && needs.plan.outputs.docs == 'true')
+        run: cargo run --locked -p pinewasm_xtask -- docs-check
+
+      - name: Check supported feature configurations
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: cargo run --locked -p pinewasm_xtask -- ci-run --stage feature-check
+
+      - name: Test Rust workspace and embedding example
+        if: steps.reuse.outputs.reused != 'true'
+        env:
+          # Every compilation in the test suite also runs the in-process
+          # translation validator on the CSIL optimization passes
+          # (CompileOptions::validate_passes, off by default elsewhere).
+          PINEWASM_VALIDATE_PASSES: "1"
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage default
+
+      # The chart runtime is built from this tree rather than checked in, and
+      # the suite that runs linked chart modules exists only in a compiler built
+      # with it.
+      - name: Test linked chart modules against the chart runtime
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: cargo run --locked -p pinewasm_xtask -- chart-test
+
+      - name: Test artifact-to-VM bridge
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64' && needs.plan.outputs.full == 'true')
+        run: cargo test --locked -p pinewasm_compiler --test artifact_import_bridge
+
+      - name: Release completed native build outputs before the all-feature build
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: cargo clean
+
+      - name: Test all-feature and minimal-feature configurations
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64')
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage all-features
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage minimal
+
+      # The benchmark correctness gate, and only the correctness gate. It
+      # builds an unoptimized subject and reports no timing, because a shared
+      # runner may not produce timing that meets the run protocol in
+      # docs/benchmarks.md. What it does catch is a workload, projection, or
+      # engine change that silently moves a measured series away from the
+      # expected outputs stored with each workload that the suite checks against.
+      - name: Run the benchmark correctness gate
+        if: steps.reuse.outputs.reused != 'true' && (matrix.platform == 'linux-x64' && needs.plan.outputs.adversarial == 'true')
+        run: cargo run --locked -p pinewasm_xtask -- benchmark-subject smoke
+
+      - name: Record validation inputs
+        if: steps.reuse.outputs.reused != 'true'
+        id: receipt
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-record --lane "rust-${{ matrix.platform }}" --output "$RUNNER_TEMP/receipt.json" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ci-record-stdout.txt"
+          python3 .github/ci/emit_owned_record.py --kind ci-record --path "$RUNNER_TEMP/receipt.json"
+      - name: Report runner disk usage
+        if: always() && runner.os != 'Windows'
+        run: |
+          df -h / || true
+          du -sh target 2>/dev/null || true
+
+      # A test process that aborts leaves no message in this log. macOS writes
+      # a crash report instead; print it so the cause is visible in the run.
+      - name: Show macOS crash reports after a failure
+        if: failure() && runner.os == 'macOS'
+        run: |
+          # The reporter needs a moment to finish writing.
+          sleep 20
+          reports="${HOME}/Library/Logs/DiagnosticReports"
+          ls -l "${reports}" 2>/dev/null || true
+          for report in "${reports}"/*.ips "${reports}"/*.crash; do
+            [ -f "${report}" ] || continue
+            echo "::group::${report##*/}"
+            head -c 60000 "${report}"
+            echo
+            echo "::endgroup::"
+          done
+          sysctl -n hw.memsize hw.ncpu || true
+          vm_stat || true
+
+  adversarial:
+    needs: [plan, dco, workflow-policy, secret-scan]
+    name: Deterministic adversarial smoke
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') && needs.plan.outputs.adversarial == 'true' }}
+    runs-on: "ubuntu-24.04"
+    # fuzz-smoke compiles each campaign's test target before running it. The
+    # budget covers those compiles from a cold cache on a two-core hosted
+    # runner; a timeout here fails an otherwise green run.
+    timeout-minutes: 60
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+          rustup default "${PINEWASM_RUST_VERSION}"
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Require selected checks on this GitHub-hosted runner
+        id: reuse
+        env:
+          CI_DISABLE_REUSE: "true"
+        run: cargo run --locked -p pinewasm_xtask -- ci-reuse --lane "adversarial" --github-output "$GITHUB_OUTPUT"
+
+      - name: Run deterministic property and mutation campaigns
+        if: steps.reuse.outputs.reused != 'true'
+        run: cargo run --locked -p pinewasm_xtask -- fuzz-smoke
+
+      - name: Record validation inputs
+        if: steps.reuse.outputs.reused != 'true'
+        id: receipt
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-record --lane "adversarial" --output "$RUNNER_TEMP/receipt.json" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ci-record-stdout.txt"
+          python3 .github/ci/emit_owned_record.py --kind ci-record --path "$RUNNER_TEMP/receipt.json"
+  msrv:
+    needs: [plan, dco, workflow-policy, secret-scan]
+    name: Declared MSRV floor still builds
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') && needs.plan.outputs.msrv == 'true' }}
+    runs-on: "ubuntu-24.04"
+    # A full run checks every target at the floor twice (default and all
+    # features), the AOT runtime variants, and pinewasm_xtask's own tests,
+    # including its artifact_runner fixtures. Budget that from a cold cache on
+    # a two-core hosted runner.
+    timeout-minutes: 120
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install the declared minimum toolchain
+        run: |
+          set -euo pipefail
+          rust_cargo_bin="${CARGO_HOME:-${HOME}/.cargo}/bin"
+          export PATH="${rust_cargo_bin}:${PATH}"
+          if ! command -v rustup >/dev/null 2>&1; then
+            rustup_installer="${RUNNER_TEMP}/pinewasm-rustup-init.sh"
+            curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
+              https://sh.rustup.rs --output "${rustup_installer}"
+            sh "${rustup_installer}" -y --no-modify-path --profile minimal --default-toolchain none
+          fi
+          printf '%s\n' "${rust_cargo_bin}" >> "${GITHUB_PATH}"
+          msrv="$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)"
+          echo "PINEWASM_RUST_MSRV=${msrv}" >> "${GITHUB_ENV}"
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+          rustup toolchain install "${msrv}" --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain "${msrv}"
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Record actual msrv parent and Cargo child tools
+        id: toolchain_msrv
+        run: |
+          tool_pin="${PINEWASM_RUST_MSRV}"
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-msrv.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact msrv tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_msrv.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-msrv.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Require selected checks on this GitHub-hosted runner
+        id: reuse
+        env:
+          CI_DISABLE_REUSE: "true"
+        run: cargo run --locked -p pinewasm_xtask -- ci-reuse --lane "msrv" --github-output "$GITHUB_OUTPUT"
+
+      - name: Check workspace, embedding example, and runtime at the floor
+        if: steps.reuse.outputs.reused != 'true' && (needs.plan.outputs.full == 'true' || needs.plan.outputs.docs == 'true')
+        run: |
+          cargo "+${PINEWASM_RUST_MSRV}" check --workspace --all-targets --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check --locked \
+            -p pinewasm_compiler --example embedding
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --workspace --all-targets --all-features --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --package pinewasm_broker --lib --no-default-features --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --package pinewasm_ta --lib --no-default-features --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --package pinewasm_lsp --lib --no-default-features --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --no-default-features --target wasm32-unknown-unknown --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --no-default-features --features ta \
+            --target wasm32-unknown-unknown --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --no-default-features --features standalone_wasm \
+            --target wasm32-unknown-unknown --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --no-default-features --features broker \
+            --target wasm32-unknown-unknown --locked
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --no-default-features --features chart \
+            --target wasm32-unknown-unknown --locked
+          PINEWASM_FIXTURE_RUST_TOOLCHAIN="${PINEWASM_RUST_MSRV}" \
+            cargo "+${PINEWASM_RUST_MSRV}" test \
+              --locked -p pinewasm_xtask --all-targets
+          RUSTDOCFLAGS="-D warnings" cargo "+${PINEWASM_RUST_MSRV}" doc \
+            --locked -p pinewasm_compiler --no-deps
+          cargo "+${PINEWASM_RUST_MSRV}" test --locked --doc \
+            -p pinewasm_compiler -p pinewasm_bindings -p pinewasm_aot
+          cargo "+${PINEWASM_RUST_MSRV}" test \
+            --locked -p pinewasm_compiler --test public_api
+          cargo "+${PINEWASM_RUST_MSRV}" check \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --all-features --target wasm32-unknown-unknown --locked
+
+      - name: Check selected test targets at the minimum supported Rust version
+        if: steps.reuse.outputs.reused != 'true' && (needs.plan.outputs.full != 'true' && needs.plan.outputs.docs != 'true')
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage msrv
+          cargo run --locked -p pinewasm_xtask -- ci-run --stage msrv-all-features
+
+      - name: Record validation inputs
+        if: steps.reuse.outputs.reused != 'true'
+        id: receipt
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-record --lane "msrv" --output "$RUNNER_TEMP/receipt.json" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ci-record-stdout.txt"
+          python3 .github/ci/emit_owned_record.py --kind ci-record --path "$RUNNER_TEMP/receipt.json"
+  aot-runtime-reproducibility:
+    needs: [plan, dco, workflow-policy, secret-scan]
+    name: Checked-in AOT runtimes are reproducible
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main') && needs.plan.outputs.runtime == 'true' }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 60
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain with Wasm target
+        run: |
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal --component rustfmt --component clippy
+          rustup default "${PINEWASM_RUST_VERSION}"
+          rustup target add wasm32-unknown-unknown
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Require selected checks on this GitHub-hosted runner
+        id: reuse
+        env:
+          CI_DISABLE_REUSE: "true"
+        run: cargo run --locked -p pinewasm_xtask -- ci-reuse --lane "aot-runtime" --github-output "$GITHUB_OUTPUT"
+
+      - name: Check AOT runtime formatting, documentation, and lints
+        if: steps.reuse.outputs.reused != 'true'
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: |
+          cargo fmt --manifest-path crates/pinewasm_aot/runtime/Cargo.toml --all -- --check
+          cargo doc \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --all-features --target wasm32-unknown-unknown --no-deps --locked
+          cargo clippy \
+            --manifest-path crates/pinewasm_aot/runtime/Cargo.toml \
+            --lib --all-features --target wasm32-unknown-unknown --locked \
+            -- -D warnings
+
+      - name: Rebuild affected AOT runtime variants
+        if: steps.reuse.outputs.reused != 'true'
+        run: cargo run --locked -p pinewasm_xtask -- ci-run --stage runtime
+
+      - name: Verify generated runtime modules are current
+        if: steps.reuse.outputs.reused != 'true'
+        run: |
+          git diff --exit-code -- \
+            crates/pinewasm_aot/runtime/Cargo.lock \
+            crates/pinewasm_aot/runtime/*.wasm
+
+      - name: Record validation inputs
+        if: steps.reuse.outputs.reused != 'true'
+        id: receipt
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-record --lane "aot-runtime" --output "$RUNNER_TEMP/receipt.json" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ci-record-stdout.txt"
+          python3 .github/ci/emit_owned_record.py --kind ci-record --path "$RUNNER_TEMP/receipt.json"
+  wasm:
+    name: Production WASM package
+    needs:
+      - plan
+      - runtime-safety
+      - guard
+      - workflow-policy
+      - secret-scan
+      - dco
+      - dependency-policy
+      - rust
+      - adversarial
+      - msrv
+      - aot-runtime-reproducibility
+    if: ${{ always() && !cancelled() && needs.plan.result == 'success' && needs.guard.result == 'success' && needs.rust.result == 'success' && needs.dependency-policy.result == 'success' && needs.workflow-policy.result == 'success' && needs.secret-scan.result == 'success' && needs.dco.result == 'success' && needs.adversarial.result != 'failure' && needs.adversarial.result != 'cancelled' && needs.msrv.result == 'success' && needs.aot-runtime-reproducibility.result != 'failure' && needs.aot-runtime-reproducibility.result != 'cancelled' && needs.runtime-safety.result != 'failure' && needs.runtime-safety.result != 'cancelled' && (github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')) && needs.plan.outputs.wasm == 'true' }}
+    runs-on: "ubuntu-24.04-arm"
+    # A cold run builds the pinned wasm-bindgen-cli and a size-optimized,
+    # link-time-optimized compiler for wasm32 on a two-core runner.
+    timeout-minutes: 90
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: ARM64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Node.js LTS
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          package-manager-cache: false
+          node-version: ${{ env.PINEWASM_NODE_VERSION }}
+
+      - name: Install pinned Rust toolchain with Wasm target
+        run: |
+          rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+          rustup default "${PINEWASM_RUST_VERSION}"
+          rustup target add wasm32-unknown-unknown
+
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Cache Rust build artifacts
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          # The hosted image owns ~/.cargo/bin (rustup, cargo); never restore over it.
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+
+      - name: Require selected checks on this GitHub-hosted runner
+        id: reuse
+        env:
+          CI_DISABLE_REUSE: "true"
+        run: cargo run --locked -p pinewasm_xtask -- ci-reuse --lane "wasm" --github-output "$GITHUB_OUTPUT"
+
+      - name: Install pinned local tools and build a fresh optimized Wasm module
+        if: steps.reuse.outputs.reused != 'true'
+        env:
+          PINEWASM_SOURCE_REVISION: ${{ github.sha }}
+        run: cargo run --locked -p pinewasm_xtask -- setup
+
+      - name: Exercise generated library admission boundaries
+        if: steps.reuse.outputs.reused != 'true'
+        run: cargo run --locked -p pinewasm_xtask -- wasm-test
+
+      - name: Validate npm surface and compiler initialization
+        if: steps.reuse.outputs.reused != 'true'
+        run: |
+          npm pack --dry-run --json ./target/wasm-pkg \
+            > "${RUNNER_TEMP}/pinewasm-npm-pack.json"
+          package_tarball="$(npm pack ./target/wasm-pkg --pack-destination "${RUNNER_TEMP}")"
+          consumer_dir="${RUNNER_TEMP}/pinewasm-consumer"
+          mkdir -p "${consumer_dir}"
+          cd "${consumer_dir}"
+          npm init --yes
+          npm install --ignore-scripts --no-audit --no-fund --save-dev \
+            "typescript@${PINEWASM_TYPESCRIPT_VERSION}"
+          npm install --offline --ignore-scripts --no-audit --no-fund \
+            "${RUNNER_TEMP}/${package_tarball}"
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { dirname, join } from 'node:path';
+          import init, {
+            AotHost,
+            IncrementalSession,
+            PreparedProgram,
+            PreparedDataset,
+            compile,
+            compileStandaloneWasmProgram,
+            compileAndRun,
+            compileProgramToWasm,
+            runProgram,
+            searchFiles,
+            version,
+          } from '@ai-edge/pinewasm';
+
+          const require = createRequire(import.meta.url);
+          const packageRoot = dirname(require.resolve('@ai-edge/pinewasm/package.json'));
+          const render = (value) => JSON.stringify(
+            value,
+            (_key, item) => typeof item === 'bigint' ? `${item}n` : item,
+          );
+          const assert = (condition, message, value) => {
+            if (!condition) {
+              throw new Error(`${message}${value === undefined ? '' : `: ${render(value)}`}`);
+            }
+          };
+          const pine = (sourceText) => sourceText.replace(/^ {10}/gm, '').trimStart();
+          const expectThrow = (label, expected, call) => {
+            try {
+              call();
+            } catch (error) {
+              assert(String(error).includes(expected), `${label} threw the wrong error`, String(error));
+              return;
+            }
+            throw new Error(`${label} did not throw`);
+          };
+
+          const packReport = JSON.parse(await readFile(
+            `${process.env.RUNNER_TEMP}/pinewasm-npm-pack.json`,
+            'utf8',
+          ));
+          const packageManifest = JSON.parse(await readFile(
+            join(packageRoot, 'package.json'),
+            'utf8',
+          ));
+          const expectedPackageFiles = [
+            'LICENSE',
+            'NOTICE',
+            'README.md',
+            'THIRD_PARTY_LICENSES.txt',
+            'package.json',
+            'pinewasm.d.ts',
+            'pinewasm.js',
+            'pinewasm_bg.wasm',
+          ];
+          const packageSummary = Array.isArray(packReport)
+            ? packReport[0]
+            : Object.values(packReport)[0];
+          const packageFiles = packageSummary?.files
+            ?.map(({ path }) => path)
+            .sort();
+          if (
+            packageSummary?.name !== '@ai-edge/pinewasm' ||
+            packageSummary?.entryCount !== expectedPackageFiles.length ||
+            JSON.stringify(packageFiles) !== JSON.stringify(expectedPackageFiles) ||
+            packageManifest.name !== '@ai-edge/pinewasm' ||
+            packageManifest.publishConfig?.access !== 'public'
+          ) {
+            throw new Error(`unexpected npm package surface: ${JSON.stringify({
+              packageSummary,
+              packageManifest,
+            })}`);
+          }
+
+          const bytes = await readFile(
+            require.resolve('@ai-edge/pinewasm/pinewasm_bg.wasm'),
+          );
+          await init({ module_or_path: bytes });
+          const identity = version();
+          const source = '//@version=6\nindicator("CI smoke")\nplot(close)\n';
+          const result = compile(source, { emitIl: true });
+          const aliasResult = compile(source, { emitCsil: true });
+          expectThrow('duplicate compile option aliases', 'invalid compile options', () => {
+            compile(source, { emitIl: true, emitCsil: true });
+          });
+          expectThrow('present undefined compile option', 'invalid compile options', () => {
+            compile(source, { emitIl: undefined });
+          });
+          const exampleSource = '//@version=6\nindicator("Example")\nx = close - close[1]\nplot(x)\n';
+          const close = [10, 12, 11];
+          const runResult = compileAndRun(exampleSource, {
+            open: close,
+            high: close,
+            low: close,
+            close,
+            volume: [1, 1, 1],
+          });
+          if (
+            !identity || identity.ilVersion !== 2 || identity.languageVersion !== 6 ||
+            identity.sourceRevision !== process.env.GITHUB_SHA
+          ) {
+            throw new Error(`unexpected version surface: ${JSON.stringify(identity)}`);
+          }
+          if (
+            !result || result.success !== true || !result.program || !result.ilText ||
+            result.csilText !== undefined || !result.timings ||
+            result.timings.ilMs === undefined || result.timings.csilMs !== undefined
+          ) {
+            throw new Error('PineWASM package compile smoke failed');
+          }
+          assert(
+            Object.hasOwn(result, 'astDebug') && result.astDebug === null,
+            'non-skipped Option::None must remain an explicit null',
+            result,
+          );
+          if (!aliasResult || aliasResult.success !== true || !aliasResult.ilText) {
+            throw new Error('PineWASM expanded CSIL option alias failed');
+          }
+          if (
+            runResult.diagnostics.length !== 0 || runResult.runtimeErrors.length !== 0 ||
+            runResult.barsExecuted !== 3 ||
+            JSON.stringify(runResult.plots?.[0]?.values) !== JSON.stringify([null, 2, -1])
+          ) {
+            throw new Error(`PineWASM README smoke failed: ${JSON.stringify(runResult)}`);
+          }
+          assert(
+            !Object.hasOwn(runResult, 'strategy') &&
+            !Object.hasOwn(runResult, 'drawings') &&
+            !Object.hasOwn(runResult, 'realtimeTrace'),
+            'empty optional RunResult fields must stay omitted',
+            runResult,
+          );
+
+          const oneBar = {
+            open: [11],
+            high: [12],
+            low: [10],
+            close: [11.5],
+            volume: [100],
+            time: [1_700_000_000_000n],
+          };
+          const inputSource = pine(`//@version=6
+          indicator("Typed inputs")
+          enum Mode
+              fast
+              slow
+          integer = input.int(1)
+          decimal = input.float(1.0)
+          enabled = input.bool(false)
+          textValue = input.string("default")
+          shade = input.color(#000000)
+          price = input.source(close)
+          mode = input.enum(Mode.fast)
+          plot(integer)
+          plot(decimal)
+          plot(enabled ? 1.0 : 0.0)
+          plot(textValue == "override" ? 1.0 : 0.0)
+          plot(price)
+          plot(mode == Mode.slow ? 1.0 : 0.0)
+          plot(close, color=shade)
+          `);
+          const inputCompile = compile(inputSource);
+          assert(inputCompile.success && inputCompile.program, 'typed input fixture did not compile', inputCompile);
+          const inputProgram = inputCompile.program;
+          expectThrow('present undefined run option', 'invalid run options', () => {
+            runProgram(inputProgram, oneBar, { realtimeTrace: undefined });
+          });
+          assert(
+            typeof inputProgram.inputs[0]?.defval?.Int === 'bigint',
+            'compiled integer metadata did not preserve its exact wire type',
+            inputProgram.inputs[0],
+          );
+          const inputRun = runProgram(inputProgram, oneBar, {
+            maxInstructionsPerRun: 1_000_000n,
+            maxStackDepth: 1_024n,
+            maxBars: 1n,
+            maxCollectionElements: 100_000n,
+            inputs: new Map([
+              [0, { Int: 7 }],
+              [1, { Float: 2.5 }],
+              [2, { Bool: true }],
+              [3, { String: 'override' }],
+              [4, { Color: { r: 33, g: 150, b: 243, t: 0 } }],
+              [5, { Source: 'Open' }],
+              [6, { Enum: { name: 'Mode', index: 1, member: 'slow' } }],
+            ]),
+          });
+          assert(inputRun.runtimeErrors.length === 0, 'typed inputs produced runtime errors', inputRun);
+          const inputValues = inputRun.plots.map((plot) => plot.values[0]);
+          assert(
+            inputValues[0] === 7 && inputValues[1] === 2.5 &&
+            inputValues[2] === 1 && inputValues[3] === 1 &&
+            inputValues[4] === 11 && inputValues[5] === 1,
+            'tagged input values did not reach the VM',
+            inputValues,
+          );
+          assert(
+            inputRun.plots[6]?.colors?.[0]?.values?.[0] === '#2196F3',
+            'tagged color input did not reach the plot color lane',
+            inputRun.plots[6],
+          );
+          const exactIntegerCompile = compile(pine(`//@version=6
+          indicator("Exact integer override")
+          integer = input.int(0)
+          plot(integer == 9007199254740993 ? 1.0 : 0.0)
+          `));
+          assert(
+            exactIntegerCompile.success && exactIntegerCompile.program,
+            'exact integer fixture did not compile',
+            exactIntegerCompile,
+          );
+          for (const integer of [9_007_199_254_740_993n, '9007199254740993']) {
+            const integerRun = runProgram(exactIntegerCompile.program, oneBar, {
+              inputs: new Map([[0, { Int: integer }]]),
+            });
+            assert(
+              integerRun.plots[0]?.values?.[0] === 1,
+              'exact integer input was rounded before VM comparison',
+              integerRun,
+            );
+          }
+
+          expectThrow('plain-object input map', 'invalid run options', () => runProgram(inputProgram, oneBar, {
+            inputs: { '0': { Int: 2 } },
+          }));
+          expectThrow('raw-scalar input value', 'invalid run options', () => runProgram(inputProgram, oneBar, {
+            inputs: new Map([[0, 2]]),
+          }));
+          expectThrow('multiple input value tags', 'invalid run options', () => runProgram(inputProgram, oneBar, {
+            inputs: new Map([[0, { Int: 2, Float: 2 }]]),
+          }));
+
+          const externalCompile = compile(pine(`//@version=6
+          indicator("External source")
+          selected = input.source(close)
+          plot(selected)
+          `));
+          assert(externalCompile.success && externalCompile.program, 'external-source fixture did not compile', externalCompile);
+          const externalRef = { scriptId: 'upstream', plotSlot: 0, plotLabel: 'Signal' };
+          const externalRun = runProgram(externalCompile.program, oneBar, {
+            inputs: new Map([[0, { ExternalSource: externalRef }]]),
+            externalSources: new Map([[0, { source: externalRef, values: [42] }]]),
+          });
+          assert(
+            externalRun.runtimeErrors.length === 0 &&
+            externalRun.plots[0]?.values?.[0] === 42,
+            'external source Map contract failed',
+            externalRun,
+          );
+          expectThrow('plain-object external source map', 'invalid run options', () => runProgram(
+            externalCompile.program,
+            oneBar,
+            {
+              inputs: new Map([[0, { ExternalSource: externalRef }]]),
+              externalSources: { 0: { source: externalRef, values: [42] } },
+            },
+          ));
+
+          const namespaceRun = compileAndRun(pine(`//@version=6
+          indicator("Namespace keys")
+          plot(syminfo.recommendations_buy_strong)
+          plot(dividends.future_amount)
+          plot(syminfo.main_tickerid == "NASDAQ:AAPL" ? 1.0 : 0.0)
+          `), {
+            ...oneBar,
+            syminfo: {
+              main_tickerid: 'NASDAQ:AAPL',
+              recommendations_buy_strong: 3n,
+            },
+            upcomingEvents: { dividends_future_amount: 0.24 },
+          });
+          assert(
+            namespaceRun.runtimeErrors.length === 0 &&
+            namespaceRun.plots[0]?.values?.[0] === 3 &&
+            namespaceRun.plots[1]?.values?.[0] === 0.24 &&
+            namespaceRun.plots[2]?.values?.[0] === 1,
+            'namespace-derived snake_case keys changed',
+            namespaceRun,
+          );
+
+          const malformed = compileAndRun(source, {
+            open: [1], high: [], low: [1], close: [1], volume: [1],
+          });
+          assert(
+            malformed.runtimeErrors[0]?.kind === 'malformed_market_data',
+            'malformed data did not return a structured runtime error',
+            malformed,
+          );
+
+          const csaw = compileProgramToWasm(result.program);
+          assert(
+            !('unsupported' in csaw) && csaw.wasm instanceof Uint8Array,
+            'CSAW compile did not return a typed module',
+            csaw,
+          );
+          const twoPlots = compile(pine(`//@version=6
+          indicator("Two plots")
+          plot(close)
+          plot(open)
+          `));
+          assert(twoPlots.success && twoPlots.program, 'standalone WebAssembly refusal fixture did not compile', twoPlots);
+          const refused = compileStandaloneWasmProgram(twoPlots.program, { module_type: 'strategy' });
+          const refusedWithNullOptions = compileStandaloneWasmProgram(twoPlots.program, {
+            module_type: 'strategy',
+            signal_plot: null,
+            signal_semantics: null,
+            max_collection_elements: null,
+          });
+          assert(
+            'refused' in refused && refused.refused.code === 'StandaloneWasmNoDesignatedPlot',
+            'standalone WebAssembly ineligibility did not return the typed refusal union',
+            refused,
+          );
+          assert(
+            'refused' in refusedWithNullOptions &&
+            refusedWithNullOptions.refused.code === refused.refused.code,
+            'nullable standalone WebAssembly options did not behave like omission',
+            refusedWithNullOptions,
+          );
+          const bigintSignalPlot = compileStandaloneWasmProgram(twoPlots.program, {
+            module_type: 'strategy',
+            signal_plot: 0n,
+          });
+          assert(
+            !('refused' in bigintSignalPlot) && bigintSignalPlot.signalPlot === 0,
+            'bigint signal plot index did not reach the standalone WebAssembly compiler',
+            bigintSignalPlot,
+          );
+
+          const residentCompiled = compile(pine(`//@version=6
+          strategy("Resident columns", initial_capital=10000)
+          if bar_index == 0
+              strategy.entry("L", strategy.long, qty=1)
+          if bar_index == 1
+              strategy.close_all()
+          plot(close - close[1], color=color.red)
+          `));
+          assert(residentCompiled.success && residentCompiled.program, 'resident fixture did not compile');
+          const resident = new PreparedProgram(residentCompiled.program);
+          const residentMarket = {
+            open: [10, 12, 11], high: [10, 12, 11], low: [10, 12, 11],
+            close: [10, 12, 11], volume: [1, 1, 1], time: [1000, 2000, 3000],
+          };
+          const columns = Float64Array.from([
+            ...residentMarket.open, ...residentMarket.high, ...residentMarket.low,
+            ...residentMarket.close, ...residentMarket.volume, ...residentMarket.time,
+          ]);
+          const metadata = { open: [], high: [], low: [], close: [], volume: [], time: [] };
+          const expectedResident = runProgram(residentCompiled.program, residentMarket);
+          const withoutTiming = ({ runMs, ...value }) => render(value);
+          assert(
+            withoutTiming(resident.runColumns(columns, metadata, null, false)) === withoutTiming(expectedResident),
+            'resident full output differs from runProgram output',
+          );
+          const dataset = new PreparedDataset(columns, metadata);
+          assert(dataset.barCount() === 3 && dataset.primaryBytes() === 144, 'resident data ownership metadata');
+          for (let trial = 0; trial < 32; trial++) {
+            assert(withoutTiming(resident.runDataset(dataset, null, false)) === withoutTiming(expectedResident), 'resident data leaked strategy state');
+          }
+          const originalColumns = columns.slice();
+          columns[0] += 5;
+          metadata.mintick = 0.5;
+          assert(withoutTiming(resident.runDataset(dataset, null, false)) === withoutTiming(expectedResident), 'resident data aliases caller input');
+          columns.set(originalColumns);
+          delete metadata.mintick;
+          const limitedDataset = resident.runDataset(dataset, {maxInstructionsPerBar: 1}, true);
+          assert(limitedDataset.runtimeErrors.length > 0, 'resident data lost execution limits');
+          assert(withoutTiming(resident.runDataset(dataset, null, false)) === withoutTiming(expectedResident), 'resident data failed to recover after a budget error');
+          expectThrow('empty resident data', '1 to 1000000 bars', () => new PreparedDataset(new Float64Array(), metadata));
+          expectThrow('oversize resident data', '1 to 1000000 bars', () => new PreparedDataset(new Float64Array(6000006), metadata));
+          expectThrow('malformed resident data', 'six equal lanes', () => new PreparedDataset(columns.subarray(1), metadata));
+          expectThrow('ambiguous resident data', 'primary metadata lanes must be empty', () => new PreparedDataset(columns, residentMarket));
+          const fractionalDatasetTime = columns.slice(); fractionalDatasetTime[15] = 1.5;
+          expectThrow('resident data time', 'safe integer', () => new PreparedDataset(fractionalDatasetTime, metadata));
+          const parameterSource = compile(pine('indicator("Dataset parameters")\nscale=input.float(1)\nplot(close*scale)'));
+          assert(parameterSource.success && parameterSource.program, 'dataset parameter source');
+          const parameterProgram = new PreparedProgram(parameterSource.program);
+          for (const scale of [1, 2, -3, 1]) {
+            const actual = parameterProgram.runDataset(dataset, {inputs: new Map([[0, {Float: scale}]])}, true);
+            assert(render(Array.from(actual.plots[0].values)) === render(residentMarket.close.map(v => v * scale)), 'dataset changing inputs');
+          }
+          parameterProgram.free();
+          const datasetNumeric = resident.runDataset(dataset, null, true);
+          const savedDatasetNumeric = datasetNumeric.plots[0].values.slice();
+          dataset.free();
+          assert(savedDatasetNumeric.every((v, i) => Object.is(v, datasetNumeric.plots[0].values[i])), 'resident data output ownership');
+          const numeric = resident.runColumns(columns, metadata, undefined, true);
+          assert(numeric.plots[0].values instanceof Float64Array, 'numeric plot is not a bulk array');
+          assert(numeric.strategy.equity instanceof Float64Array, 'numeric equity is not a bulk array');
+          assert(numeric.strategy.marginUsed instanceof Float64Array, 'numeric margin is not a bulk array');
+          assert(
+            render(Array.from(numeric.plots[0].values)) === render(expectedResident.plots[0].values) &&
+            render(Array.from(numeric.strategy.equity)) === render(expectedResident.strategy.equity) &&
+            render(numeric.strategy.trades) === render(expectedResident.strategy.trades),
+            'numeric projection lost complete result data',
+          );
+          assert(!Object.hasOwn(numeric.plots[0], 'colors'), 'numeric projection retained the color serialization');
+          const saved = numeric.plots[0].values.slice();
+          expectThrow('resident malformed columns', 'six equal lanes', () => resident.runColumns(columns.subarray(1), metadata, null, true));
+          expectThrow('resident ambiguous metadata', 'primary metadata lanes must be empty', () => resident.runColumns(columns, residentMarket, null, true));
+          const badTimes = columns.slice();
+          badTimes[15] = 1.5;
+          expectThrow('resident fractional time', 'safe integer', () => resident.runColumns(badTimes, metadata, null, true));
+          const limitedResident = resident.runColumns(columns, metadata, { maxInstructionsPerBar: 1 }, true);
+          assert(limitedResident.runtimeErrors.length > 0, 'resident evaluation lost its instruction budget');
+          assert(
+            withoutTiming(resident.runColumns(columns, metadata, null, false)) === withoutTiming(expectedResident),
+            'resident evaluation did not recover with fresh state',
+          );
+          const changedColumns = columns.slice();
+          for (const index of [0, 3, 6, 9]) changedColumns[index] += 5;
+          resident.runColumns(changedColumns, metadata, null, true);
+          resident.free();
+          assert(saved.every((value, index) => Object.is(value, numeric.plots[0].values[index])), 'numeric output aliases reused or released Wasm memory');
+          expectThrow('invalid resident program', 'invalid program', () => new PreparedProgram({}));
+
+          const session = new IncrementalSession(result.program, oneBar);
+          assert(session.result().barsExecuted === 1, 'incremental result contract failed');
+          session.free();
+          const host = new AotHost(result.program, oneBar);
+          assert(Array.isArray(host.drainLogs()), 'AOT log drain contract failed');
+          assert(Array.isArray(host.drainAlerts()), 'AOT alert drain contract failed');
+          host.free();
+
+          const search = searchFiles(
+            [{ path: 'main.pine', content: source }],
+            'plot',
+            { caseSensitive: false, wholeWord: true, isRegex: false, maxResults: 20 },
+          );
+          assert(search.total === 1n && search.files[0]?.matches[0]?.line === 2n, 'search integer contract changed', search);
+          NODE
+
+      - name: Type-check the packed high-level API from a strict consumer
+        if: steps.reuse.outputs.reused != 'true'
+        run: |
+          consumer_dir="${RUNNER_TEMP}/pinewasm-consumer"
+          cd "${consumer_dir}"
+          cat > consumer.mts <<'TYPESCRIPT'
+          // @ts-expect-error The Program brand is private to the declaration module.
+          import { pineWasmProgram } from '@ai-edge/pinewasm';
+          // @ts-expect-error InputValueTag is an implementation helper, not public API.
+          import type { InputValueTag } from '@ai-edge/pinewasm';
+          import init, {
+            AotHost,
+            IncrementalSession,
+            PreparedProgram,
+            PreparedDataset,
+            compile,
+            compileStandaloneWasmProgram,
+            compileAndRun,
+            compileProgramToWasm,
+            runProgram,
+            searchFiles,
+            type InputValue,
+            type MarketData,
+            type NumericRunResult,
+            type Program,
+            type RunOptions,
+            type RunResult,
+          } from '@ai-edge/pinewasm';
+
+          const source = `//@version=6
+          indicator("Typed consumer")
+          length = input.int(2)
+          plot(close + length)
+          `;
+          const compiled = compile(source, { emitIl: true });
+          if (!compiled.program) throw new Error('expected a program');
+          const program: Program = compiled.program;
+          const market: MarketData = {
+            open: [1, 2],
+            high: [1, 2],
+            low: [1, 2],
+            close: [1, 2],
+            volume: [1, 1],
+            time: [1_700_000_000_000n, 1_700_000_060_000n],
+            syminfo: {
+              main_tickerid: 'NASDAQ:AAPL',
+              recommendations_buy_strong: 3n,
+              expirationDate: null,
+            },
+            upcomingEvents: { dividends_future_amount: 0.24 },
+            footprintData: new Map([
+              ['footprint/default', [{ buy_volume: 2, rows: [{ up_price: 3 }] }]],
+            ]),
+          };
+          const taggedValues = [
+            { Int: 2 },
+            { Int: 9_007_199_254_740_993n },
+            { Int: '9007199254740993' },
+            { Float: 2.5 },
+            { Bool: true },
+            { String: 'value' },
+            { Color: { r: 255, g: 0, b: 64, t: 25 } },
+            { Source: 'Close' },
+            { ExternalSource: { scriptId: 'upstream', plotSlot: 0, plotLabel: 'Signal' } },
+            { Enum: { name: 'Mode', index: 0, member: 'Fast', title: null } },
+          ] satisfies ReadonlyArray<InputValue>;
+          const inputOverrides: Map<number, InputValue> = new Map([
+            [0, taggedValues[0]],
+          ]);
+          const runOptions: RunOptions = {
+            maxInstructionsPerRun: 1_000_000n,
+            inputs: inputOverrides,
+            externalSources: new Map([[0, {
+              source: { scriptId: 'upstream', plotSlot: 0, plotLabel: 'Signal' },
+              values: [null, 1],
+            }]]),
+          };
+
+          const resident = new PreparedProgram(program);
+          const residentMetadata: MarketData = { open: [], high: [], low: [], close: [], volume: [], time: [] };
+          const residentResult: RunResult | NumericRunResult = resident.runColumns(new Float64Array(12), residentMetadata, runOptions, true);
+          const dataset = new PreparedDataset(new Float64Array(12), residentMetadata);
+          const datasetResult: RunResult | NumericRunResult = resident.runDataset(dataset, runOptions, true);
+          const datasetBars: number = dataset.barCount();
+          const datasetBytes: number = dataset.primaryBytes();
+          console.log(datasetResult, datasetBars, datasetBytes);
+          // @ts-expect-error A dataset requires numeric bulk transport.
+          new PreparedDataset([1, 2], residentMetadata);
+          // @ts-expect-error A resident dataset is an owned class, not raw MarketData.
+          resident.runDataset(residentMetadata, runOptions, true);
+          // @ts-expect-error Resident run options keep their object contract.
+          resident.runDataset(dataset, 5, true);
+          dataset.free();
+          console.log(residentResult.plots[0].values);
+          // @ts-expect-error A prepared program must come from the compiler's branded Program.
+          new PreparedProgram({ inputs: [] });
+          // @ts-expect-error Numeric columns use a Float64Array transport.
+          resident.runColumns([1, 2], residentMetadata, null, false);
+          // @ts-expect-error Run options retain their validated object contract.
+          resident.runColumns(new Float64Array(12), residentMetadata, 5, false);
+          resident.free();
+
+          const run: RunResult = runProgram(program, market, runOptions);
+          const combined: RunResult = compileAndRun(source, market, undefined, runOptions);
+          const csaw = compileProgramToWasm(program);
+          if ('unsupported' in csaw) console.log(csaw.unsupported);
+          else console.log(csaw.executionMode, csaw.wasm.byteLength);
+          const standalone_wasm = compileStandaloneWasmProgram(program, {
+            module_type: 'strategy',
+            signal_plot: 0n,
+            signal_semantics: null,
+            max_collection_elements: null,
+          });
+          if ('refused' in standalone_wasm) console.log(standalone_wasm.refused.code);
+          else console.log(standalone_wasm.moduleSha256, standalone_wasm.wasm.byteLength);
+
+          const session = new IncrementalSession(program, market, runOptions);
+          const advanced: RunResult = session.advance([{
+            barIndex: 2,
+            open: 3,
+            high: 3,
+            low: 3,
+            close: 3,
+            volume: 1,
+            time: 1_700_000_120_000n,
+            isBarClose: true,
+          }]);
+          const current: RunResult = session.result();
+          session.free();
+
+          const host = new AotHost(program, market, runOptions, 2);
+          host.pure(0, 1, 2);
+          host.reset();
+          host.drainLogs();
+          host.drainAlerts();
+          host.drainDrawings();
+          host.takeError();
+          host.abiMismatch();
+          host.free();
+
+          const total: bigint = searchFiles(
+            [{ path: 'main.pine', content: source }],
+            'plot',
+            { caseSensitive: false, wholeWord: true, isRegex: false, maxResults: 20 },
+          ).total;
+          void init;
+          void run;
+          void combined;
+          void advanced;
+          void current;
+          void total;
+
+          // @ts-expect-error RunOptions.inputs requires a native Map contract.
+          const objectInputs: RunOptions = { inputs: { '0': { Int: 2 } } };
+          // @ts-expect-error Input overrides are tagged; a raw scalar is invalid.
+          const scalarInputs: RunOptions = { inputs: new Map([[0, 2]]) };
+          // @ts-expect-error An externally tagged input value carries exactly one tag.
+          const multipleTags: InputValue = { Int: 2, Float: 2 };
+          // @ts-expect-error RunOptions.externalSources also requires a native Map.
+          const objectSources: RunOptions = { externalSources: { 0: { source: { scriptId: 'x', plotSlot: 0, plotLabel: 'x' }, values: [1] } } };
+          // @ts-expect-error Program values may only come from this package.
+          const fabricatedProgram: Program = { inputs: [] };
+          // @ts-expect-error Namespace-derived symbol keys stay snake_case.
+          const camelSymbol: MarketData = { open: [], high: [], low: [], close: [], volume: [], syminfo: { mainTickerid: 'wrong' } };
+          // @ts-expect-error standalone WebAssembly options intentionally use the protocol's snake_case keys.
+          compileStandaloneWasmProgram(program, { moduleType: 'strategy' });
+          // @ts-expect-error The two accepted CSIL flag spellings are mutually exclusive.
+          compile(source, { emitIl: true, emitCsil: true });
+          void objectInputs;
+          void scalarInputs;
+          void multipleTags;
+          void objectSources;
+          void fabricatedProgram;
+          void camelSymbol;
+          TYPESCRIPT
+          npx --no-install tsc \
+            --strict \
+            --exactOptionalPropertyTypes \
+            --noEmit \
+            --target ES2022 \
+            --module NodeNext \
+            --moduleResolution NodeNext \
+            --lib ES2022,DOM,ESNext.Disposable \
+            consumer.mts
+
+      - name: Summarize fresh Wasm package
+        if: steps.reuse.outputs.reused != 'true'
+        run: |
+          wasm_path=target/wasm-pkg/pinewasm_bg.wasm
+          test -s "${wasm_path}"
+          wasm_bytes="$(stat --format=%s "${wasm_path}")"
+          wasm_sha256="$(sha256sum "${wasm_path}" | awk '{print $1}')"
+          {
+            echo "### Production Wasm package"
+            echo ""
+            echo "- Build policy: **freshly compiled in this workflow run**"
+            echo "- Source commit: ${GITHUB_SHA}"
+            echo "- Binaryen version: **${PINEWASM_BINARYEN_VERSION}**"
+            echo "- Optimized module size: **${wasm_bytes} bytes**"
+            echo "- Optimized module SHA-256: ${wasm_sha256}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      # Hosted runners are disposable, so the verified package leaves the job
+      # as a workflow artifact. Saving on PRs too exercises the same publication
+      # path before merge. A failed upload fails the job: there is no fallback.
+      - name: Assemble verified Wasm package archive
+        if: steps.reuse.outputs.reused != 'true'
+        id: package_archive
+        run: |
+          artifact_name="pinewasm-wasm-pkg-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA}"
+          archive_dir="${RUNNER_TEMP}/${artifact_name}"
+          mkdir "${archive_dir}"
+          tar -czf "${archive_dir}/wasm-pkg.tar.gz" -C target/wasm-pkg .
+          (
+            cd "${archive_dir}"
+            sha256sum wasm-pkg.tar.gz > SHA256SUMS
+            sha256sum --check SHA256SUMS
+          )
+          {
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "source_commit=${GITHUB_SHA}"
+            echo "event=${GITHUB_EVENT_NAME}"
+            echo "ref=${GITHUB_REF}"
+            echo "run_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "runner=${RUNNER_NAME}"
+            echo "runner_image=${ImageOS:-unknown} ${ImageVersion:-unknown} (${RUNNER_OS} ${RUNNER_ARCH})"
+            echo "wasm_sha256=$(sha256sum target/wasm-pkg/pinewasm_bg.wasm | cut -d' ' -f1)"
+          } > "${archive_dir}/provenance.txt"
+          {
+            echo "name=${artifact_name}"
+            echo "path=${archive_dir}"
+          } >> "${GITHUB_OUTPUT}"
+          {
+            echo ""
+            echo "- Artifact storage: **GitHub Actions artifact** attached to this run"
+            echo "- Archive identifier: ${artifact_name}"
+            echo "- Files: wasm-pkg.tar.gz, SHA256SUMS, provenance.txt"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Retain verified Wasm package as a workflow artifact
+        if: steps.reuse.outputs.reused != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.package_archive.outputs.name }}
+          path: ${{ steps.package_archive.outputs.path }}
+          # A package built on main is a release candidate; a pull-request
+          # package only proves the path works.
+          retention-days: ${{ github.ref == 'refs/heads/main' && 90 || 14 }}
+          if-no-files-found: error
+          # The archive is already gzip-compressed.
+          compression-level: 0
+
+      - name: Record validation inputs
+        if: steps.reuse.outputs.reused != 'true'
+        id: receipt
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: |
+          cargo run --locked -p pinewasm_xtask -- ci-record --lane "wasm" --output "$RUNNER_TEMP/receipt.json" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ci-record-stdout.txt"
+          python3 .github/ci/emit_owned_record.py --kind ci-record --path "$RUNNER_TEMP/receipt.json"
+  runtime-safety:
+    name: Affected runtime safety
+    needs: [plan, dco, workflow-policy, secret-scan]
+    if: needs.plan.outputs.safety == 'true'
+    uses: ./.github/workflows/runtime-safety.yml
+
+  result:
+    name: CI result
+    if: ${{ always() && !cancelled() && (github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')) }}
+    needs: [plan, guard, workflow-policy, secret-scan, dco, dependency-policy, rust, adversarial, msrv, aot-runtime-reproducibility, runtime-safety, wasm]
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 20
+    env:
+      CI_PLAN: ${{ needs.plan.outputs.plan }}
+      CI_NEEDS: ${{ toJSON(needs) }}
+    steps:
+      - name: Require reviewed GitHub-hosted runner platform
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          EXPECTED_RUNNER_OS: Linux
+          EXPECTED_RUNNER_ARCH: X64
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$RUNNER_OS" == "$EXPECTED_RUNNER_OS" && "$RUNNER_ARCH" == "$EXPECTED_RUNNER_ARCH" ]]
+          case "$EXPECTED_RUNNER_OS/$EXPECTED_RUNNER_ARCH" in
+            Linux/X64) [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] ;;
+            Linux/ARM64) [[ "$(uname -s)" == Linux && "$(uname -m)" == aarch64 ]] ;;
+            macOS/ARM64) [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] ;;
+            *) echo 'Unsupported GitHub-hosted runner platform' >&2; exit 1 ;;
+          esac
+          printf 'runner.environment=%s\nrunner.os=%s\nrunner.arch=%s\n' "$ACTUAL_RUNNER_ENVIRONMENT" "$RUNNER_OS" "$RUNNER_ARCH"
+          python_path="$(type -P python3)"
+          [[ "$python_path" == /* && -x "$python_path" ]]
+          "$python_path" --version
+          "$python_path" -I - <<'PYPREFLIGHT'
+          import json, pathlib, sys
+          if sys.version_info < (3, 11):
+              raise SystemExit("Python 3.11+ is required for the selected CI checks; no fallback")
+          import tomllib
+          print(json.dumps({"pythonExecutable": str(pathlib.Path(sys.executable).resolve(strict=True)), "pythonVersion": sys.version.split()[0], "tomllibAvailable": True}, sort_keys=True))
+          PYPREFLIGHT
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        timeout-minutes: 10
+        env:
+          GIT_HTTP_LOW_SPEED_LIMIT: "1000"
+          GIT_HTTP_LOW_SPEED_TIME: "60"
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install "${PINEWASM_RUST_VERSION}" --profile minimal
+      - name: Record actual stable parent and Cargo child tools
+        id: toolchain_stable
+        run: |
+          tool_pin=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          python3 .github/ci/toolchain_identity.py --toolchain "$tool_pin" \
+            --record "$RUNNER_TEMP/tools-stable.json" --github-path "$GITHUB_PATH" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Record exact stable tool identity
+        env:
+          ACTUAL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          CI_HEAD_SHA: ${{ github.sha }}
+          EXPECTED_TOOL_RECORD_SHA: ${{ steps.toolchain_stable.outputs.record_sha256 }}
+        run: python3 .github/ci/emit_owned_record.py --kind toolchain --path "$RUNNER_TEMP/tools-stable.json" --expected-sha "$EXPECTED_TOOL_RECORD_SHA"
+      - name: Restore Rust build cache
+        id: rust_cache
+        # A slow restore must not consume the job budget before any check runs.
+        # Bound it and fall back to a cold build instead of failing the run.
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: "false"
+          cache-bin: "false"
+          cache-workspace-crates: "true"
+          shared-key: repository-policy-v2
+
+      - name: Discard an incomplete Rust cache restore
+        if: steps.rust_cache.outcome == 'failure'
+        run: cargo clean
+      - name: Require complete selected validation
+        run: cargo run --locked -p pinewasm_xtask -- ci-verify

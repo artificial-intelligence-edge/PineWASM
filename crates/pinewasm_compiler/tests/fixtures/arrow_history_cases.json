@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "series-cast-history",
+      "source": "//@version=6\nindicator(\"arrow history rule\")\nseries color c=#336699\nplotarrow(close,colorup=color(c)[1],colordown=#993366)\n",
+      "sourceSha256": "233eed2be83fb472987ae6bca37af610a3882b0c1ec8e2e2c41b6b8b5d26f785",
+      "expectedUpColorer": true,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "80967fd47b142454fc488c0bbe7df3158bda674475e36138c95f4b0111b3a588",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-direct-history",
+      "source": "//@version=6\nindicator(\"arrow history rule\")\nseries color c=#336699\nplotarrow(close,colorup=c[1],colordown=#993366)\n",
+      "sourceSha256": "fa7e2c5fae5b98d7b4ef7fded744e4aa79bfa45aaf8d22588814e0788210c03f",
+      "expectedUpColorer": true,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "5ad6890619c63c8ebb3c6cc0903539c160783da745e83143a9d17dda24691db7",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "ordinary-direct-history",
+      "source": "//@version=6\nindicator(\"arrow history rule\")\ncolor c=#336699\nplotarrow(close,colorup=c[1],colordown=#993366)\n",
+      "sourceSha256": "08cbd6afadc2c5709be1493875564b67a1566cdf14f6372592e1283b3c14f744",
+      "expectedUpColorer": true,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "159f815472498d23f93f8ae9f9de630686f196c8255d3de10b22a28d6dd84b7d",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-direct-no-history",
+      "source": "//@version=6\nindicator(\"arrow history rule\")\nseries color c=#336699\nplotarrow(close,colorup=c,colordown=#993366)\n",
+      "sourceSha256": "b1fc40d73abaf60e24508904044b0cb52a3ca83d8fcb6898f55d8dd3c7dc9baf",
+      "expectedUpColorer": false,
+      "expected": {
+        "up": {
+          "origin": "constant",
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#336699",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "65bf50b8d6ad9032168524dd2f70f7d30e67329fce2c278126f88858f53724f9",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "const-direct-history",
+      "source": "//@version=6\nindicator(\"arrow history rule\")\nconst color c=#336699\nplotarrow(close,colorup=c[1],colordown=#993366)\n",
+      "sourceSha256": "10921adf817191b7ea29d2baad28819a132389c392daf8dd452a7ca59beeabc1",
+      "expectedUpColorer": true,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "9baa6b74a6773b5f28019e49d532a8a47c6255756ff48ad97d35f59eb68f7829",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "input-offset-cast-history",
+      "source": "//@version=6\nindicator(\"dynamic history rule\")\nseries color c=#336699\ni=input.int(1,minval=0,maxval=1)\nplotarrow(close,colorup=color(c)[i],colordown=#993366)\n",
+      "sourceSha256": "7cc4eb087237e11dab7f4b1ce4fe3129bbbc7f0d123218b2c84181b48e161ca5",
+      "expectedUpColorer": true,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "8aedb879d809c35cb8f9a3536c6bf06d1b01f25abf11e5429124de7e01525358",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "cast-history-zero",
+      "source": "//@version=6\nindicator(\"zero history rule\")\nseries color c=#336699\nplotarrow(close,colorup=color(c)[0],colordown=#993366)\n",
+      "sourceSha256": "b8bba7841af1ed2ea063663bb7c58b7115cc3cf3dbf180d7d11808bcdfe9d314",
+      "expectedUpColorer": true,
+      "historyOffset": 0,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "4fbbafce0cb4bed2a5ff0a4c63c4fc52b2842d67c0784a4b7029bdd4722c8590",
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "direct-history-zero",
+      "source": "//@version=6\nindicator(\"zero history rule\")\nseries color c=#336699\nplotarrow(close,colorup=c[0],colordown=#993366)\n",
+      "sourceSha256": "af0992eebbb5137708e4593822cac6fbcc50b7d14c94f0cf77e687b4a22c4fcc",
+      "expectedUpColorer": true,
+      "historyOffset": 0,
+      "expected": {
+        "up": {
+          "origin": "dynamic",
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "origin": "constant",
+          "r": 153,
+          "g": 51,
+          "b": 102,
+          "t": 0
+        }
+      },
+      "expectedCss": {
+        "colordown": "#993366",
+        "colorup": "#00FF00",
+        "display": 4294967295
+      },
+      "expectedCsilSha256": "37df2392f6219f26b8595a83f1399c7a0100c6303374b7fe7d0c094ef89b8463",
+      "expectedCompileSuccess": true
+    }
+  ],
+  "executionPreservation": {
+    "scope": "Regression expectations for PineWASM's own compiler and runtime."
+  }
+}

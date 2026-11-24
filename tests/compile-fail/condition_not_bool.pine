@@ -1,0 +1,4 @@
+//@version=6
+indicator("Bad")
+if close
+    plot(close)

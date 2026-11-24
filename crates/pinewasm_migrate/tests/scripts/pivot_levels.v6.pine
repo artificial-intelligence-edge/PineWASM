@@ -1,0 +1,106 @@
+//@version=6
+indicator("Pivot Levels", overlay = true, max_lines_count = 100, max_labels_count = 100)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+leftBars = input.int(5, "Left Bars")
+rightBars = input.int(5, "Right Bars")
+keepLevels = input.int(6, "Levels To Keep", minval = 1)
+lineStyleName = input.string("Dashed", "Line Style", options = ["Solid", "Dashed", "Dotted"])
+guideStyleName = input.string("Dotted", "Guide Style", options = ["Solid", "Dashed", "Dotted"])
+extendRight = input.bool(true, "Extend Lines")
+showPrices = input.bool(true, "Show Prices")
+
+// ---------------------------------------------------------------------------
+// Styles. Neither switch has a default arm, so an unmatched name needs a
+// fallback.
+// ---------------------------------------------------------------------------
+lineStyle = switch lineStyleName
+    "Solid" => line.style_solid
+    "Dashed" => line.style_dashed
+    "Dotted" => line.style_dotted
+
+guideStyle(string name) =>
+    switch name
+        "Solid" => hline.style_solid
+        "Dashed" => hline.style_dashed
+        "Dotted" => hline.style_dotted
+        => hline.style_solid
+
+hline(50, "Upper Guide", color = color.gray, linestyle = guideStyle(guideStyleName))
+hline(0, "Zero Guide", color = color.gray, linestyle = guideStyle("Solid"), linewidth = math.max(1, 0))
+
+markerStyle = if showPrices
+    plot.style_circles
+else
+    plot.style_line
+plot(showPrices ? close : na, "Marker", color = color.gray, style = markerStyle)
+
+// ---------------------------------------------------------------------------
+// Pivots
+// ---------------------------------------------------------------------------
+ph = ta.pivothigh(high, leftBars, rightBars)
+pl = ta.pivotlow(low, leftBars, rightBars)
+
+var line[] highLines = array.new_line()
+var line[] lowLines = array.new_line()
+var label[] tags = array.new_label()
+
+addLevel(line[] lines, float price, color c) =>
+    l = line.new(bar_index - rightBars, price, bar_index, price, color = c, style = lineStyle, extend = extendRight ? extend.right : extend.none)
+    array.push(lines, l)
+    if array.size(lines) > keepLevels
+        line.delete(array.shift(lines))
+
+if not na(ph)
+    addLevel(highLines, ph, #FF5252)
+    if showPrices
+        array.push(tags, label.new(bar_index - rightBars, ph, str.tostring(ph, format.mintick), style = label.style_label_down, color = #FF5252, textcolor = color.black))
+if not na(pl)
+    addLevel(lowLines, pl, #00897B)
+    if showPrices
+        array.push(tags, label.new(bar_index - rightBars, pl, str.tostring(pl, format.mintick), style = label.style_label_up, color = #00897B, textcolor = color.black))
+
+while array.size(tags) > keepLevels * 2
+    label.delete(array.shift(tags))
+
+// Stretch unbroken levels; delete the ones price has closed through.
+if array.size(highLines) > 0
+    for i = array.size(highLines) - 1 to 0 by 1
+        l = array.get(highLines, i)
+        if close > line.get_y1(l)
+            line.delete(l)
+            array.remove(highLines, i)
+        else
+            line.set_x2(l, bar_index)
+
+// Nearest resistance above the close.
+nearest = 0.0
+nearest := na
+for l in highLines
+    y = line.get_y1(l)
+    if y > close and (na(nearest) or y < nearest)
+        nearest := y
+        nearest
+plot(nearest, "Nearest Resistance", color = color.new(#FF5252, 50), style = plot.style_linebr, linewidth = 1)
+
+alertcondition(not na(ph), "New Pivot High", "A pivot high formed")
+alertcondition(not na(pl), "New Pivot Low", "A pivot low formed")
+
+// ---------------------------------------------------------------------------
+// Prior day floor pivots from the daily context
+// ---------------------------------------------------------------------------
+showFloor = input.bool(true, "Show Floor Pivots")
+[dHigh, dLow, dClose] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+pp = (dHigh + dLow + dClose) / 3
+r1 = 2 * pp - dLow
+s1 = 2 * pp - dHigh
+r2 = pp + (dHigh - dLow)
+s2 = pp - (dHigh - dLow)
+newDay = ta.change(dClose) != 0
+plot(showFloor and not newDay ? pp : na, "Pivot", color = #FFEB3B, style = plot.style_linebr, linewidth = 2)
+plot(showFloor and not newDay ? r1 : na, "R1", color = color.new(#FF5252, 30), style = plot.style_linebr)
+plot(showFloor and not newDay ? s1 : na, "S1", color = color.new(#00897B, 30), style = plot.style_linebr)
+plot(showFloor and not newDay ? r2 : na, "R2", color = color.new(#FF5252, 60), style = plot.style_linebr)
+plot(showFloor and not newDay ? s2 : na, "S2", color = color.new(#00897B, 60), style = plot.style_linebr)

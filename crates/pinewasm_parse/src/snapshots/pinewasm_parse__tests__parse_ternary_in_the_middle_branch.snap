@@ -1,0 +1,14 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..22
+  Version <none>
+  Assign `x` @ 0..21
+    Ternary @ 4..21
+      Ident `a` @ 4..5
+      Ternary @ 8..17
+        Ident `b` @ 8..9
+        Ident `c` @ 12..13
+        Ident `d` @ 16..17
+      Ident `e` @ 20..21

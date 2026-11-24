@@ -1,0 +1,50 @@
+//@version=6
+indicator("UDT")
+
+// A user-defined type: a record with typed fields and defaults. Instances
+// are reference values on the VM heap, constructed with `Name.new(...)` and
+// their fields read/written through `obj.field`.
+type Point
+    float x = 0.0
+    float y = 0.0
+
+// Construct with named arguments; the omitted field takes its declared default.
+origin = Point.new()
+p = Point.new(x = 3.0, y = 4.0)
+plot(p.x + p.y + origin.x)
+
+// A var-held object persists across bars; mutating a field accumulates.
+type Acc
+    float total = 0.0
+var a = Acc.new()
+a.total := a.total + close
+plot(a.total)
+
+// Aliasing: two variables bound to one object share mutations (reference
+// semantics — the handle is copied). A shallow copy is independent.
+type Box
+    float v = 0.0
+b1 = Box.new(1.0)
+b2 = b1
+b3 = Box.copy(b1)
+b2.v := 99.0
+plot(b1.v)
+plot(b3.v)
+
+// A nested type (a field of another UDT) — read through two levels.
+type Inner
+    float w = 0.0
+type Outer
+    Inner child
+    float k = 0.0
+o = Outer.new(Inner.new(7.0), 3.0)
+plot(o.child.w + o.k)
+
+// A self-referential type: a linked-list node walked through its `next` chain.
+type Node
+    int val = 0
+    Node next
+n3 = Node.new(3)
+n2 = Node.new(2, n3)
+n1 = Node.new(1, n2)
+plot(n1.val + n1.next.val + n1.next.next.val)

@@ -1,0 +1,47 @@
+[package]
+name = "pinewasm_vm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The PineWASM VM: a deterministic interpreter for validated CSIL"
+publish.workspace = true
+
+[features]
+# Compiles the Aeneas extraction roots (`src/aeneas_roots_*.rs`). Never
+# enabled by production builds.
+aeneas = []
+
+[dependencies]
+pinewasm_span = { workspace = true }
+pinewasm_hir = { workspace = true }
+pinewasm_mir = { workspace = true }
+pinewasm_csil = { workspace = true }
+# The transcendentals. Deliberately not `std`'s, so that results do not
+# depend on which platform's libm the build linked.
+pinewasm_num = { workspace = true }
+# The stateful `ta.*` engine, shared with emitted artifacts so the two cannot
+# drift. `crate::ta` is the interpreter's `Value` binding to it.
+pinewasm_ta = { workspace = true }
+# The strategy broker simulation, shared with emitted strategy artifacts for
+# the same one-implementation reason. `crate::broker` re-exports it
+# at its in-crate path; `serde` puts the public wire types
+# (`StrategyTrade` and report aggregates) on the public serialization surface.
+pinewasm_broker = { workspace = true, features = ["serde"] }
+# IANA time zone rules, shared with emitted artifacts: an exchange's local
+# time, daylight-saving changes included, is computed by one implementation.
+# `bundled` embeds the pinned IANA release the interpreter resolves names in.
+pinewasm_tz = { workspace = true, features = ["bundled"] }
+fancy-regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+pinewasm_parse = { workspace = true }
+pinewasm_semantics = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true

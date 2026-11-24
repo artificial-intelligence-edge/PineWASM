@@ -1,0 +1,4 @@
+//@version=6
+indicator("History", overlay=false)
+plot(close - close[1], "Change")
+plot(nz(close[2], 0.0), "Lag 2")

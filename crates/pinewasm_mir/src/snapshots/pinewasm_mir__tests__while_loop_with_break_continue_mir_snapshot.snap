@@ -1,0 +1,50 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"W\\\")\\nvar i = 0\\ni := 0\\nwhile i < 10\\n    if i == 5\\n        break\\n    i := i + 1\\n    continue\\nplot(i)\\n\")"
+---
+MirBody title="W" slots=1 plots=1 values=14
+  slot 0 `i` var
+  plot 0 title="<none>"
+bb0:
+  branch_if_slot_written slot0, bb2, bb1
+bb1:
+  v0 = const 0
+  store_user_current slot0, v0
+  jump bb3
+bb2:
+  jump bb3
+bb3:
+  v1 = const 0
+  store_user_current slot0, v1
+  jump bb4
+bb4:
+  v2 = read_user slot0[0]
+  v3 = const 10
+  v4 = binary `<` v2, v3
+  branch v4, bb5, bb6
+bb5:
+  v5 = read_user slot0[0]
+  v6 = const 5
+  v7 = binary `==` v5, v6
+  branch v7, bb7, bb8
+bb6:
+  v11 = read_user slot0[0]
+  v12 = int_to_float v11
+  v13 = const #2196F3
+  plot p0, v12
+    color Color v13
+  return
+bb7:
+  jump bb6
+bb8:
+  jump bb9
+bb9:
+  v8 = read_user slot0[0]
+  v9 = const 1
+  v10 = binary `+` v8, v9 (int)
+  store_user_current slot0, v10
+  jump bb4
+bb10:
+  jump bb9
+bb11:
+  jump bb4

@@ -1,0 +1,40 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "Ints"
+SERIES_SLOT 0 "m"
+SERIES_SLOT 1 "q"
+SERIES_SLOT 2 "value"
+PLOT_SLOT 0
+
+FUNC main (max_stack 2)
+  0000 READ_BUILTIN BAR_INDEX 0         ; 22..31
+  0001 PUSH_I64 2                       ; 34..35
+  0002 INT_REM                          ; 22..35
+  0003 STORE_USER_SLOT_CURRENT 0        ; 18..35
+  0004 PUSH_I64 7                       ; 40..41
+  0005 PUSH_I64 2                       ; 44..45
+  0006 PINE_INT_DIV                     ; 40..45
+  0007 STORE_USER_SLOT_CURRENT 1        ; 36..45
+  0008 PUSH_F64 0                       ; 54..57
+  0009 STORE_USER_SLOT_CURRENT 2        ; 46..57
+  0010 READ_USER_SLOT 0 0               ; 61..62
+  0011 PUSH_I64 0                       ; 66..67
+  0012 CMP_EQ                           ; 61..67
+  0013 JUMP_IF_FALSE 0018               ; 58..108
+  0014 READ_USER_SLOT 1 0               ; 81..82
+  0015 INT_TO_F64                       ; 81..82
+  0016 STORE_USER_SLOT_CURRENT 2        ; 72..82
+  0017 JUMP 0023                        ; 58..108
+  0018 READ_USER_SLOT 1 0               ; 101..102
+  0019 INT_TO_F64                       ; 101..102
+  0020 PUSH_F64 0.5                     ; 105..108
+  0021 F64_ADD                          ; 101..108
+  0022 STORE_USER_SLOT_CURRENT 2        ; 92..108
+  0023 READ_USER_SLOT 2 0               ; 114..119
+  0024 PUSH_COLOR #2196F3               ; 109..120
+  0025 PLOT_STYLED_F64 0 1              ; 109..120
+  0026 RETURN                           ; 109..120
+END

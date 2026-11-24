@@ -1,0 +1,103 @@
+//@version=6
+strategy("Breakout Pyramid", overlay = true, pyramiding = 3, initial_capital = 50000, default_qty_type = strategy.fixed, default_qty_value = 1, margin_long = 50, process_orders_on_close = false, margin_short = 0)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+channelLen = input.int(20, "Channel Length", minval = 2)
+addSpacing = input.float(1.0, "Add Spacing (ATR)", step = 0.25)
+trailTrigger = input.int(300, "Trail Trigger Ticks")
+trailOffset = input.int(150, "Trail Offset Ticks")
+maxAdds = input.int(3, "Maximum Entries", minval = 1, maxval = 3)
+riskPercent = input.float(1.0, "Risk Percent")
+
+// ---------------------------------------------------------------------------
+// Channel
+// ---------------------------------------------------------------------------
+upper = ta.highest(high, channelLen)[1]
+lower = ta.lowest(low, channelLen)[1]
+middle = (upper + lower) / 2
+atr = ta.atr(channelLen)
+
+__v6_1 = ta.barssince(close > upper) > 0
+__v6_3 = ta.crossover(close, upper)
+breakoutUp = close > upper and __v6_1 or __v6_3
+breakdown = close < lower
+
+// Pyramid bookkeeping: the price of the latest fill and how many are open.
+var float lastFill = na
+var int openCount = 0
+if strategy.position_size == 0
+    openCount := 0
+    lastFill := na
+
+// A new unit is added only once price has moved a full spacing past the
+// previous fill.
+spacingMet = na(lastFill) or close - lastFill >= addSpacing * atr
+canAdd = openCount < maxAdds and spacingMet
+
+unitRisk = atr * 2
+units = unitRisk > 0 ? math.floor(strategy.equity * riskPercent / 100 / unitRisk) : 1
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+if breakoutUp and canAdd
+    strategy.order("Add " + str.tostring(openCount + 1), strategy.long, math.max(1, units))
+
+if breakoutUp and canAdd
+    openCount := openCount + 1
+    lastFill := close
+
+// Every unit trails. The absolute trail activation follows the channel
+// middle once it is above the average entry, otherwise the ticks apply.
+trailLevel = middle > strategy.position_avg_price ? middle : na
+for i = 1 to maxAdds by 1
+    strategy.exit("Trail " + str.tostring(i), "Add " + str.tostring(i), trail_price = trailLevel, trail_points = na(trailLevel) ? trailTrigger : na, trail_offset = trailOffset, stop = lower)
+
+if breakdown
+    strategy.close_all(comment = "channel break")
+if breakdown
+    strategy.cancel_all()
+
+// ---------------------------------------------------------------------------
+// Plots
+// ---------------------------------------------------------------------------
+pu = plot(upper, "Upper", color = #00897B, linewidth = math.max(1, 0))
+pl = plot(lower, "Lower", color = #FF5252, linewidth = math.max(1, 0))
+plot(middle, "Middle", color = color.gray, style = plot.style_circles, linewidth = 1)
+fill(pu, pl, color = color.new(#00897B, 92))
+plot(strategy.position_size > 0 ? strategy.position_avg_price : na, "Average Price", color = #FFEB3B, style = plot.style_linebr)
+plotchar(breakoutUp and canAdd, "Add", "+", location.belowbar, #00897B, size = size.small)
+
+// ---------------------------------------------------------------------------
+// Equity curve monitoring
+// ---------------------------------------------------------------------------
+var float peakEquity = strategy.initial_capital
+peakEquity := math.max(peakEquity, strategy.equity)
+drawdownPct = (peakEquity - strategy.equity) / peakEquity * 100
+maxDrawdownPct = input.float(15.0, "Pause Entries Above Drawdown Percent")
+paused = drawdownPct > maxDrawdownPct
+if paused
+    strategy.cancel_all()
+
+// Volatility filter: only add while the channel is wide enough.
+channelWidth = (upper - lower) / atr
+__v6_2 = ta.sma(channelWidth, 10) < 2
+narrowChannel = channelWidth < 2 or __v6_2
+
+if breakoutUp and canAdd and not narrowChannel
+    alert("Added unit " + str.tostring(openCount) + " at " + str.tostring(close, format.mintick), alert.freq_once_per_bar_close)
+if breakdown and strategy.position_size > 0
+    alert("Channel break exit", alert.freq_once_per_bar_close)
+
+var table info = table.new(position.top_right, 2, 3, border_width = 1)
+if barstate.islast
+    table.cell(info, 0, 0, "Units", text_color = color.white, bgcolor = color.gray)
+    table.cell(info, 1, 0, str.tostring(openCount), text_color = color.white)
+    table.cell(info, 0, 1, "Drawdown", text_color = color.white, bgcolor = color.gray)
+    table.cell(info, 1, 1, str.tostring(drawdownPct, "#.#") + "%", text_color = paused ? #FF5252 : color.white)
+    table.cell(info, 0, 2, "Width", text_color = color.white, bgcolor = color.gray)
+    table.cell(info, 1, 2, str.tostring(channelWidth, "#.#"), text_color = narrowChannel ? #FFEB3B : color.white)
+bgcolor(paused ? color.new(#FF5252, 94) : narrowChannel ? color.new(color.gray, 94) : na)
+plot(drawdownPct, "Drawdown Percent", display = display.data_window)

@@ -1,0 +1,96 @@
+//@version=5
+indicator("Weekday Seasonality", overlay = false)
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+src = input.source(close, "Source", "Price used for returns", "row1", "Data", display.all, false)
+yearsBack = input.int(3, "Years To Include", minval = 1)
+decimals = input.int(2, "Decimals")
+showCounts = input.bool(true, "Show Sample Counts")
+bgTransp = input.int(40, "Cell Transparency")
+
+// Weekday buckets. The table is split into two halves of the week.
+DAYS = 7
+HALF_WEEK = DAYS / 2
+MS_PER_DAY = 86400000
+
+var float[] sums = array.new_float(DAYS, 0.0)
+var int[] counts = array.new_int(DAYS, 0)
+
+// Only daily bars are sampled.
+isDailyChart = timeframe.period == "D"
+cutoff = timenow - yearsBack * 365 * MS_PER_DAY
+
+// Session start of the prior day and of the same bar a week earlier.
+prevDayStart = time("D", 1)
+weekAgoStart = time("W", 1)
+
+ret = (src - src[1]) / src[1] * 100
+if isDailyChart and time >= cutoff and not na(ret)
+    d = dayofweek - 1
+    array.set(sums, d, array.get(sums, d) + ret)
+    array.set(counts, d, array.get(counts, d) + 1)
+
+avgFor(int d) =>
+    c = array.get(counts, d)
+    c == 0 ? na : array.get(sums, d) / c
+
+dayName(int d) =>
+    switch d
+        0 => "Sun"
+        1 => "Mon"
+        2 => "Tue"
+        3 => "Wed"
+        4 => "Thu"
+        5 => "Fri"
+        => "Sat"
+
+var table t = table.new(position.top_center, DAYS, 3, border_width = 1)
+if barstate.islast
+    best = -1.0e10
+    bestDay = 0
+    for d = 0 to DAYS - 1
+        v = avgFor(d)
+        if not na(v) and v > best
+            best := v
+            bestDay := d
+    for d = 0 to DAYS - 1
+        v = avgFor(d)
+        c = na(v) ? color.gray : v >= 0 ? color.teal : color.red
+        table.cell(t, d, 0, dayName(d), text_color = color.white, bgcolor = color.new(color.gray, bgTransp))
+        table.cell(t, d, 1, na(v) ? "-" : str.tostring(math.round(v, decimals)), text_color = color.white, bgcolor = color.new(c, d == bestDay ? 0 : bgTransp))
+        if showCounts
+            table.cell(t, d, 2, str.tostring(array.get(counts, d)), text_color = color.gray)
+    if not isDailyChart
+        table.cell(t, HALF_WEEK, 1, "Use a daily chart", text_color = color.yellow)
+
+todayAvg = avgFor(dayofweek - 1)
+plot(todayAvg, "Average For Weekday", color = todayAvg >= 0 ? color.teal : color.red, style = plot.style_columns, transp = 30)
+plot(ret, "Return", color = color.gray, display = display.data_window)
+plot((time - prevDayStart) / MS_PER_DAY, "Days Since Prior Session", display = display.data_window)
+plot((time - weekAgoStart) / MS_PER_DAY, "Days Since Prior Week", display = display.data_window)
+hline(0, "Zero", color = color.gray)
+
+// ---------------------------------------------------------------------------
+// Month of year returns, accumulated on the last bar of each month
+// ---------------------------------------------------------------------------
+MONTHS = 12
+var float[] monthSums = array.new_float(MONTHS, 0.0)
+var int[] monthCounts = array.new_int(MONTHS, 0)
+var float monthOpen = na
+newMonth = month != month[1]
+if newMonth or na(monthOpen)
+    if not na(monthOpen) and time >= cutoff
+        m = month[1] - 1
+        array.set(monthSums, m, array.get(monthSums, m) + (close[1] - monthOpen) / monthOpen * 100)
+        array.set(monthCounts, m, array.get(monthCounts, m) + 1)
+    monthOpen := open
+
+var table mt = table.new(position.bottom_center, MONTHS, 2, border_width = 1)
+if barstate.islast
+    for m = 0 to MONTHS - 1
+        n = array.get(monthCounts, m)
+        v = n == 0 ? na : array.get(monthSums, m) / n
+        table.cell(mt, m, 0, str.tostring(m + 1), text_color = color.white, bgcolor = color.gray)
+        table.cell(mt, m, 1, na(v) ? "-" : str.tostring(math.round(v, decimals)), text_color = color.white, bgcolor = na(v) ? color.gray : v >= 0 ? color.teal : color.red)

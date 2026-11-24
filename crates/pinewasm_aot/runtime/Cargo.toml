@@ -1,0 +1,165 @@
+# The AOT runtime module: `pinewasm_num`'s transcendentals compiled to
+# WebAssembly so emitted artifacts can link them instead of importing
+# `host.pure` (docs/aot.md §5).
+#
+# Deliberately outside the workspace. It builds for a different target
+# (`wasm32-unknown-unknown`), under a different profile, and produces a
+# checked-in binary rather than a library the workspace links; folding it into
+# the workspace would drag `no_std` + `panic = "abort"` settings onto crates
+# that want neither. Its separate Cargo.lock is committed because these bytes
+# are release artifacts. Regenerate with `cargo xtask aot-runtime-all`.
+[workspace]
+
+[package]
+name = "pinewasm_aot_runtime"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+description = "Reproducible linked runtime modules for PineWASM AOT artifacts"
+license = "AGPL-3.0-only"
+repository = "https://github.com/artificial-intelligence-edge/PineWASM"
+publish = false
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+warnings = "deny"
+# `aeneas_host` is set only by the Charon/Aeneas extraction
+# (`--rustc-arg=--cfg=aeneas_host`, see src/lib.rs); declared so
+# `unexpected_cfgs` accepts it.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(aeneas_host)"] }
+
+[lints.clippy]
+# This crate is intentionally outside the root workspace, so it must carry
+# the unsafe-documentation gate explicitly. Every raw linear-memory access and
+# allocator implementation needs a local, reviewable safety argument.
+undocumented_unsafe_blocks = "deny"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+# The standalone WebAssembly export family (src/standalone_wasm.rs): JSON scanner, serializer, and allocator.
+# Off by default so the base blob (`pinewasm_aot_runtime.wasm`) remains the
+# minimal deterministic artifact for programs that never call it; its ~25 KiB
+# of rodata (ryu tables, dec2flt tables, error strings) must not ride along in
+# those artifacts. `cargo xtask aot-runtime-all` builds both the base blob with
+# this off and `pinewasm_aot_runtime_standalone_wasm.wasm` with it on.
+standalone_wasm = ["dep:ryu", "dep:itoa", "ta"]
+# The stateful `ta.*` engine (src/ta.rs), shared by the TA and standalone WebAssembly runtime
+# variants. Off by default so the base blob — spliced into every artifact that
+# touches a transcendental but no `ta.*` — remains minimal and reproducible
+# from the current pinned source and toolchain. `cargo xtask aot-runtime-all`
+# builds `pinewasm_aot_runtime_ta.wasm` with it on; the standalone WebAssembly
+# blob implies it, because a standalone WebAssembly artifact needs both families.
+ta = ["dep:pinewasm_ta"]
+# The strategy broker (`src/broker.rs`): the `pinewasm_rt_broker_*` export
+# family driving the shared `pinewasm_broker` model per emitted bar,
+# plus `standalone_wasm_serialize_posture`, the flat-aware posture serializer. Implies
+# `standalone_wasm` because strategy artifacts are standalone WebAssembly-only and the broker allocates from
+# the standalone WebAssembly arena band. A fourth checked-in blob
+# (`pinewasm_aot_runtime_broker.wasm`, `cargo xtask aot-runtime-all`) so
+# indicator artifacts retain their smaller feature-specific runtime.
+broker = ["dep:pinewasm_broker", "standalone_wasm"]
+# The chart export family (src/chart.rs): the VM as the host of a
+# chart module, linked into the module so it imports nothing (docs/aot.md
+# §14). This build links `std`. Unlike the four above its blob is not
+# checked in: it holds the VM, so nearly every compiler change changes it.
+# `cargo xtask aot-runtime-chart` builds it, and `cargo xtask wasm` links it
+# into the JavaScript package's compiler.
+chart = ["ta", "dep:pinewasm_vm", "dep:pinewasm_csil", "dep:serde", "dep:serde_json"]
+# Charon/Aeneas extraction roots (src/aeneas_roots_aot_runtime.rs) and the
+# pure arena helpers they reach (src/arena_bounds.rs). Verification only: no
+# checked-in blob enables it, so it cannot change any runtime's bytes.
+aeneas = []
+# Native Miri runs use libm's pure-Rust fallback because the interpreter does
+# not support target-specific inline assembly. Wasm release builds never
+# enable this feature.
+miri = ["pinewasm_num/miri", "pinewasm_ta/miri", "pinewasm_broker?/miri"]
+
+[dependencies]
+pinewasm_num = { path = "../../pinewasm_num" }
+# Fixed exchange offsets and session shapes, read by the same code the
+# interpreter reads them with. Without `bundled`: no time zone
+# database rides along in an artifact.
+pinewasm_tz = { path = "../../pinewasm_tz" }
+# The engine itself, shared with the interpreter: the whole
+# point of linking it is that an artifact and the VM run the same code.
+pinewasm_ta = { path = "../../pinewasm_ta", optional = true }
+# The strategy broker model, shared with the interpreter.
+# `default-features = false` drops its `std` feature (`std` only unlocks
+# `std::error::Error`).
+pinewasm_broker = { path = "../../pinewasm_broker", default-features = false, optional = true }
+# The standalone WebAssembly family's printers (src/standalone_wasm.rs). Both are no_std, zero-dependency,
+# and documented never to panic — a panic path would drag `core::fmt`
+# vtables (and thus an element section) into the blob, which the splice
+# rejects. Pinned exactly, like `libm`, so the checked-in blob is
+# reproducible. Optional: only the standalone WebAssembly blob carries them.
+ryu = { version = "=1.0.23", optional = true }
+itoa = { version = "=1.0.18", optional = true }
+# The chart runtime (src/chart.rs): the VM itself, and the JSON its
+# loader exchanges with it. This crate's lockfile holds every package these
+# share with the workspace at the workspace's exact version (`cargo xtask
+# aot-runtime-chart` refuses a build otherwise), so the linked VM is built
+# from the dependency versions the VM itself uses. `float_roundtrip` because
+# market data arrives as JSON text and must parse to the exact prices.
+pinewasm_vm = { path = "../../pinewasm_vm", optional = true }
+pinewasm_csil = { path = "../../pinewasm_csil", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
+
+[profile.release]
+# Size first: these bytes ride along in every artifact that touches a
+# transcendental. The float sequences are identical at any optimization level
+# (Rust never contracts or reassociates float math), so this is a pure
+# size/speed trade with no effect on results.
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = false
+
+# Broker accounting and stateful indicator updates execute on every bar.
+# Pure numeric helpers retain their size-first profile.
+[profile.release.package.pinewasm_broker]
+opt-level = 3
+
+[profile.release.package.pinewasm_ta]
+opt-level = 3
+
+# The chart runtime (`--features chart`) is built with this profile, and
+# nothing else is, so the four checked-in runtimes keep the bytes the release
+# profile gives them. It speed-optimizes what runs on every bar: the
+# VM's dispatch crates, as the workspace does (see the root
+# Cargo.toml), and the numeric kernels the compiled script calls. Measured on
+# a loop-heavy script, that is 2-4% of the run for 0.1 MiB of module; building
+# every crate for speed costs 1 MiB more and measures the same.
+#
+# It also builds the VM's crates with the overflow checks the workspace
+# builds them with, so the linked VM stops on the arithmetic the workspace
+# VM stops on.
+[profile.chart]
+inherits = "release"
+
+[profile.chart.package.libm]
+opt-level = 3
+
+[profile.chart.package.pinewasm_num]
+opt-level = 3
+
+[profile.chart.package.pinewasm_vm]
+opt-level = 3
+overflow-checks = true
+
+[profile.chart.package.pinewasm_mir]
+opt-level = 3
+overflow-checks = true
+
+[profile.chart.package.pinewasm_ta]
+overflow-checks = true
+
+[profile.chart.package.pinewasm_csil]
+overflow-checks = true
+
+[profile.chart.package.pinewasm_span]
+overflow-checks = true

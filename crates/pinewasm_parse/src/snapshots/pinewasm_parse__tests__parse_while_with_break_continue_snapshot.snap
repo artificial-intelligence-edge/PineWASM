@@ -1,0 +1,20 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..53
+  Version <none>
+  While @ 0..52
+    Cond
+      Binary `>` @ 6..11
+        Ident `x` @ 6..7
+        Number 0 (int) @ 10..11
+    Body
+      If @ 16..39
+        Cond
+          Binary `==` @ 19..25
+            Ident `x` @ 19..20
+            Number 5 (int) @ 24..25
+        Then
+          Break @ 34..39
+      Continue @ 44..52

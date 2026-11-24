@@ -1,0 +1,18 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..44
+  Version <none>
+  Assign `p` @ 0..43
+    IfExpr @ 4..43
+      Cond
+        Binary `>` @ 7..19
+          Ident `close` @ 7..12
+          Ident `open` @ 15..19
+      Then
+        ExprStmt @ 24..29
+          Ident `close` @ 24..29
+      Else
+        ExprStmt @ 39..43
+          Ident `open` @ 39..43

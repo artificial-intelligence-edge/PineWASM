@@ -1,0 +1,5 @@
+//@version=6
+indicator("Persistent state", overlay=false)
+var float total = 0.0
+total += close
+plot(total, "Cumulative")

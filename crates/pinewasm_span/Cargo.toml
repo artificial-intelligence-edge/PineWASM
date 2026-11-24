@@ -1,0 +1,22 @@
+[package]
+name = "pinewasm_span"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Source positions, source maps, and structured diagnostics"
+publish.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+# Extraction roots for Charon/Aeneas only; never enabled in production builds.
+aeneas = []

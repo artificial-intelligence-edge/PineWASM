@@ -1,0 +1,245 @@
+{
+  "scope": "Drawing constant names that PineWASM resolves, and the internal string code it maps each name to.",
+  "constants": [
+    {
+      "name": "position.top_left",
+      "value": "top_left"
+    },
+    {
+      "name": "position.top_center",
+      "value": "top_center"
+    },
+    {
+      "name": "position.top_right",
+      "value": "top_right"
+    },
+    {
+      "name": "position.middle_left",
+      "value": "middle_left"
+    },
+    {
+      "name": "position.middle_center",
+      "value": "middle_center"
+    },
+    {
+      "name": "position.middle_right",
+      "value": "middle_right"
+    },
+    {
+      "name": "position.bottom_left",
+      "value": "bottom_left"
+    },
+    {
+      "name": "position.bottom_center",
+      "value": "bottom_center"
+    },
+    {
+      "name": "position.bottom_right",
+      "value": "bottom_right"
+    },
+    {
+      "name": "size.auto",
+      "value": "auto"
+    },
+    {
+      "name": "size.tiny",
+      "value": "tiny"
+    },
+    {
+      "name": "size.small",
+      "value": "small"
+    },
+    {
+      "name": "size.normal",
+      "value": "normal"
+    },
+    {
+      "name": "size.large",
+      "value": "large"
+    },
+    {
+      "name": "size.huge",
+      "value": "huge"
+    },
+    {
+      "name": "xloc.bar_index",
+      "value": "bi"
+    },
+    {
+      "name": "xloc.bar_time",
+      "value": "bt"
+    },
+    {
+      "name": "yloc.price",
+      "value": "pr"
+    },
+    {
+      "name": "yloc.abovebar",
+      "value": "ab"
+    },
+    {
+      "name": "yloc.belowbar",
+      "value": "bl"
+    },
+    {
+      "name": "extend.none",
+      "value": "n"
+    },
+    {
+      "name": "extend.left",
+      "value": "l"
+    },
+    {
+      "name": "extend.right",
+      "value": "r"
+    },
+    {
+      "name": "extend.both",
+      "value": "b"
+    },
+    {
+      "name": "line.style_solid",
+      "value": "sol"
+    },
+    {
+      "name": "line.style_dotted",
+      "value": "dot"
+    },
+    {
+      "name": "line.style_dashed",
+      "value": "dsh"
+    },
+    {
+      "name": "line.style_arrow_left",
+      "value": "al"
+    },
+    {
+      "name": "line.style_arrow_right",
+      "value": "ar"
+    },
+    {
+      "name": "line.style_arrow_both",
+      "value": "ab"
+    },
+    {
+      "name": "label.style_none",
+      "value": "n"
+    },
+    {
+      "name": "label.style_xcross",
+      "value": "xcr"
+    },
+    {
+      "name": "label.style_cross",
+      "value": "cr"
+    },
+    {
+      "name": "label.style_triangleup",
+      "value": "tup"
+    },
+    {
+      "name": "label.style_triangledown",
+      "value": "tdn"
+    },
+    {
+      "name": "label.style_flag",
+      "value": "flg"
+    },
+    {
+      "name": "label.style_circle",
+      "value": "cir"
+    },
+    {
+      "name": "label.style_arrowup",
+      "value": "aup"
+    },
+    {
+      "name": "label.style_arrowdown",
+      "value": "adn"
+    },
+    {
+      "name": "label.style_label_up",
+      "value": "lup"
+    },
+    {
+      "name": "label.style_label_down",
+      "value": "ldn"
+    },
+    {
+      "name": "label.style_label_left",
+      "value": "llf"
+    },
+    {
+      "name": "label.style_label_right",
+      "value": "lrg"
+    },
+    {
+      "name": "label.style_label_lower_left",
+      "value": "llwlf"
+    },
+    {
+      "name": "label.style_label_lower_right",
+      "value": "llwrg"
+    },
+    {
+      "name": "label.style_label_upper_left",
+      "value": "luplf"
+    },
+    {
+      "name": "label.style_label_upper_right",
+      "value": "luprg"
+    },
+    {
+      "name": "label.style_label_center",
+      "value": "lcn"
+    },
+    {
+      "name": "label.style_square",
+      "value": "sq"
+    },
+    {
+      "name": "label.style_diamond",
+      "value": "dia"
+    },
+    {
+      "name": "label.style_text_outline",
+      "value": "to"
+    },
+    {
+      "name": "text.align_left",
+      "value": "left"
+    },
+    {
+      "name": "text.align_center",
+      "value": "center"
+    },
+    {
+      "name": "text.align_right",
+      "value": "right"
+    },
+    {
+      "name": "text.align_top",
+      "value": "top"
+    },
+    {
+      "name": "text.align_bottom",
+      "value": "bottom"
+    },
+    {
+      "name": "text.wrap_none",
+      "value": "none"
+    },
+    {
+      "name": "text.wrap_auto",
+      "value": "auto"
+    },
+    {
+      "name": "font.family_default",
+      "value": "default"
+    },
+    {
+      "name": "font.family_monospace",
+      "value": "monospace"
+    }
+  ]
+}

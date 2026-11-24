@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"//@version=6\\nindicator(\\\"T\\\")\\n[m, s, h] = ta.macd(close, 3, 7, 4)\\nplot(m)\\nplot(h)\\n\")"
+---
+MirBody title="T" slots=3 plots=2 values=8
+  slot 0 `m`
+  slot 1 `s`
+  slot 2 `h`
+  plot 0 title="<none>"
+  plot 1 title="<none>"
+  ta_state 0 ta.macd params=[3, 7, 4]
+bb0:
+  v0 = read_builtin close[0]
+  v1, v2, v3 = call_ta state0 v0
+  store_user_current slot2, v3
+  store_user_current slot1, v2
+  store_user_current slot0, v1
+  v4 = read_user slot0[0]
+  v5 = const #2196F3
+  plot p0, v4
+    color Color v5
+  v6 = read_user slot2[0]
+  v7 = const #2196F3
+  plot p1, v6
+    color Color v7
+  return

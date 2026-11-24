@@ -1,0 +1,25 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"Engine\\\")\\nplot(ta.ema(close, 9))\\nplot(ta.crossover(close, open) ? 1.0 : 0.0)\\n\")"
+---
+MirBody title="Engine" slots=0 plots=2 values=10
+  plot 0 title="<none>"
+  plot 1 title="<none>"
+  ta_state 0 ta.ema params=[9]
+  ta_state 1 ta.crossover params=[]
+bb0:
+  v0 = read_builtin close[0]
+  v1 = call_ta state0 v0
+  v2 = const #2196F3
+  plot p0, v1
+    color Color v2
+  v3 = read_builtin close[0]
+  v4 = read_builtin open[0]
+  v5 = call_ta state1 v3, v4
+  v6 = const 1
+  v7 = const 0
+  v8 = select v5, v6, v7
+  v9 = const #2196F3
+  plot p1, v8
+    color Color v9
+  return

@@ -1,0 +1,20 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..32
+  Version <none>
+  Assign `y` @ 0..13
+    Binary `+` @ 4..13
+      Ident `a` @ 4..5
+      Binary `%` @ 8..13
+        Ident `b` @ 8..9
+        Ident `c` @ 12..13
+  Assign `z` @ 14..31
+    Binary `/` @ 18..31
+      Binary `*` @ 18..27
+        Binary `%` @ 18..23
+          Ident `a` @ 18..19
+          Ident `b` @ 22..23
+        Ident `c` @ 26..27
+      Ident `d` @ 30..31

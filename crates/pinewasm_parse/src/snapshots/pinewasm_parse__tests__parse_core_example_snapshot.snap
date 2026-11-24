@@ -1,0 +1,17 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..63
+  Version 6 @ 0..12
+  IndicatorDecl @ 13..33
+    Str "Example" @ 23..32
+  Assign `x` @ 34..54
+    Binary `-` @ 38..54
+      Ident `close` @ 38..43
+      History @ 46..54
+        Ident `close` @ 46..51
+        Number 1 (int) @ 52..53
+  ExprStmt @ 55..62
+    Call `plot` @ 55..62
+      Ident `x` @ 60..61

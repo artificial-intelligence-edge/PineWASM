@@ -1,0 +1,29 @@
+//@version=6
+indicator("UDT field series", overlay = true)
+
+// A field can be reassigned on any bar, so reading one gives a series value.
+type Pt
+    float x
+    color c
+
+getX(Pt p) => p.x
+method mx(Pt self) => self.x
+
+p = Pt.new(open, close > open ? color.green : color.red)
+
+// The paint comes from a field, so it may change on every bar.
+plot(close, color = p.c)
+
+// `[]` after a call takes the history of the call's result, including a
+// drawing getter, a function and a method that read a field.
+var line l = line.new(0, open, 1, open)
+line.set_xy1(l, bar_index, open)
+plot(line.get_x1(l)[1])
+plot(getX(p)[1])
+plot(p.mx()[1])
+
+// An expression that reads a field keeps a history, and so does a variable
+// bound to a field.
+plot((p.x * 2)[1])
+x = p.x
+plot(x[1])

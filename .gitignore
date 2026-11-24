@@ -1,0 +1,29 @@
+# Rust
+/target/
+.tools/
+**/*.rs.bk
+
+# The generated JavaScript/Wasm package lives under target/wasm-pkg and is
+# covered by the Rust target ignore above.
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local tool configuration is not tracked.
+.claude/
+.codex/
+.mcp.json
+.vscode/
+
+# Credentials and local authentication material must never be committed.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# Python tooling output
+__pycache__/
+*.py[cod]

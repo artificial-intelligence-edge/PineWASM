@@ -1,0 +1,16 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+expression: dump_program(&result.program)
+---
+Program @ 0..40
+  Version <none>
+  Assign `x` @ 0..31
+    Ternary @ 4..31
+      Binary `>` @ 4..16
+        Ident `close` @ 4..9
+        Ident `open` @ 12..16
+      Ident `close` @ 19..24
+      Ident `open` @ 27..31
+  ExprStmt @ 32..39
+    Call `plot` @ 32..39
+      Ident `x` @ 37..38

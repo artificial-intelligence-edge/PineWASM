@@ -1,0 +1,28 @@
+//@version=6
+indicator("Table Alerts")
+
+// Event streams: log.* and alert()/alertcondition() are recorded into the
+// RunResult `logs` and `alerts` sections. This fixture also makes a position.*
+// constant observable as an ordinary const string. The implemented table,
+// polyline, and linefill object lifecycles are covered by drawings.pine and the
+// VM drawing-object tests rather than duplicated here.
+
+pos = position.middle_center
+freq = alert.freq_once_per_bar_close
+
+// Make the positioning token observable end-to-end.
+total = str.length(pos)
+plot(total)
+
+same = pos == "position.middle_center"
+plot(same ? 1.0 : 0.0)
+
+// Log stream: one formatted message per bar at each severity.
+log.info("close={0}", close)
+log.warning("bar {0}", bar_index)
+log.error("checkpoint")
+
+// Alert stream: a plain alert() (default freq_once_per_bar, deduped within a
+// bar) plus a conditional alert that fires only when close rises above 10.
+alert("heartbeat")
+alertcondition(close > 10.0, "cross", "close above ten")

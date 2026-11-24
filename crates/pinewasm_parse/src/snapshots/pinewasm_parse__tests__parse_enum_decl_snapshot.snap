@@ -1,0 +1,13 @@
+---
+source: crates/pinewasm_parse/src/tests.rs
+assertion_line: 1615
+expression: dump_program(&result.program)
+---
+Program @ 0..100
+  Version 6 @ 0..12
+  IndicatorDecl @ 13..27
+    Str "E" @ 23..26
+  EnumDef `Signal` @ 28..99
+    Variant `buy` = "Buy signal" @ 44..62
+    Variant `sell` = "Sell signal" @ 67..87
+    Variant `neutral` @ 92..99

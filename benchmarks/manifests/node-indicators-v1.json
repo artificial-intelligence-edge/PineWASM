@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "suite": "node-indicators-v1",
+  "status": "exploratory-not-accepted",
+  "host": "Node.js v22.22.3, one fresh local process per sample",
+  "projection": "All named numeric plot values and titles, full history and na placement; no visual styling, drawings, realtime, or strategy equivalence claim",
+  "input_generator": "First-party sine/cosine drift from 2020-01-01 UTC; generated in Rust and materialized once for every engine",
+  "bars": [
+    2000,
+    10000
+  ],
+  "workloads": [
+    "history",
+    "arithmetic",
+    "sma",
+    "control",
+    "persistent",
+    "collections",
+    "legacy-mixed"
+  ],
+  "diagnostic_workloads": [
+    "legacy-mixed"
+  ],
+  "engines": [
+    "pinewasm",
+    "pinets",
+    "piner-js",
+    "piner-interp",
+    "resin",
+    "pine-a-script",
+    "openpine"
+  ],
+  "lanes": [
+    "cold-runtime",
+    "cached"
+  ],
+  "unavailable_lanes": {
+    "openpine": [
+      "cached"
+    ]
+  },
+  "samples": 30,
+  "warmups": {
+    "cold-runtime": 0,
+    "cached": 10
+  },
+  "iterations": 1,
+  "timeout_seconds": 60,
+  "order_seed": 20260905,
+  "bootstrap_seed": 902883,
+  "bootstrap_resamples": 10000,
+  "absolute_tolerance": 1e-09,
+  "relative_tolerance": 1e-10,
+  "precision_floor_ms": 0.1,
+  "packages": {
+    "pinets": "0.9.33",
+    "@heyphat/piner": "0.13.0",
+    "@nullarch/resin": "0.2.2"
+  },
+  "source_engines": {
+    "pine-a-script": {
+      "repository": "MeridianAlgo/Pine-A-Script",
+      "revision": "6f9e99cd0a0bc895ac661cbfbe2c9ae1fa0df2c9"
+    },
+    "openpine": {
+      "repository": "woefije0/OpenPine",
+      "revision": "eb47d24bc0259ac5d23c797ad0076e4ae5f3a9e4"
+    }
+  },
+  "limitations": [
+    "This exploratory suite follows the indicator workload shape and is not a complete benchmark result.",
+    "Fixed warmups are recorded individually; no steady-state or JIT-convergence claim is made. Cold-runtime measurements have zero workload warmups.",
+    "The EMA/MACD/SMA/RSI mixed workload is untimed diagnostic context because EMA seeding is marked assumed in PineWASM's coverage matrix. Differences are semantic mismatches between engine outputs to investigate, not claims about either engine's behavior.",
+    "Numerical comparisons cover the declared numeric plot projection only. Cold timers start after module initialization and input/source file reads, and include source compilation, data conversion, fresh execution state, output conversion, and JSON materialization.",
+    "Cached timers exclude only public reusable compilation-artifact creation. Resin's public run API compiles generated JavaScript each time; that API cost remains included.",
+    "Each engine's default resource policies apply, with an external 60-second watchdog per invocation. These limits are not equivalent, so this suite makes no cross-engine performance claim.",
+    "Every failed engine/workload/lane remains in the attempted matrix. No algorithm or language-feature emulation is permitted in adapters.",
+    "Reproduction by a second operator remains a separate requirement."
+  ],
+  "subject_artifact_sha256": {
+    "target/wasm-pkg/pinewasm.js": "369b073fd89ac973ad6446dd4a44572dcd3ab89eb27f45c274ed70171c77ab93",
+    "target/wasm-pkg/pinewasm_bg.wasm": "ef54e833c4eeb27417e047f7857d678ef8473701cb37d58c1fa377055beb0960"
+  },
+  "npm_lock": {
+    "name": "benchmark-engines",
+    "lockfileVersion": 3,
+    "requires": true,
+    "packages": {
+      "": {
+        "dependencies": {
+          "@heyphat/piner": "0.13.0",
+          "@nullarch/resin": "0.2.2",
+          "pinets": "0.9.33"
+        }
+      },
+      "node_modules/@heyphat/piner": {
+        "version": "0.13.0",
+        "resolved": "https://registry.npmjs.org/@heyphat/piner/-/piner-0.13.0.tgz",
+        "integrity": "sha512-wyZp7irvRiBBoSkLINDqufqRsc6rZH7uoIwk1dZHlKIkLBz+fpeBi7mbgumRxiyBNZf2dN6YmiE6swRhWE9wNw==",
+        "license": "AGPL-3.0-only",
+        "engines": {
+          "node": ">=18"
+        }
+      },
+      "node_modules/@nullarch/resin": {
+        "version": "0.2.2",
+        "resolved": "https://registry.npmjs.org/@nullarch/resin/-/resin-0.2.2.tgz",
+        "integrity": "sha512-XarlO+N8hyIaiNSSMmFVlvYoTJp6fgodcbkR+cc2er7dMmxfygCVNYSJv/F3qJe5Zk70LnkvurNpZKzRNkPwpQ==",
+        "license": "Apache-2.0",
+        "bin": {
+          "resin": "bin/resin.mjs"
+        },
+        "engines": {
+          "node": ">=22.18"
+        }
+      },
+      "node_modules/acorn": {
+        "version": "8.18.0",
+        "resolved": "https://registry.npmjs.org/acorn/-/acorn-8.18.0.tgz",
+        "integrity": "sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==",
+        "license": "MIT",
+        "bin": {
+          "acorn": "bin/acorn"
+        },
+        "engines": {
+          "node": ">=0.4.0"
+        }
+      },
+      "node_modules/acorn-walk": {
+        "version": "8.3.5",
+        "resolved": "https://registry.npmjs.org/acorn-walk/-/acorn-walk-8.3.5.tgz",
+        "integrity": "sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==",
+        "license": "MIT",
+        "dependencies": {
+          "acorn": "^8.11.0"
+        },
+        "engines": {
+          "node": ">=0.4.0"
+        }
+      },
+      "node_modules/astring": {
+        "version": "1.9.0",
+        "resolved": "https://registry.npmjs.org/astring/-/astring-1.9.0.tgz",
+        "integrity": "sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==",
+        "license": "MIT",
+        "bin": {
+          "astring": "bin/astring"
+        }
+      },
+      "node_modules/pinets": {
+        "version": "0.9.33",
+        "resolved": "https://registry.npmjs.org/pinets/-/pinets-0.9.33.tgz",
+        "integrity": "sha512-co+TfFuiNYy8ph2N8efMLZcJ/BPhJs2Eb8Hn0a+d08KxyKIueYs0DyN6vudAfpr6X2phaUghAHbbfExfbD/sJw==",
+        "license": "AGPL-3.0-only",
+        "dependencies": {
+          "acorn": "^8.14.0",
+          "acorn-walk": "^8.3.4",
+          "astring": "^1.9.0"
+        }
+      }
+    }
+  }
+}

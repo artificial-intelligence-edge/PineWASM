@@ -1,0 +1,23 @@
+//@version=6
+indicator("Tuples")
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+[bbMiddle, bbUpper, bbLower] = ta.bb(close, 20, 2.0)
+[kcMiddle, kcUpper, kcLower] = ta.kc(close, 20, 2.0)
+[plusDi, minusDi, adx] = ta.dmi(14, 14)
+// a two-element tuple: [supertrend, direction]
+[stValue, stDir] = ta.supertrend(3, 10)
+plot(macdLine)
+plot(histLine)
+plot(bbMiddle)
+plot(kcMiddle)
+plot(adx)
+plot(stValue)
+plot(stDir)
+bounds(src) =>
+    hi = src + 1.0
+    lo = src - 1.0
+    [hi, lo]
+[hi, lo] = bounds(close)
+plot(hi - lo)
+// history on a destructured target works
+plot(bbUpper - bbUpper[1])

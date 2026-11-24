@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_mir/src/tests.rs
+expression: "lower_source(\"indicator(\\\"Ternary\\\")\\nplot(close > open ? close : open)\\n\")"
+---
+MirBody title="Ternary" slots=1 plots=1 values=7
+  slot 0 `%t0`
+  plot 0 title="<none>"
+bb0:
+  v0 = read_builtin close[0]
+  v1 = read_builtin open[0]
+  v2 = binary `>` v0, v1
+  branch v2, bb1, bb2
+bb1:
+  v3 = read_builtin close[0]
+  store_user_current slot0, v3
+  jump bb3
+bb2:
+  v4 = read_builtin open[0]
+  store_user_current slot0, v4
+  jump bb3
+bb3:
+  v5 = read_user slot0[0]
+  v6 = const #2196F3
+  plot p0, v5
+    color Color v6
+  return

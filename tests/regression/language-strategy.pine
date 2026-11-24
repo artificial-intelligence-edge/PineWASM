@@ -1,0 +1,417 @@
+//@version=6
+// ===========================================================================
+// PineWASM supported-language regression fixture: strategy() declaration.
+//
+// One strategy() script exercising the surface that requires a strategy
+// declaration: strategy.* orders, risk commands, broker state, input.*,
+// request.*, log.* and ticker.*.
+//
+// Every feature exercised here is folded into an accumulator or a check
+// counter so a regression shows up in the plotted output rather than
+// passing silently. Each check compares a value with the result that the
+// language rules give for that input.
+// Run the command below after changing this file.
+//
+// Re-verify on the local synthetic feed from the repository root:
+//   cargo run -p pinewasm_compiler --bin pinewasm-check --locked -- --run tests/regression/*.pine
+// Expected: one JSON result per file with `"ok":true`.
+// ===========================================================================
+//@strategy_alert_message Strategy check fired {{strategy.order.action}} @ {{close}}
+strategy("PineWASM Strategy Regression", overlay = true, initial_capital = 10000, default_qty_type = strategy.percent_of_equity, default_qty_value = 5, currency = "USD", commission_type = strategy.commission.cash_per_order, commission_value = 1.0, pyramiding = 2)
+
+// ===========================================================================
+// Regression section: strategy-request-input
+// Covers the request, strategy, input, log and ticker checks below,
+// each under its own built-in family header.
+// ===========================================================================
+
+var float strategy_request_input_acc = 0.0
+var int strategy_request_input_checks = 0
+
+strategy_request_input_note(bool ok) =>
+    ok ? 1 : 0
+
+// ---------------------------------------------------------------------------
+// input.* built-ins: input.int, input.float, input.bool, input.string,
+// input.color, input.source, input.text_area, input.timeframe, input.session,
+// input.symbol, input.price, input.time, input.enum, input() (generic)
+// ---------------------------------------------------------------------------
+
+enum StrategyRequestInputMode
+    fast = "Fast"
+    slow = "Slow"
+    off
+
+// input.int(): range overload (defval,title,minval,maxval,step) + metadata tail.
+strategy_request_input_len = input.int(14, "Length", 1, 100, 1, tooltip = "bars", inline = "n", group = "Numbers", confirm = false, display = display.none)
+// input.int(): options overload (defval,title,options).
+strategy_request_input_pick = input.int(3, "Pick", [1, 2, 3, 5], group = "Numbers")
+// input.float(): range overload; an int default coerces.
+strategy_request_input_mult = input.float(2.0, "Multiplier", 0.5, 10.0, 0.5, group = "Numbers")
+// input.float(): options overload + active= reactive tree.
+strategy_request_input_step = input.float(0.25, "Step", [0.25, 0.5, 1.0], group = "Numbers", active = strategy_request_input_len > 0)
+// input.bool(): full simple signature.
+strategy_request_input_on = input.bool(true, "Enabled", tooltip = "toggle", group = "Flags")
+// input.string(): options signature.
+strategy_request_input_mode = input.string("SMA", "Mode", ["SMA", "EMA", "WMA"], group = "Text")
+// input.color(): const color expression via color.new().
+strategy_request_input_tint = input.color(color.new(color.blue, 90), "Tint", group = "Text")
+// input.source(): defaults select the documented price series; series float.
+strategy_request_input_src = input.source(hlc3, "Source", group = "Series")
+// input.text_area(): InputKind::String, no inline/options.
+strategy_request_input_note_text = input.text_area("line one", "Notes", tooltip = "free text", group = "Text")
+// input.timeframe(): input string with a timeframe widget.
+strategy_request_input_tf = input.timeframe("1W", "Higher TF", ["1D", "1W", "1M"], group = "Text")
+// input.session(): input string with session widget.
+strategy_request_input_sess = input.session("0930-1600", "Session", group = "Text")
+// input.symbol(): input string, simple signature.
+strategy_request_input_sym = input.symbol("MARKET:ACME", "Symbol", group = "Text")
+// input.price(): float defval or host override.
+strategy_request_input_price = input.price(1.2345, "Marker Price", group = "Markers", inline = "pt")
+// input.time(): int epoch ms defval or host override.
+strategy_request_input_time = input.time(1700000000000, "Marker Time", group = "Markers", inline = "pt")
+// input.enum(): defval is an enum member; type preserved.
+strategy_request_input_enum = input.enum(StrategyRequestInputMode.fast, "Mode Enum", group = "Enum")
+// input() generic: dispatches on the const defval type.
+strategy_request_input_gint = input(21, "Generic Int", group = "Generic")
+strategy_request_input_gflt = input(1.5, "Generic Float", group = "Generic")
+strategy_request_input_gbool = input(false, "Generic Bool", group = "Generic")
+strategy_request_input_gstr = input("alpha", "Generic String", group = "Generic")
+strategy_request_input_gcol = input(color.red, "Generic Color", group = "Generic")
+strategy_request_input_gsrc = input(close, "Generic Source", group = "Generic")
+
+// Values are the declared defaults with no host override: pin them.
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_len == 14)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_pick == 3)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_mult == 2.0)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_step == 0.25)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_on)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_mode == "SMA")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_tf == "1W")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_sess == "0930-1600")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_sym == "MARKET:ACME")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_note_text == "line one")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_price == 1.2345)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_time == 1700000000000)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_enum == StrategyRequestInputMode.fast)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_gint == 21)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_gflt == 1.5)
+strategy_request_input_checks += strategy_request_input_note(not strategy_request_input_gbool)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_gstr == "alpha")
+// input.source default hlc3 uses the exact OHLC formula.
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_src == (high + low + close) / 3.0)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_gsrc == close)
+strategy_request_input_checks += strategy_request_input_note(color.t(strategy_request_input_tint) == 90)
+strategy_request_input_checks += strategy_request_input_note(color.r(strategy_request_input_gcol) == 255)
+
+strategy_request_input_acc += strategy_request_input_len + strategy_request_input_mult + strategy_request_input_src + strategy_request_input_pick + strategy_request_input_step + (strategy_request_input_on ? 1.0 : 0.0)
+
+// ---------------------------------------------------------------------------
+// ticker.* built-ins: new, modify, heikinashi, kagi, linebreak, pointfigure,
+// renko, standard, inherit
+// ---------------------------------------------------------------------------
+
+strategy_request_input_t_new = ticker.new("TEST", "ACME", "regular", adjustment.splits)
+strategy_request_input_t_new2 = ticker.new(prefix = "TEST", ticker = "ACME", backadjustment = backadjustment.on)
+strategy_request_input_t_mod = ticker.modify(strategy_request_input_t_new, "extended")
+strategy_request_input_t_ha = ticker.heikinashi("ACME")
+strategy_request_input_t_kagi = ticker.kagi("ACME", 3.0)
+strategy_request_input_t_lb = ticker.linebreak("ACME", 3)
+strategy_request_input_t_pf = ticker.pointfigure("ACME", "hl", "ATR", 14, 3)
+strategy_request_input_t_renko = ticker.renko("ACME", "ATR", 14, request_wicks = true)
+strategy_request_input_t_std = ticker.standard("ACME")
+strategy_request_input_t_std_default = ticker.standard()
+strategy_request_input_t_inh = ticker.inherit(strategy_request_input_t_ha, "PAIR")
+
+// Canonical forms of the ticker ID strings.
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_t_ha == "heikinashi:ACME")
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_t_std == "standard:ACME")
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_new, "new:TEST:ACME"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_new2, "new:TEST:ACME"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_mod, "modify:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_kagi, "kagi:ACME:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_lb, "linebreak:ACME:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_pf, "pointfigure:ACME:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_renko, "renko:ACME:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_inh, "inherit:"))
+strategy_request_input_checks += strategy_request_input_note(str.startswith(strategy_request_input_t_std_default, "standard:"))
+
+strategy_request_input_acc += str.length(strategy_request_input_t_new) + str.length(strategy_request_input_t_mod) + str.length(strategy_request_input_t_ha) + str.length(strategy_request_input_t_kagi) + str.length(strategy_request_input_t_lb) + str.length(strategy_request_input_t_pf) + str.length(strategy_request_input_t_renko) + str.length(strategy_request_input_t_std) + str.length(strategy_request_input_t_std_default) + str.length(strategy_request_input_t_inh) + str.length(strategy_request_input_t_new2)
+
+// ---------------------------------------------------------------------------
+// request.* built-ins: security (plain/compound, gaps, lookahead, aliases),
+// security_lower_tf, dividends, splits, earnings, financial, economic, seed,
+// currency_rate, footprint, quandl (deprecated stub)
+// ---------------------------------------------------------------------------
+
+// Plain same-feed resampling, defaults (gaps_off, lookahead_off).
+strategy_request_input_w_close = request.security(syminfo.tickerid, "1W", close)
+// gaps_on: only on the bar that closes a bucket.
+strategy_request_input_w_gaps = request.security(syminfo.tickerid, "1W", close, gaps = barmerge.gaps_on)
+// lookahead_on repaints; syminfo.ticker is an accepted feed alias.
+strategy_request_input_w_hl2 = request.security(syminfo.ticker, "1W", hl2, lookahead = barmerge.lookahead_on)
+// Explicit off flags.
+strategy_request_input_w_off = request.security(syminfo.tickerid, "1D", ohlc4, gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+// Compound expressions: ta.sma / ta.change and arithmetic over resampled OHLCV.
+strategy_request_input_w_sma = request.security(syminfo.tickerid, "1W", ta.sma(close, 2))
+strategy_request_input_w_chg = request.security(syminfo.tickerid, "1W", ta.change(close))
+strategy_request_input_w_ar = request.security(syminfo.tickerid, "1W", (high + low) / 2.0 - open)
+// External symbol, plain source, host-table backed (na without host data).
+strategy_request_input_ext = request.security("EXTERNAL", "1D", close)
+// Explicit default flags remain accepted for an external symbol.
+strategy_request_input_ext2 = request.security("EXTERNAL", "1D", open, gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+
+// Intrabar decomposition is a host concern: empty array by default.
+strategy_request_input_ltf = request.security_lower_tf(syminfo.tickerid, "1", close)
+strategy_request_input_checks += strategy_request_input_note(array.size(strategy_request_input_ltf) == 0)
+
+// Host-backed request.* interfaces return `na` when no host value is supplied.
+strategy_request_input_div = request.dividends("EXCHANGE:ACME", dividends.gross)
+strategy_request_input_div2 = request.dividends("EXCHANGE:ACME", dividends.net, barmerge.gaps_off, barmerge.lookahead_off)
+strategy_request_input_spl = request.splits("EXCHANGE:ACME", splits.denominator)
+strategy_request_input_ern = request.earnings("EXCHANGE:ACME", earnings.actual)
+strategy_request_input_fin = request.financial("EXCHANGE:ACME", "TOTAL_REVENUE", "FQ")
+strategy_request_input_eco = request.economic("US", "GDP")
+strategy_request_input_seed = request.seed("seed_source", "ASSET_SIGNAL", close)
+strategy_request_input_fx = request.currency_rate("EUR", "USD")
+// Deprecated: PineWASM returns na for every call.
+strategy_request_input_qdl = request.quandl("DATASET/SERIES", barmerge.gaps_off, 0)
+
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_div))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_div2))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_spl))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_ern))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_fin))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_eco))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_seed))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_fx))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_qdl))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_ext))
+strategy_request_input_checks += strategy_request_input_note(na(strategy_request_input_ext2))
+
+// request.footprint(): a footprint object whose fields default to na/empty.
+strategy_request_input_fp = request.footprint(syminfo.tickerid)
+strategy_request_input_fp_rows = footprint.rows(strategy_request_input_fp)
+strategy_request_input_checks += strategy_request_input_note(array.size(strategy_request_input_fp_rows) == 0)
+strategy_request_input_checks += strategy_request_input_note(na(footprint.total_volume(strategy_request_input_fp)))
+
+strategy_request_input_acc += nz(strategy_request_input_w_close) + nz(strategy_request_input_w_gaps) + nz(strategy_request_input_w_hl2) + nz(strategy_request_input_w_off) + nz(strategy_request_input_w_sma) + nz(strategy_request_input_w_chg) + nz(strategy_request_input_w_ar) + nz(strategy_request_input_ext) + nz(strategy_request_input_ext2) + nz(strategy_request_input_div) + nz(strategy_request_input_spl) + nz(strategy_request_input_ern) + nz(strategy_request_input_fin) + nz(strategy_request_input_eco) + nz(strategy_request_input_seed) + nz(strategy_request_input_fx) + nz(strategy_request_input_qdl) + array.size(strategy_request_input_ltf)
+
+// ---------------------------------------------------------------------------
+// strategy.* built-ins: risk commands (globally hoisted; kept permissive so the
+// backtest keeps trading), order primitives, and the strategy.* read variables.
+// ---------------------------------------------------------------------------
+
+// strategy.risk.allow_entry_in / max_position_size / max_drawdown /
+// max_intraday_loss / max_intraday_filled_orders / max_cons_loss_days
+strategy.risk.allow_entry_in(strategy.direction.all)
+strategy.risk.max_position_size(1000000)
+strategy.risk.max_drawdown(100, strategy.percent_of_equity, alert_message = "dd")
+strategy.risk.max_intraday_loss(100, strategy.percent_of_equity, alert_message = "idl")
+strategy.risk.max_intraday_filled_orders(1000, alert_message = "mifo")
+strategy.risk.max_cons_loss_days(1000, alert_message = "mcld")
+
+// strategy.entry / strategy.order / strategy.exit / strategy.close /
+// strategy.close_all / strategy.cancel / strategy.cancel_all, plus the
+// strategy.long/short, oca.*, and commission/qty constants.
+strategy_request_input_up = ta.change(close) > 0
+
+if bar_index == 5
+    strategy.entry("SRI_Long", strategy.long, qty = 1, comment = "entry", oca_name = "sri", oca_type = strategy.oca.none, alert_message = "e", disable_alert = true)
+if bar_index == 6
+    strategy.order("SRI_Stop", strategy.long, qty = 1, stop = high + 5.0, oca_name = "sri2", oca_type = strategy.oca.cancel, comment = "order")
+    strategy.exit("SRI_Bracket", from_entry = "SRI_Long", qty_percent = 100, profit = 100, loss = 100, comment_profit = "tp", comment_loss = "sl", alert_profit = "tp", alert_loss = "sl")
+if bar_index == 7
+    strategy.exit("SRI_Trail", from_entry = "SRI_Long", trail_points = 50, trail_offset = 10, oca_name = "sri3", comment_trailing = "tr")
+if bar_index == 8
+    strategy.cancel("SRI_Stop")
+if bar_index == 9
+    strategy.close("SRI_Long", comment = "close", qty_percent = 50, immediately = false, alert_message = "c")
+if bar_index == 10
+    strategy.cancel_all()
+    strategy.close_all(comment = "flat", alert_message = "ca")
+if bar_index == 20 and strategy_request_input_up
+    strategy.entry("SRI_Short", strategy.short, qty = 2, limit = low - 5.0, oca_type = strategy.oca.reduce)
+if bar_index == 30
+    strategy.close_all()
+
+// strategy.convert_to_account / strategy.convert_to_symbol: identity with no
+// host rate table, so the identity case applies.
+strategy_request_input_conv_a = strategy.convert_to_account(2.5)
+strategy_request_input_conv_s = strategy.convert_to_symbol(2.5)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_conv_a == 2.5)
+strategy_request_input_checks += strategy_request_input_note(strategy_request_input_conv_s == 2.5)
+
+// Read surface: the strategy.* built-in variables checked below.
+strategy_request_input_checks += strategy_request_input_note(strategy.initial_capital == 10000)
+strategy_request_input_checks += strategy_request_input_note(strategy.account_currency == "USD")
+strategy_request_input_checks += strategy_request_input_note(strategy.grossprofit >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.grossloss >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.max_contracts_held_all >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.max_contracts_held_long >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.max_contracts_held_short >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.max_drawdown >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.max_runup >= 0)
+strategy_request_input_checks += strategy_request_input_note(strategy.closedtrades == strategy.wintrades + strategy.losstrades + strategy.eventrades)
+strategy_request_input_checks += strategy_request_input_note(strategy.equity == strategy.initial_capital + strategy.netprofit + strategy.openprofit)
+// position_size is frozen per bar, so history reads the prior bar.
+strategy_request_input_checks += strategy_request_input_note(na(strategy.position_size[1]) or strategy.position_size[1] == strategy.position_size[1])
+// avg_* are na until a trade closes.
+strategy_request_input_checks += strategy_request_input_note(strategy.closedtrades > 0 or na(strategy.avg_trade))
+
+strategy_request_input_acc += strategy.position_size + nz(strategy.position_avg_price) + strategy.equity + strategy.openprofit + strategy.netprofit + strategy.closedtrades + strategy.opentrades + strategy.wintrades + strategy.losstrades + strategy.eventrades + strategy.grossprofit + strategy.grossloss + strategy.max_contracts_held_all + strategy.max_contracts_held_long + strategy.max_contracts_held_short + strategy.max_drawdown + strategy.max_runup + strategy.initial_capital + nz(strategy.avg_trade) + nz(strategy.avg_winning_trade) + nz(strategy.avg_losing_trade)
+
+// Per-lot / per-trade accessors. Out-of-range indices read `na`, never panic.
+strategy_request_input_open_stats = nz(strategy.opentrades.commission(0)) + nz(strategy.opentrades.entry_bar_index(0)) + nz(strategy.opentrades.entry_price(0)) + nz(strategy.opentrades.entry_time(0)) + nz(strategy.opentrades.max_drawdown(0)) + nz(strategy.opentrades.max_runup(0)) + nz(strategy.opentrades.profit(0)) + nz(strategy.opentrades.size(0))
+strategy_request_input_open_ids = str.length(na(strategy.opentrades.entry_id(0)) ? "" : strategy.opentrades.entry_id(0)) + str.length(na(strategy.opentrades.entry_comment(0)) ? "" : strategy.opentrades.entry_comment(0))
+
+strategy_request_input_closed_stats = nz(strategy.closedtrades.commission(0)) + nz(strategy.closedtrades.entry_bar_index(0)) + nz(strategy.closedtrades.entry_price(0)) + nz(strategy.closedtrades.entry_time(0)) + nz(strategy.closedtrades.exit_bar_index(0)) + nz(strategy.closedtrades.exit_price(0)) + nz(strategy.closedtrades.exit_time(0)) + nz(strategy.closedtrades.max_drawdown(0)) + nz(strategy.closedtrades.max_runup(0)) + nz(strategy.closedtrades.profit(0)) + nz(strategy.closedtrades.size(0))
+strategy_request_input_closed_ids = str.length(na(strategy.closedtrades.entry_id(0)) ? "" : strategy.closedtrades.entry_id(0)) + str.length(na(strategy.closedtrades.exit_id(0)) ? "" : strategy.closedtrades.exit_id(0)) + str.length(na(strategy.closedtrades.entry_comment(0)) ? "" : strategy.closedtrades.entry_comment(0)) + str.length(na(strategy.closedtrades.exit_comment(0)) ? "" : strategy.closedtrades.exit_comment(0))
+
+// An out-of-range index reads na rather than panicking.
+strategy_request_input_checks += strategy_request_input_note(na(strategy.opentrades.entry_price(9999)))
+strategy_request_input_checks += strategy_request_input_note(na(strategy.closedtrades.profit(9999)))
+
+strategy_request_input_acc += strategy_request_input_open_stats + strategy_request_input_open_ids + strategy_request_input_closed_stats + strategy_request_input_closed_ids
+
+// ---------------------------------------------------------------------------
+// log.* built-ins: log.info / log.warning / log.error (str.format-style)
+// ---------------------------------------------------------------------------
+
+log.info("acc={0} checks={1}", strategy_request_input_acc, strategy_request_input_checks)
+log.warning("bar {0} mode {1}", bar_index, strategy_request_input_mode)
+log.error("ticker {0}", strategy_request_input_t_ha)
+
+// ---------------------------------------------------------------------------
+// Observable output: the accumulator and the deterministic check counter.
+// ---------------------------------------------------------------------------
+
+plot(strategy_request_input_acc, "strategy_request_input_acc")
+plot(strategy_request_input_checks, "strategy_request_input_checks")
+
+// ======================================================================
+// SECTION: request, strategy, input, log, ticker, context and constant checks
+// ======================================================================
+
+// ===========================================================================
+// Strategy-specific checks for the request, input, ticker, log, context and
+// constant namespaces. The helpers below are local to this section.
+// ===========================================================================
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(bool ok) =>
+    ok ? 1.0 : 0.0
+
+var float gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc = 0.0
+
+// ---------------------------------------------------------------------------
+// Qty-type tokens. The named constant resolves to the same bare token
+// the raw string matches. The runtime VALUE of each constant
+// is the dotted name itself, so only distinctness is asserted here.
+// ---------------------------------------------------------------------------
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + str.length(strategy.fixed) + str.length(strategy.cash) + str.length(strategy.percent_of_equity)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c1 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.fixed != strategy.cash)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c2 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.cash != strategy.percent_of_equity)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c3 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.fixed != strategy.percent_of_equity)
+
+// strategy.cash is also consumed end-to-end as a risk-command qty type.
+strategy.risk.max_drawdown(100000, strategy.cash)
+
+// ---------------------------------------------------------------------------
+// Commission-type tokens. The `strategy.commission.` prefix normalizes
+// to the bare token in `strategy(commission_type=)`; the three tokens are
+// distinct const strings.
+// ---------------------------------------------------------------------------
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + str.length(strategy.commission.cash_per_contract) + str.length(strategy.commission.cash_per_order) + str.length(strategy.commission.percent)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c4 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.commission.cash_per_contract != strategy.commission.cash_per_order)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c5 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.commission.cash_per_order != strategy.commission.percent)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c6 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.commission.cash_per_contract != strategy.commission.percent)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c7 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(str.length(strategy.commission.percent) > 0)
+
+// ---------------------------------------------------------------------------
+// Direction tokens: long/short are the mapped (+1/-1) restrictions.
+// ---------------------------------------------------------------------------
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + str.length(strategy.direction.all) + str.length(strategy.direction.long) + str.length(strategy.direction.short)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c8 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.direction.long != strategy.direction.short)
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c9 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.direction.short != strategy.direction.all)
+
+// strategy.direction.long consumed end-to-end: it maps to a +1 entry
+// restriction, so the short entry attempted below is dropped and the position
+// never goes negative. (A second allow_entry_in call with
+// strategy.direction.short would intersect to "no direction at all" and make
+// every order below unobservable, so the short token is exercised as a value.)
+strategy.risk.allow_entry_in(strategy.direction.long)
+if bar_index == 4
+    strategy.entry("GapShortBlocked", strategy.short, qty = 1, comment = "blocked")
+
+// ---------------------------------------------------------------------------
+// strategy.exit(): the ABSOLUTE bracket form (limit=/stop= price levels)
+// plus trail_price=.
+// ---------------------------------------------------------------------------
+if bar_index == 5
+    strategy.entry("GapLong", strategy.long, qty = 1, comment = "gap entry")
+if bar_index == 6
+    strategy.exit("GapAbs", from_entry = "GapLong", qty_percent = 50, limit = close * 2.0, stop = close * 0.5, comment_profit = "abs tp", comment_loss = "abs sl")
+if bar_index == 7
+    strategy.exit("GapTrailPrice", from_entry = "GapLong", trail_price = close * 1.5, trail_offset = 10, comment_trailing = "abs trail")
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc := gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc + strategy.opentrades + strategy.closedtrades + strategy.position_size
+
+// The long-only restriction is observable: the blocked short never opens.
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c10 = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_check(strategy.position_size >= 0)
+
+gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks = gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c1 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c2 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c3 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c4 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c5 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c6 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c7 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c8 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c9 + gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_c10
+
+if barstate.islast
+    label.new(bar_index, high, str.tostring(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks))
+
+plot(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_acc, "gap strategy acc")
+plot(gap_2_10_2_19_2_20_2_21_2_22_2_23_2_30_checks, "gap strategy checks")
+
+// ======================================================================
+// SECTION: language core and runtime behaviour checks for strategy()
+// ======================================================================
+
+// Strategy checks for the language core and runtime behaviour. The
+// top-level identifiers below are used by the checks that follow, and
+// the results are reported through the plots at the end of the section.
+//
+// `//@strategy_alert_message` is a compiler-annotation directive (like
+// `//@version`), parsed into StrategyInfo.alert_message metadata. The last one
+// wins, so this file declares it once, before the declaration statement.
+//
+// The strategy() declaration sets these parameters: initial_capital,
+// default_qty_type, default_qty_value,
+// commission_type, commission_value, slippage, pyramiding,
+// process_orders_on_close, calc_on_every_tick, calc_on_order_fills, currency,
+// margin_long, margin_short. Directional margin drives broker affordability.
+
+var float gap_s1_s3_strategy_acc = 0.0
+var float gap_s1_s3_strategy_checks = 0.0
+
+gap_s1_s3_strategy_chk(cond, weight = 1.0) => cond ? weight : 0.0
+
+// The declared parameters are observable through the broker state they drive:
+// initial_capital seeds equity, and commission/slippage/margin shape the fills.
+gap_s1_s3_strategy_checks := gap_s1_s3_strategy_checks + gap_s1_s3_strategy_chk(strategy.initial_capital == 25000)
+gap_s1_s3_strategy_checks := gap_s1_s3_strategy_checks + gap_s1_s3_strategy_chk(bar_index == 0 ? strategy.equity == 25000 : true)
+gap_s1_s3_strategy_checks := gap_s1_s3_strategy_checks + gap_s1_s3_strategy_chk(strategy.opentrades <= 3)
+
+gap_s1_s3_strategy_fast = ta.sma(close, 5)
+gap_s1_s3_strategy_slow = ta.sma(close, 20)
+
+if ta.crossover(gap_s1_s3_strategy_fast, gap_s1_s3_strategy_slow)
+    strategy.entry("gap_s1_s3_long", strategy.long)
+if ta.crossunder(gap_s1_s3_strategy_fast, gap_s1_s3_strategy_slow)
+    strategy.close("gap_s1_s3_long")
+
+// Commission is charged, so gross and net must differ once trades have closed.
+gap_s1_s3_strategy_checks := gap_s1_s3_strategy_checks + gap_s1_s3_strategy_chk(strategy.closedtrades > 0 ? strategy.grossprofit >= strategy.netprofit : true)
+
+gap_s1_s3_strategy_acc := gap_s1_s3_strategy_acc + strategy.equity - strategy.initial_capital
+
+if barstate.islast
+    gap_s1_s3_strategy_lbl = label.new(bar_index, close, str.tostring(strategy.closedtrades))
+    label.delete(gap_s1_s3_strategy_lbl)
+
+plot(gap_s1_s3_strategy_acc, "gap_s1_s3_strategy_acc", style = plot.style_line, display = display.data_window)
+plot(gap_s1_s3_strategy_checks, "gap_s1_s3_strategy_checks", style = plot.style_stepline, display = display.data_window)

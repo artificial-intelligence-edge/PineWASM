@@ -1,0 +1,6 @@
+//@version=6
+indicator("Volatility Bands", overlay=true)
+[middle, upper, lower] = ta.bb(close, 20, 2.0)
+plot(middle, "Basis")
+plot(upper, "Upper")
+plot(lower, "Lower")

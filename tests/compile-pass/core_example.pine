@@ -1,0 +1,4 @@
+//@version=6
+indicator("Example")
+x = close - close[1]
+plot(x)

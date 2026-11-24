@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_csil/src/tests.rs
+expression: dump_csil(&program)
+---
+CSIL version 2 lang 6 abi 0
+PROGRAM "Engine"
+CONST 0 "cross"
+CONST 1 "alert.freq_once_per_bar"
+PLOT_SLOT 0
+TA_STATE 0 ta.ema [9]
+TA_STATE 1 ta.crossover []
+
+FUNC main (max_stack 2)
+  0000 READ_BUILTIN CLOSE 0             ; 32..37
+  0001 CALL_TA 0                        ; 25..41
+  0002 PUSH_COLOR #2196F3               ; 20..42
+  0003 PLOT_STYLED_F64 0 1              ; 20..42
+  0004 READ_BUILTIN CLOSE 0             ; 59..64
+  0005 READ_BUILTIN OPEN 0              ; 66..70
+  0006 CALL_TA 1                        ; 46..71
+  0007 JUMP_IF_FALSE 0011               ; 43..90
+  0008 PUSH_STR const0                  ; 82..89
+  0009 PUSH_STR const1                  ; 76..90
+  0010 ALERT                            ; 76..90
+  0011 RETURN                           ; 43..90
+END

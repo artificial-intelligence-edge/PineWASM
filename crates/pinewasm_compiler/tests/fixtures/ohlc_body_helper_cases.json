@@ -1,0 +1,275 @@
+{
+  "scope": "Regression expectations for PineWASM's own compiler and runtime.",
+  "cases": [
+    {
+      "id": "plotcandle:false-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "888096ccc2c2c2eaa95ba84abe2603afc3773b01d3cdbb9fdd26a38e8ba40551",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:true-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true or flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "f2594bd88dbdc1a26edc0a569054dd841ce0c660ceedb3d8c0745eaa4594a49d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:persistent-and-false",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag and false)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "cac741791a00f8b36a8f160d785ed351a7bee0fe307de8cc7b9337bd0941732e",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:persistent-or-true",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag or true)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "514a32b2f96723d3edda8edc10fd10a065d24f120a0145227a1ce55f074fdf62",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:true-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true and flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "b1557b7ad1fe44db09397d5c23b40d1539f4b3b3817990bd8a4af9d9858bf7d5",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:false-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false or flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "11e6c75a1f2e97bd748dcc96880e68024047edd93fb327aa16c5d495cb2bc195",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotcandle:literal-argument-with-unrelated-mutable-global",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(true))\nFLAG:=false\n",
+      "sourceSha256": "206c71687002b3cefbe377826599498b105a388d75ea073354a92a24a8dd6375",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotcandle:unchanged-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotcandle(open,high,low,close,color=pick(FLAG))\n",
+      "sourceSha256": "16eae1e677ed49516ed68a1e3673cf48c97bee88acc692fbdb65057b88078aef",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotcandle:zero-argument-global-false-and",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\nvar bool FLAG=true\npick()=>(false and FLAG)?#336699:#669933\nplotcandle(open,high,low,close,color=pick())\nFLAG:=false\n",
+      "sourceSha256": "e95f8f3c171087093cba4e915876406ee23cc8dbd3fd1c3840930f12ceb83549",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:false-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "d8f830d74a8f3a278797874ee409eb1c02338446a367bd22df4ad2c5de677736",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:true-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true or flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "37851e0411dcf6a72b0ccc1efb3a254026f28ca5d650aa7139aa75a359ec810a",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:persistent-and-false",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag and false)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "30724e342cc2a6a6071ec91173ecf59c2b759222cdb2c11432eb373031b88a54",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:persistent-or-true",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(flag or true)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "2912b1667c8f0aa77192b0d1655d539c537f3cf4f5b9d4b6393bf25ae46d2b74",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:true-and-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(true and flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "711a2734f65e237f2ded484f4dca3dae65621df5e8ea73db1486f4bdf058e4d0",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:false-or-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false or flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\nFLAG:=false\n",
+      "sourceSha256": "b995cd37e9fd16beb8fa83971ccb07ca0814af93adcf5459cbaa766d87991481",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 41,
+          "g": 98,
+          "b": 255,
+          "t": 0
+        },
+        "runtimeColorer": true
+      }
+    },
+    {
+      "id": "plotbar:literal-argument-with-unrelated-mutable-global",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(true))\nFLAG:=false\n",
+      "sourceSha256": "f91ac6c996223667302e16980b97b7cea396de9563be748976d9d0e4918dfe5d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:unchanged-persistent",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\npick(bool flag)=>(false and flag)?#336699:#669933\nvar bool FLAG=true\nplotbar(open,high,low,close,color=pick(FLAG))\n",
+      "sourceSha256": "86267812ad0301cabccfa3741f098465e777dcdc540b673c9b2ce3ca2004e91e",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    },
+    {
+      "id": "plotbar:zero-argument-global-false-and",
+      "source": "//@version=6\nindicator(\"helper Boolean origins\")\nvar bool FLAG=true\npick()=>(false and FLAG)?#336699:#669933\nplotbar(open,high,low,close,color=pick())\nFLAG:=false\n",
+      "sourceSha256": "9a19d76d33103d96a4b5552206cd03a06e269d85512d3ca2ad485f6195a18c9d",
+      "expected": {
+        "staticColorPresent": true,
+        "staticColor": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "runtimeColorer": false
+      }
+    }
+  ]
+}

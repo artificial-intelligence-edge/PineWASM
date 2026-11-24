@@ -1,0 +1,26 @@
+---
+source: crates/pinewasm_semantics/src/tests.rs
+assertion_line: 3598
+expression: dump
+---
+HirProgram indicator="Inputs"
+  symbol 0 `n`: input int (slot 0)
+  symbol 1 `src`: series float (slot 1)
+  symbol 2 `b`: input bool (slot 2)
+  plot slot 0 title="<none>"
+  input 0 input.int title="Length" defval=14 constraints={min=1, max=100}
+  input 1 input.source title="Source" defval=close constraints=none
+  input 2 input.bool title="b" defval=true constraints=none
+  Assign `n` (sym 0)
+    ReadInput input0 : input int
+  Assign `src` (sym 1)
+    ReadInput input1 : series float
+  Assign `b` (sym 2)
+    ReadInput input2 : input bool
+  Plot slot 0
+    Binary `+` : series float
+      ReadVar `src`[0] (sym 1) : series float
+      IntToFloat : input float
+        ReadVar `n`[0] (sym 0) : input int
+    Color Color
+      ConstColor #2196F3 : const color

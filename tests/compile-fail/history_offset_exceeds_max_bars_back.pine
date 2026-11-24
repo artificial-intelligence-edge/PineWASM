@@ -1,0 +1,4 @@
+//@version=6
+indicator("Too Far Back")
+x = close[5001]
+plot(x)

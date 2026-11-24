@@ -1,0 +1,8 @@
+//@version=6
+indicator("Strings")
+label = "close=" + str.tostring(close, "#.##")
+tag = str.upper(str.substring(label, 0, 5))
+found = str.contains(label, "=")
+digits = str.length(str.replace_all(label, ".", ""))
+parsed = str.tonumber(str.tostring(close))
+plot(found ? digits + str.pos(tag, "S") : parsed)

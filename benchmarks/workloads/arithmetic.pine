@@ -1,0 +1,4 @@
+//@version=6
+indicator("Arithmetic", overlay=false)
+plot((high + low + close) / 3.0, "Typical")
+plot((close - open) * volume, "Signed volume")

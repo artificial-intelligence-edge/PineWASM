@@ -1,0 +1,8 @@
+//@version=6
+indicator("UDT field as a simple length")
+// A field read is `series` (a field can change on any bar), so it cannot be
+// the `simple int` length that `ta.ema` requires (E0219).
+type Settings
+    int length
+s = Settings.new(14)
+plot(ta.ema(close, s.length))

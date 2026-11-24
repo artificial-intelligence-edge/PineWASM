@@ -1,0 +1,5 @@
+//@version=6
+indicator("Precedence")
+a = 1 + 2 * 3 - 4 / 2
+b = (high + low) / 2
+plot(a * b)

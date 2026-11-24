@@ -1,0 +1,286 @@
+{
+  "kind": "arrow-cosine-and-mixed-dependency-cases",
+  "scope": "Regression expectations for PineWASM's compiler and runtime.",
+  "arrows": [
+    {
+      "id": "unknown-const-left-and-series",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(0) > 0 and close > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "a8782bf3de984fd1d6e0c623d0a370f291a6d0020c42ce383eef821378e1ea2d",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-left-and-unknown-const",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 and math.cos(0) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "f21788bef7254ac70b92ee4e83d1b58b07398c9d31a473670d6313c436053ba5",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "unknown-const-left-or-series",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(0) > 0 or close > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "e71cfcf370c78f3e2054c30f515112cbb3150dc88281b66685ab2d02d34a26c7",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-left-or-unknown-const",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 or math.cos(0) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "e425942762123664cf54b0621231fb62b696a369e8a2bfa75087266fffb42e86",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "cosine-false-left-or-series",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(2) > 0 or close > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "8b7c07dc6a3ce057d25d6f56f8ebfb98d1a6df0415b1a7f8e82f54889de3954b",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-left-or-cosine-false",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 or math.cos(2) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "546a0b5ff783a9417ec9d3826a7ca7aaad9d32ea7664862096700f7466dfe804",
+      "expectedBindings": {
+        "up": true,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 0,
+          "g": 255,
+          "b": 0,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#00FF00",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "cosine-false-left-and-series",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(2) > 0 and close > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "cd8a28ff2bba2dbabf3ea41ac366652a28c247b94154ad43239275ffcf92e69b",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "series-left-and-cosine-false",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif close > 0 and math.cos(2) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "05ee2ea99d04f7ae21300dd5dab2c3cf431f6fee5f10d7e97b0f05f906727242",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "direct-cosine-true",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(0) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "961783895ddd8c0ba46112a8fc2597c2923153d2c29e95b83f8511ea84b9791a",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 102,
+          "g": 153,
+          "b": 51,
+          "t": 0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "#669933",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    },
+    {
+      "id": "direct-cosine-false",
+      "source": "//@version=6\nindicator(\"Arrow mixed dependency coverage\")\ncolor C=color.new(#336699,70)\nif math.cos(2) > 0\n    C:=#669933\nplotarrow(close,colorup=C)\n",
+      "sourceSha256": "23867f15bfa7baaab718ad419b764109bed6430a14142b66ec4d111c5e500b57",
+      "expectedBindings": {
+        "up": false,
+        "down": false
+      },
+      "expectedStatic": {
+        "up": {
+          "r": 51,
+          "g": 102,
+          "b": 153,
+          "t": 70.0
+        },
+        "down": {
+          "r": 255,
+          "g": 0,
+          "b": 0,
+          "t": 0
+        }
+      },
+      "expectedStaticCss": {
+        "up": "rgba(51,102,153,0.3)",
+        "down": "#FF0000"
+      },
+      "expectedCompileSuccess": true
+    }
+  ]
+}
