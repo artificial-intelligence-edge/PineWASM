@@ -14,11 +14,11 @@ cargo xtask wasm
 npm pack ./target/wasm-pkg --pack-destination /absolute/path/to/output-directory
 ```
 
-Then install the resulting `ai-edge-pinewasm-<version>.tgz` in the consuming
+Then install the resulting `aiedge-pinewasm-<version>.tgz` in the consuming
 project:
 
 ```sh
-npm install /absolute/path/to/ai-edge-pinewasm-<version>.tgz
+npm install /absolute/path/to/aiedge-pinewasm-<version>.tgz
 ```
 
 A source checkout does not establish that a registry release is available. If a
