@@ -279,7 +279,7 @@ fn write_package_manifest(package_dir: &Path) -> TaskResult {
         "files": GENERATED_FILES,
         "license": "AGPL-3.0-only",
         "main": "pinewasm.js",
-        "name": "@ai-edge/pinewasm",
+        "name": "pinewasm",
         "sideEffects": ["./snippets/*"],
         "types": "pinewasm.d.ts",
         "version": crate::version::COMPILER_VERSION,
@@ -333,7 +333,7 @@ fn finalize_directory(root: &Path, package_dir: &Path) -> TaskResult {
     if object.get("license").and_then(Value::as_str) != Some("AGPL-3.0-only") {
         return Err("package.json must declare license AGPL-3.0-only".into());
     }
-    object.insert("name".into(), json!("@ai-edge/pinewasm"));
+    object.insert("name".into(), json!("pinewasm"));
     object.insert("publishConfig".into(), json!({"access": "public"}));
     object.insert(
         "repository".into(),
@@ -509,9 +509,9 @@ fn validate_package_readme(file: &Path) -> TaskResult {
         )
     })?;
     for required in [
-        "npm install @ai-edge/pinewasm",
+        "npm install pinewasm",
         "npm pack ./target/wasm-pkg",
-        "from '@ai-edge/pinewasm'",
+        "from 'pinewasm'",
     ] {
         if !source.contains(required) {
             return Err(format!(

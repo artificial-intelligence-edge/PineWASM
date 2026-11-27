@@ -11,6 +11,8 @@ PineWASM distributes artifacts under AGPL-3.0-only: when an artifact is conveyed
 
 Dependency license elections:
 - Apache-2.0 OR BSL-1.0 -> Apache-2.0
+- (MIT OR Apache-2.0) AND Unicode-3.0 -> MIT AND Unicode-3.0
+- Apache-2.0 OR MIT -> MIT
 - MIT OR Apache-2.0 -> MIT
 - Unlicense OR MIT -> MIT
 - MIT OR Apache-2.0 OR LGPL-2.1-or-later -> Apache-2.0

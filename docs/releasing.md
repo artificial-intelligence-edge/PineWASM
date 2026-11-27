@@ -179,7 +179,7 @@ checkout on the packaging runner, and retains a run/attempt/commit-named
 workflow artifact. It never restores the final
 package from a cross-run cache. Before distribution, inspect the package
 manifest or run `npm pack --dry-run --json ./target/wasm-pkg` and confirm it is named
-`@ai-edge/pinewasm`, `publishConfig.access` is `public`, and the README and all
+`pinewasm`, `publishConfig.access` is `public`, and the README and all
 three legal files are included.
 
 ## Verify a published release

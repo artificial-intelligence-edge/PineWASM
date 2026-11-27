@@ -30,7 +30,7 @@ v6 source migration ([migration.md](migration.md)) for hosts that offer a
 conversion when a script is rejected with `E0249`. The standard package omits
 it.
 
-The generated `@ai-edge/pinewasm` ES module and `.wasm` binary land in
+The generated `pinewasm` ES module and `.wasm` binary land in
 `target/wasm-pkg/`:
 
 ```ts
@@ -248,7 +248,7 @@ Every override is also externally tagged and carries exactly one variant tag; a
 raw scalar or an object with multiple tags is not an input value:
 
 ```ts
-import type { InputValue, RunOptions } from "@ai-edge/pinewasm";
+import type { InputValue, RunOptions } from "pinewasm";
 
 const examples: InputValue[] = [
   { Int: 20 },
