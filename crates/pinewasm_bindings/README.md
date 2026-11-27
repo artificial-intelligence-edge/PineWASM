@@ -25,7 +25,7 @@ A source checkout does not establish that a registry release is available. If a
 maintainer publishes a verified release, it uses the same package name:
 
 ```sh
-npm install @ai-edge/pinewasm
+npm install @aiedge/pinewasm
 ```
 
 Generated package metadata and artifact notices record the source repository
@@ -38,7 +38,7 @@ Application code should always use the package specifier rather than a build
 directory. In a browser or bundler, the loader resolves its sibling Wasm file:
 
 ```js
-import init, { compileAndRun } from '@ai-edge/pinewasm';
+import init, { compileAndRun } from '@aiedge/pinewasm';
 
 await init();
 ```
@@ -49,10 +49,10 @@ depend on `fetch()` support for local files:
 ```js
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import init, { compileAndRun } from '@ai-edge/pinewasm';
+import init, { compileAndRun } from '@aiedge/pinewasm';
 
 const require = createRequire(import.meta.url);
-const bytes = await readFile(require.resolve('@ai-edge/pinewasm/pinewasm_bg.wasm'));
+const bytes = await readFile(require.resolve('@aiedge/pinewasm/pinewasm_bg.wasm'));
 await init({ module_or_path: bytes });
 
 const source = `//@version=6
@@ -78,7 +78,7 @@ if (result.diagnostics.length || result.runtimeErrors.length || !result.plots?.[
 console.log(result.plots[0].values); // [ null, 2, -1 ]
 ```
 
-The package contains the `@ai-edge/pinewasm` ES module, generated TypeScript
+The package contains the `@aiedge/pinewasm` ES module, generated TypeScript
 declarations, and WebAssembly binary. Initialize the default export once, then
 use the named compile, run, library, incremental-session, search, or AOT
 exports. The bundled `pinewasm.d.ts` is the checked contract for the package's
@@ -110,7 +110,7 @@ For example, input overrides are externally tagged values in a native
 JavaScript `Map` keyed by the numeric id from `program.inputs`:
 
 ```ts
-import type { RunOptions } from '@ai-edge/pinewasm';
+import type { RunOptions } from '@aiedge/pinewasm';
 
 const options: RunOptions = {
   inputs: new Map([

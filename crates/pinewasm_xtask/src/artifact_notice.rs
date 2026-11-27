@@ -106,11 +106,21 @@ const NOTICE_DOCUMENTS: [&str; 7] = [
 /// a new dual-licensed crate cannot enter an artifact without a recorded
 /// election. `THIRD_PARTY_LICENSES.txt` still reproduces every text each
 /// package ships, so a recipient holds the alternatives too (`NOTICE`).
-pub(crate) const LICENSE_ELECTIONS: [(&str, &str, &str); 4] = [
+pub(crate) const LICENSE_ELECTIONS: [(&str, &str, &str); 6] = [
     (
         "Apache-2.0 OR BSL-1.0",
         "Apache-2.0",
         "the election for the Apache-2.0 OR BSL-1.0 family is Apache-2.0",
+    ),
+    (
+        "(MIT OR Apache-2.0) AND Unicode-3.0",
+        "MIT AND Unicode-3.0",
+        "the election for the (MIT OR Apache-2.0) AND Unicode-3.0 family is MIT AND Unicode-3.0",
+    ),
+    (
+        "Apache-2.0 OR MIT",
+        "MIT",
+        "the election for the Apache-2.0 OR MIT family is MIT",
     ),
     (
         "MIT OR Apache-2.0",
@@ -1142,7 +1152,11 @@ mod tests {
         assert_eq!(elect("MIT/Apache-2.0").as_deref(), Some("MIT"));
         assert_eq!(elect("Unlicense OR MIT").as_deref(), Some("MIT"));
         assert_eq!(elect("Unicode-3.0").as_deref(), Some("Unicode-3.0"));
-        assert_eq!(elect("(MIT OR Apache-2.0) AND Unicode-3.0"), None);
+        assert_eq!(
+            elect("(MIT OR Apache-2.0) AND Unicode-3.0").as_deref(),
+            Some("MIT AND Unicode-3.0")
+        );
+        assert_eq!(elect("(MIT OR Zlib) AND Unicode-3.0"), None);
     }
 
     #[test]

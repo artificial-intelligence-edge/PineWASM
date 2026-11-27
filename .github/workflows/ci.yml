@@ -1480,10 +1480,10 @@ jobs:
             runProgram,
             searchFiles,
             version,
-          } from '@ai-edge/pinewasm';
+          } from '@aiedge/pinewasm';
 
           const require = createRequire(import.meta.url);
-          const packageRoot = dirname(require.resolve('@ai-edge/pinewasm/package.json'));
+          const packageRoot = dirname(require.resolve('@aiedge/pinewasm/package.json'));
           const render = (value) => JSON.stringify(
             value,
             (_key, item) => typeof item === 'bigint' ? `${item}n` : item,
@@ -1529,10 +1529,10 @@ jobs:
             ?.map(({ path }) => path)
             .sort();
           if (
-            packageSummary?.name !== '@ai-edge/pinewasm' ||
+            packageSummary?.name !== '@aiedge/pinewasm' ||
             packageSummary?.entryCount !== expectedPackageFiles.length ||
             JSON.stringify(packageFiles) !== JSON.stringify(expectedPackageFiles) ||
-            packageManifest.name !== '@ai-edge/pinewasm' ||
+            packageManifest.name !== '@aiedge/pinewasm' ||
             packageManifest.publishConfig?.access !== 'public'
           ) {
             throw new Error(`unexpected npm package surface: ${JSON.stringify({
@@ -1542,7 +1542,7 @@ jobs:
           }
 
           const bytes = await readFile(
-            require.resolve('@ai-edge/pinewasm/pinewasm_bg.wasm'),
+            require.resolve('@aiedge/pinewasm/pinewasm_bg.wasm'),
           );
           await init({ module_or_path: bytes });
           const identity = version();
@@ -1906,9 +1906,9 @@ jobs:
           cd "${consumer_dir}"
           cat > consumer.mts <<'TYPESCRIPT'
           // @ts-expect-error The Program brand is private to the declaration module.
-          import { pineWasmProgram } from '@ai-edge/pinewasm';
+          import { pineWasmProgram } from '@aiedge/pinewasm';
           // @ts-expect-error InputValueTag is an implementation helper, not public API.
-          import type { InputValueTag } from '@ai-edge/pinewasm';
+          import type { InputValueTag } from '@aiedge/pinewasm';
           import init, {
             AotHost,
             IncrementalSession,
@@ -1926,7 +1926,7 @@ jobs:
             type Program,
             type RunOptions,
             type RunResult,
-          } from '@ai-edge/pinewasm';
+          } from '@aiedge/pinewasm';
 
           const source = `//@version=6
           indicator("Typed consumer")
