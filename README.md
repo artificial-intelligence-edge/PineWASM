@@ -80,9 +80,9 @@ Save this as `quickstart.mts` in that folder:
 ~~~ts
 import { readFileSync } from "node:fs";
 import YahooFinance from "yahoo-finance2";
-import { initSync, compileAndRun } from "@ai-edge/pinewasm";
+import { initSync, compileAndRun } from "@aiedge/pinewasm";
 
-const wasm = new URL(import.meta.resolve("@ai-edge/pinewasm/pinewasm_bg.wasm"));
+const wasm = new URL(import.meta.resolve("@aiedge/pinewasm/pinewasm_bg.wasm"));
 initSync({ module: readFileSync(wasm) });
 
 // One year of daily SPY bars from Yahoo Finance (a missing value becomes `na`)
@@ -237,7 +237,7 @@ PineWASM pins its choice with a test and marks the row *assumed*.
 
 | Host | Interface | How to get it |
 | --- | --- | --- |
-| JavaScript and TypeScript | `@ai-edge/pinewasm` | Build locally with `cargo xtask wasm` |
+| JavaScript and TypeScript | `@aiedge/pinewasm` | Build locally with `cargo xtask wasm` |
 | Rust | `pinewasm_compiler` | Use the crate from this workspace (not published to crates.io) |
 | Any WebAssembly host | Per-script `.wasm` modules | Emit them with the compiler's AOT API |
 
@@ -252,7 +252,7 @@ The [Quickstart](#quickstart) compiles and runs in one call. To reuse a script a
 datasets or input settings, compile it once and keep the program:
 
 ~~~ts
-import { compile, runProgram } from "@ai-edge/pinewasm";
+import { compile, runProgram } from "@aiedge/pinewasm";
 
 const compiled = compile(source);
 if (!compiled.success || !compiled.program) {
@@ -302,7 +302,7 @@ snapshot of the bar that is forming, and `isBarClose` marks the tick that comple
 needs a `time` array on the bars:
 
 ~~~ts
-import { compile, IncrementalSession } from "@ai-edge/pinewasm";
+import { compile, IncrementalSession } from "@aiedge/pinewasm";
 
 const liveProgram = compile(source);
 if (!liveProgram.success || !liveProgram.program) {
