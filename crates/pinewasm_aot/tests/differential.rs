@@ -9098,6 +9098,231 @@ fn standalone_unbounded_integer_inputs_refuse_the_na_sentinel_at_the_request() {
     compile_program(&bounded).expect("declared input limits exclude the integer na sentinel");
 }
 
+/// The scripts whose `ta.ema` length is computed from inputs, with the two
+/// inputs every body reads. Each lowers to `EMA_SIMPLE_DYNAMIC`.
+const COMPUTED_EMA_LENGTH_BODIES: [(&str, &str); 14] = [
+    ("sum", "plot(ta.ema(close, n + 1))"),
+    ("product", "plot(ta.ema(close, n * 2))"),
+    ("alias", "m = n * 2 - 1\nplot(ta.ema(close, m))"),
+    ("two inputs", "plot(ta.ema(close, n + k))"),
+    (
+        "helper",
+        "ema(simple int length) => ta.ema(close, length)\nplot(ema(n + k))",
+    ),
+    ("math.max", "plot(ta.ema(close, math.max(n, k)))"),
+    (
+        "na source",
+        "src = bar_index % 7 == 3 ? na : close\nplot(ta.ema(src, n + 1))",
+    ),
+    (
+        "conditional site",
+        "float x = na\nif bar_index % 3 != 0\n    x := ta.ema(close, n + 1)\nplot(x)",
+    ),
+    (
+        "several sites",
+        "plot(ta.ema(close, n + 1))\nplot(ta.ema(open, n * 3))\nplot(ta.ema(close, n))",
+    ),
+    ("int source", "plot(ta.ema(bar_index, n + 1))"),
+    (
+        "smoothed twice",
+        "plot(ta.ema(ta.ema(close, n + 1), k * 2))",
+    ),
+    (
+        "unchanged var",
+        "var int m = n + k\nplot(ta.ema(close, m))",
+    ),
+    (
+        "source overflows",
+        "src = bar_index % 11 == 5 ? close * 1e308 * 1e308 : close\nplot(ta.ema(src, n + 1))",
+    ),
+    (
+        "source underflows",
+        "src = bar_index % 13 == 4 ? -close * 1e308 * 1e308 : close * 1e-320\nplot(ta.ema(src, n + k))",
+    ),
+];
+
+fn computed_ema_length_source(body: &str) -> String {
+    format!(
+        "//@version=6\nindicator(\"Computed EMA length\")\nn = input.int(3, \"N\")\nk = input.int(2, \"K\")\n{body}\n"
+    )
+}
+
+fn computed_ema_length_inputs(n: i64, k: i64) -> RunOptions {
+    RunOptions {
+        inputs: std::collections::HashMap::from([(0, InputValue::Int(n)), (1, InputValue::Int(k))]),
+        ..RunOptions::default()
+    }
+}
+
+/// A `ta.ema` length computed from inputs is a run-time length
+/// (`EMA_SIMPLE_DYNAMIC`). The standalone tier lowers it natively, so the
+/// inputs it reads are parameters a host can vary: for every selection, each
+/// plot lane is bit-equal to the interpreter's, na included. One resident
+/// instance takes all the selections in turn, so each evaluation must seed
+/// its smoothers again and take its own length.
+#[test]
+fn standalone_computed_ema_lengths_match_the_interpreter_for_every_selected_input() {
+    let data = synthetic_data(160);
+    for (label, body) in COMPUTED_EMA_LENGTH_BODIES {
+        let program = compile_csil(&computed_ema_length_source(body));
+        assert!(
+            program.main().code.iter().any(|instruction| matches!(
+                instruction,
+                pinewasm_csil::CsilInstr::EmaSimpleDynamic { .. }
+            )),
+            "{label}: the length must be a run-time one"
+        );
+        let wasm = compile_standalone_wasm_program(
+            &program,
+            &StandaloneWasmOptions {
+                signal_plot: None,
+                module_type: StandaloneWasmModuleType::Indicator,
+            },
+        )
+        .unwrap_or_else(|refusal| panic!("{label}: refused: {refusal:?}"));
+        let mut host = StandaloneWasmHost::new(&wasm);
+        let mut lanes_by_selection = Vec::new();
+        for (n, k) in [(3, 2), (1, 1), (20, 7), (3, 2), (60, 40)] {
+            let context = format!("{label}, n={n}, k={k}");
+            let expected = run(&program, &data, &computed_ema_length_inputs(n, k));
+            assert!(
+                expected.errors.is_empty(),
+                "{context}: interpreter errors: {:?}",
+                expected.errors
+            );
+            let wire = standalone_wasm_wire(&data, None).replacen(
+                "\"params\":{}",
+                &format!("\"params\":{{\"n\":{n},\"k\":{k}}}"),
+                1,
+            );
+            host.evaluate(&wire)
+                .unwrap_or_else(|error| panic!("{context}: evaluate failed: {error}"));
+            let mut lanes = Vec::new();
+            for plot in &expected.plots {
+                let lane = host.plot_lane(plot.slot as usize);
+                assert_eq!(lane.len(), data.bars(), "{context}: lane length");
+                for (bar, (expected, got)) in plot.values.iter().zip(&lane).enumerate() {
+                    match expected {
+                        Value::Na => assert!(
+                            got.is_nan(),
+                            "{context}: plot {} bar {bar}: interpreter na, module {got}",
+                            plot.slot
+                        ),
+                        Value::Float(x) => assert_eq!(
+                            x.to_bits(),
+                            got.to_bits(),
+                            "{context}: plot {} bar {bar}: interpreter {x}, module {got}",
+                            plot.slot
+                        ),
+                        other => panic!(
+                            "{context}: plot {} bar {bar}: unexpected {other:?}",
+                            plot.slot
+                        ),
+                    }
+                }
+                lanes.push(lane.iter().map(|value| value.to_bits()).collect::<Vec<_>>());
+            }
+            lanes_by_selection.push(lanes);
+        }
+        // The same selection twice gives the same lanes, and a different one
+        // does not: the inputs are live, and nothing carries over.
+        assert_eq!(
+            lanes_by_selection[0], lanes_by_selection[3],
+            "{label}: the repeated selection"
+        );
+        assert_ne!(
+            lanes_by_selection[0], lanes_by_selection[2],
+            "{label}: the length must follow the inputs"
+        );
+    }
+}
+
+/// A computed length outside `1..=MAX_WINDOW_LENGTH` stops the interpreter
+/// with `InvalidTaLength`. The standalone module reports the same condition
+/// as an indicator failure and stays usable for the next request.
+#[test]
+fn standalone_computed_ema_length_out_of_range_stops_and_the_instance_recovers() {
+    let max = i64::from(pinewasm_csil::MAX_WINDOW_LENGTH);
+    let data = synthetic_data(40);
+    let program = compile_csil(&computed_ema_length_source("plot(ta.ema(close, n + k))"));
+    let wasm = compile_standalone_wasm_program(
+        &program,
+        &StandaloneWasmOptions {
+            signal_plot: None,
+            module_type: StandaloneWasmModuleType::Indicator,
+        },
+    )
+    .expect("a computed EMA length lowers natively on the standalone path");
+    let wire = |n: i64, k: i64| {
+        standalone_wasm_wire(&data, None).replacen(
+            "\"params\":{}",
+            &format!("\"params\":{{\"n\":{n},\"k\":{k}}}"),
+            1,
+        )
+    };
+    let mut host = StandaloneWasmHost::new(&wasm);
+    host.evaluate(&wire(3, 2)).expect("the default evaluates");
+    let default_lane = host.plot_lane(0);
+
+    for (n, k) in [
+        (0, 0),
+        (-5, 2),
+        (max, 1),
+        (i64::MAX - 1, 1),
+        (max / 2 + 1, max / 2 + 1),
+    ] {
+        let context = format!("n={n}, k={k}");
+        let expected = run(&program, &data, &computed_ema_length_inputs(n, k));
+        // `i64::MAX - 1 + 1` is still far out of range; nothing here wraps.
+        assert_eq!(expected.errors.len(), 1, "{context}: {:?}", expected.errors);
+        assert_eq!(
+            expected.errors[0].kind,
+            pinewasm_vm::RuntimeErrorKind::InvalidTaLength,
+            "{context}"
+        );
+        let error = host
+            .evaluate(&wire(n, k))
+            .expect_err("an out-of-range computed length must stop the run");
+        assert_eq!(
+            error, "Indicator failure: TA input length out of range",
+            "{context}"
+        );
+        host.evaluate(&wire(3, 2))
+            .unwrap_or_else(|error| panic!("{context}: recovery failed: {error}"));
+        let recovered = host.plot_lane(0);
+        assert_eq!(
+            recovered.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            default_lane.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            "{context}: the next request starts clean"
+        );
+    }
+
+    // Both ends of the legal range run.
+    for (n, k) in [(1, 0), (max - 1, 1)] {
+        let expected = run(&program, &data, &computed_ema_length_inputs(n, k));
+        assert!(expected.errors.is_empty(), "{:?}", expected.errors);
+        host.evaluate(&wire(n, k))
+            .unwrap_or_else(|error| panic!("n={n}, k={k}: {error}"));
+    }
+}
+
+/// The chart tier still hands a run-time EMA length to the interpreter: its
+/// status protocol has no report for a length that goes out of range after
+/// the first bar.
+#[test]
+fn a_computed_ema_length_is_native_only_on_the_standalone_tier() {
+    let program = compile_csil(&computed_ema_length_source("plot(ta.ema(close, n + 1))"));
+    assert!(matches!(
+        compile_program(&program),
+        Err(AotError::UnsupportedOpcode(ref opcode)) if opcode == "EmaSimpleDynamic"
+    ));
+    let artifact = compile_program_to_wasm(&program).expect("the hosted tier takes it");
+    assert_eq!(
+        artifact.layout.execution_mode,
+        ExecutionMode::InterpreterHosted
+    );
+}
+
 #[test]
 fn integer_division_rounded_immediately_keeps_pine_numeric_semantics() {
     let source = "indicator(\"Round Pine division\")\nplot(math.round(bar_index / 2))\nplot(math.round(-3 / 4))\nplot(math.round(-7 / 2))\nplot(math.round(bar_index / 0))\nplot(math.round(bar_index[1] / 4))\nplot(math.round(9007199254740993 / 1) == 9007199254740993 ? 1 : 0)\n";

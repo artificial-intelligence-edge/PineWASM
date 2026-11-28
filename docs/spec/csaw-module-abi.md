@@ -746,6 +746,13 @@ status. It corresponds to the interpreter's `RuntimeErrorKind::InvalidTaLength`;
 the standalone WebAssembly glue reports it as "Indicator failure: TA input
 length out of range".
 
+Inside a standalone WebAssembly artifact, `run` also returns 12 from the bar
+loop, when a `ta.ema` call whose length is computed at run time (for example
+`ta.ema(close, n + 1)`) executes with a length outside 1..=100000. The glue
+reports it with the same message. Generic CSAW chart-tier consumers receive 12
+only before the bar loop: a chart-tier module does not lower that call
+natively.
+
 Statuses 13, 14, and 15 are used only inside a standalone WebAssembly
 artifact; generic CSAW chart-tier consumers do not receive them. Each writes
 the status, bar, and instruction offset like status 1, and the standalone

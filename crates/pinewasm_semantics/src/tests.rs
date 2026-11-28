@@ -3792,6 +3792,206 @@ fn input_and_timeframe_expression_can_supply_simple_ema_length() {
     );
 }
 
+fn w0010_warnings(diagnostics: &[Diagnostic]) -> Vec<&Diagnostic> {
+    diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.code.as_deref() == Some("W0010"))
+        .collect()
+}
+
+#[test]
+fn a_length_calculated_from_an_input_warns_w0010_where_it_stays_fixed() {
+    let source = "//@version=6\nindicator(\"Fixed lengths\")\nn = input.int(10, \"N\")\nm = n * 2\nplot(ta.sma(close, n + 1))\nplot(ta.rsi(close, m))\nplot(ta.highest(high, n + 2))\nplot(math.sum(close, n - 1))\n";
+    let (_, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    let warnings = w0010_warnings(&diagnostics);
+    assert_eq!(warnings.len(), 4, "{diagnostics:?}");
+    assert_eq!(warnings[0].severity, Severity::Warning);
+    assert_eq!(
+        warnings[0].message,
+        "`ta.sma` argument `length` is calculated from an input, so this call keeps the value the input defaults give (11)"
+    );
+    assert_diagnostic_source(source, warnings[0], "n + 1", 5, 20);
+    assert_eq!(
+        warnings[1].message,
+        "`ta.rsi` argument `length` is calculated from an input, so this call keeps the value the input defaults give (20)"
+    );
+    assert_diagnostic_source(source, warnings[1], "m", 6, 20);
+    assert!(
+        warnings[2]
+            .message
+            .starts_with("`ta.highest` argument `length`")
+            && warnings[2].message.ends_with("(12)"),
+        "{diagnostics:?}"
+    );
+    assert_diagnostic_source(source, warnings[2], "n + 2", 7, 23);
+    assert!(
+        warnings[3]
+            .message
+            .starts_with("`math.sum` argument `length`")
+            && warnings[3].message.ends_with("(9)"),
+        "{diagnostics:?}"
+    );
+    assert_diagnostic_source(source, warnings[3], "n - 1", 8, 22);
+}
+
+#[test]
+fn a_length_that_follows_its_input_or_reads_no_input_does_not_warn_w0010() {
+    // A direct input and its alias are bound to the selected value, a length
+    // calculated from literals has only one value, and a calculated `ta.ema`
+    // length is a run-time one.
+    let source = "//@version=6\nindicator(\"Live lengths\")\nn = input.int(10, \"N\")\nm = n\nk = 5\nplot(ta.sma(close, n))\nplot(ta.rsi(close, m))\nplot(ta.sma(close, k + 1))\nplot(ta.rsi(close, k * 2))\nplot(ta.ema(close, n + 1))\nplot(ta.ema(close, m * 2))\nplot(ta.ema(close, k + 1))\n";
+    let (_, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    assert!(w0010_warnings(&diagnostics).is_empty(), "{diagnostics:?}");
+}
+
+#[test]
+fn a_request_keeps_a_calculated_ema_length_and_warns_w0010_once() {
+    // The request lowers the declaration more than once; the chart reads the
+    // same call with a run-time length.
+    let source = "//@version=6\nindicator(\"Request length\")\nn = input.int(10, \"N\")\ne = ta.ema(close, n + 1)\nplot(request.security(syminfo.tickerid, \"D\", e))\nplot(e)\n";
+    let (dump, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    assert!(dump.contains("TaCallDynamic ta.ema"), "{dump}");
+    let warnings = w0010_warnings(&diagnostics);
+    assert_eq!(warnings.len(), 1, "{diagnostics:?}");
+    assert_eq!(
+        warnings[0].message,
+        "`ta.ema` argument `length` is calculated from an input, so inside a `request.*()` call it keeps the value the input defaults give (11)"
+    );
+    assert_diagnostic_source(source, warnings[0], "n + 1", 4, 19);
+
+    // Without a request the same call has nothing to report.
+    let source = "//@version=6\nindicator(\"Chart length\")\nn = input.int(10, \"N\")\ne = ta.ema(close, n + 1)\nplot(e)\n";
+    let (_, diagnostics) = check(source);
+    assert!(w0010_warnings(&diagnostics).is_empty(), "{diagnostics:?}");
+}
+
+#[test]
+fn a_series_helper_parameter_keeps_the_fixed_ema_length_and_warns_w0010() {
+    // A `series int` parameter is not a `simple int`, so a calculated
+    // argument cannot become a run-time `ta.ema` length there. The call keeps
+    // compiling with the value the argument has at compile time.
+    let source = "//@version=6\nindicator(\"Series parameter\")\nn = input.int(10, \"N\")\nf(series int len) => ta.ema(close, len)\nplot(f(n + 1))\nplot(f(n + 1))\nplot(f(n * 2))\n";
+    let (dump, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    assert!(!dump.contains("TaCallDynamic ta.ema"), "{dump}");
+    // One warning for each value: the second `f(n + 1)` adds nothing.
+    let warnings = w0010_warnings(&diagnostics);
+    assert_eq!(warnings.len(), 2, "{diagnostics:?}");
+    assert!(warnings[0].message.ends_with("(11)"), "{diagnostics:?}");
+    assert!(warnings[1].message.ends_with("(20)"), "{diagnostics:?}");
+    for warning in &warnings {
+        assert!(
+            warning.message.starts_with("`ta.ema` argument `length`"),
+            "{diagnostics:?}"
+        );
+        assert_diagnostic_source(source, warning, "len", 4, 36);
+    }
+
+    // A literal or a direct input through the same parameter has one meaning.
+    for call in ["f(6)", "f(n)"] {
+        let source = format!(
+            "//@version=6\nindicator(\"Series parameter\")\nn = input.int(10, \"N\")\nf(series int len) => ta.ema(close, len)\nplot({call})\n"
+        );
+        let (_, diagnostics) = check(&source);
+        assert!(!has_errors(&diagnostics), "{call}: {diagnostics:?}");
+        assert!(
+            w0010_warnings(&diagnostics).is_empty(),
+            "{call}: {diagnostics:?}"
+        );
+    }
+
+    // A parameter that varies by bar still is not a length.
+    let source = "//@version=6\nindicator(\"Series parameter\")\nf(series int len) => ta.ema(close, len)\nplot(f(bar_index))\n";
+    let (_, diagnostics) = check(source);
+    assert!(
+        error_codes(&diagnostics).contains(&"E0219"),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn a_rejected_request_does_not_report_the_length_it_would_have_kept() {
+    // The expression lowers as far as the `ta.ema` call, then the request is
+    // rejected: no request keeps that length, so nothing is reported for it.
+    for (request, code) in [
+        (
+            "request.security(syminfo.tickerid, \"60\", ta.ema(close, n + 1) + str.length(syminfo.ticker) * 0)",
+            "E0244",
+        ),
+        (
+            "array.size(request.security_lower_tf(syminfo.tickerid, \"1\", ta.ema(close, n + 1)))",
+            "E0246",
+        ),
+    ] {
+        let source = format!(
+            "//@version=6\nindicator(\"Rejected request\")\nn = input.int(14, \"N\")\nplot({request})\n"
+        );
+        let (_, diagnostics) = check(&source);
+        assert!(
+            error_codes(&diagnostics).contains(&code),
+            "{request}: {diagnostics:?}"
+        );
+        assert!(
+            w0010_warnings(&diagnostics).is_empty(),
+            "{request}: {diagnostics:?}"
+        );
+    }
+}
+
+#[test]
+fn a_calculated_ema_length_that_the_defaults_put_out_of_range_is_e0219() {
+    // The same rule as a direct input whose default is out of range, on the
+    // chart and inside a request.
+    for (call, reason) in [
+        ("ta.ema(close, n - 20)", "must be at least 1, found -10"),
+        (
+            "ta.ema(close, n * 10001)",
+            "must be at most 100000, found 100010",
+        ),
+        (
+            "request.security(syminfo.tickerid, \"D\", ta.ema(close, n - 20))",
+            "must be at least 1, found -10",
+        ),
+    ] {
+        let source = format!(
+            "//@version=6\nindicator(\"Out of range\")\nn = input.int(10, \"N\")\nplot({call})\n"
+        );
+        let (_, diagnostics) = check(&source);
+        let errors: Vec<_> = diagnostics.iter().filter(|d| d.is_error()).collect();
+        assert_eq!(errors.len(), 1, "{call}: {diagnostics:?}");
+        assert_eq!(errors[0].code.as_deref(), Some("E0219"), "{call}");
+        assert_eq!(
+            errors[0].message,
+            format!("invalid `ta.ema` argument `length`: {reason}"),
+            "{call}"
+        );
+    }
+
+    // In range for the defaults, the length is a run-time one and its range
+    // is checked when the call runs.
+    let source = "//@version=6\nindicator(\"In range\")\nn = input.int(10, \"N\")\nplot(ta.ema(close, n * 10000))\n";
+    let (dump, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    assert!(dump.contains("TaCallDynamic ta.ema"), "{dump}");
+}
+
+#[test]
+fn a_calculated_argument_through_a_helper_warns_w0010_for_its_parameter() {
+    let source = "//@version=6\nindicator(\"Pivot helper\")\nn = input.int(3, \"N\")\nf(l, r) => ta.pivothigh(high, l, r)\nplot(f(n + 1, 2))\n";
+    let (_, diagnostics) = check(source);
+    assert!(!has_errors(&diagnostics), "{diagnostics:?}");
+    let warnings = w0010_warnings(&diagnostics);
+    assert_eq!(warnings.len(), 1, "{diagnostics:?}");
+    assert_eq!(
+        warnings[0].message,
+        "`ta.pivothigh` argument `leftbars` is calculated from an input, so this call keeps the value the input defaults give (4)"
+    );
+    assert_diagnostic_source(source, warnings[0], "l", 4, 31);
+}
+
 #[test]
 fn input_string_accepts_options_list() {
     // `input.string(defval, options=[...])` — the dropdown form.

@@ -2131,6 +2131,7 @@ pub(crate) struct SlotLayout {
     history_observed: Vec<bool>,
     written_observed: Vec<bool>,
     sma: Vec<Option<SmaLayout>>,
+    ema: Vec<Option<EmaLayout>>,
 }
 
 /// Dense observation rings are independent of bar-indexed slot history.
@@ -2142,6 +2143,17 @@ pub(crate) const SMA_META_BYTES: u32 = 24;
 pub(crate) struct SmaLayout {
     pub relative_offset: u32,
     pub mask: u32,
+}
+
+/// One run-time-length EMA call site's smoother (`EMA_SIMPLE_DYNAMIC`): the
+/// running sum (f64), the current value (f64), the count of present sources
+/// (u32) and the length the site first ran with (u32, zero before then). The
+/// site keeps no source history, so this is all the state it has.
+pub(crate) const EMA_META_BYTES: u32 = 24;
+
+#[derive(Clone, Copy)]
+pub(crate) struct EmaLayout {
+    pub relative_offset: u32,
 }
 
 /// Which slot lanes and written flags a module keeps written. A slot's
@@ -2348,6 +2360,29 @@ impl SlotLayout {
                 ));
             }
         }
+        let mut ema = vec![None; rings.len()];
+        for instruction in program.functions.iter().flat_map(|function| &function.code) {
+            let CsilInstr::EmaSimpleDynamic { slot } = instruction else {
+                continue;
+            };
+            let slot = *slot as usize;
+            if ema[slot].is_some() {
+                continue;
+            }
+            ema[slot] = Some(EmaLayout {
+                relative_offset: bytes - offsets[slot],
+            });
+            bytes = bytes.checked_add(EMA_META_BYTES).ok_or_else(|| {
+                AotError::UnsupportedOpcode(
+                    "EMA smoother state exceeds the wasm32 address space".into(),
+                )
+            })?;
+            if standalone_wasm && u64::from(bytes) > MEMORY_MAX_PAGES * 65536 {
+                return Err(AotError::UnsupportedOpcode(
+                    "EMA smoother state exceeds the standalone WebAssembly memory maximum".into(),
+                ));
+            }
+        }
         let all = matches!(lanes, SlotLanes::All);
         let mut history_observed = vec![all; rings.len()];
         let mut written_observed = vec![all; rings.len()];
@@ -2411,6 +2446,7 @@ impl SlotLayout {
             history_observed,
             written_observed,
             sma,
+            ema,
         })
     }
 
@@ -2428,6 +2464,10 @@ impl SlotLayout {
 
     pub(crate) fn sma(&self, slot: u32) -> SmaLayout {
         self.sma[slot as usize].expect("SMA instruction has a planned observation ring")
+    }
+
+    pub(crate) fn ema(&self, slot: u32) -> EmaLayout {
+        self.ema[slot as usize].expect("EMA instruction has planned smoother state")
     }
 }
 
@@ -3023,6 +3063,18 @@ fn emit_run(
                 .instruction(&I::I32Add)
                 .instruction(&I::I32Const(0))
                 .instruction(&I::I32Const(SMA_META_BYTES as i32))
+                .instruction(&I::MemoryFill(0));
+        }
+    }
+    // A run-time-length EMA seeds again on every run too: a resident module
+    // must not carry one evaluation's smoother, or its length, into the next.
+    for (slot, state) in slots.ema.iter().enumerate() {
+        if let Some(state) = state {
+            f.instruction(&I::GlobalGet(globals.slot[slot]))
+                .instruction(&I::I32Const(state.relative_offset as i32))
+                .instruction(&I::I32Add)
+                .instruction(&I::I32Const(0))
+                .instruction(&I::I32Const(EMA_META_BYTES as i32))
                 .instruction(&I::MemoryFill(0));
         }
     }

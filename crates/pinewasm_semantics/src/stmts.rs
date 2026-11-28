@@ -1947,12 +1947,12 @@ impl<'r> Analyzer<'r> {
         // unchanged `var` initialized from an input is fixed for the run; a
         // later `:=` clears these stamps (see `analyze_reassign`). `varip` can
         // change intrabar, while series-qualified values can vary by bar.
-        let const_int = if is_varip || symbol_qualifier == Qualifier::Series {
+        let known_int = if is_varip || symbol_qualifier == Qualifier::Series {
             None
         } else {
-            self.ast_const_int(value).or(match &value_hir.kind {
+            self.ast_known_int(value).or(match &value_hir.kind {
                 HirExprKind::ReadInput { input } => match self.inputs[*input as usize].defval {
-                    InputValue::Int(n) => Some(n),
+                    InputValue::Int(n) => Some((n, true)),
                     _ => None,
                 },
                 _ => None,
@@ -2033,7 +2033,7 @@ impl<'r> Analyzer<'r> {
             persistent: is_var,
             varip: is_varip,
             synthetic: false,
-            const_int,
+            const_int: known_int.map(|(value, _)| value),
             decl_span: name.span,
         });
         if name.name != DISCARD_NAME {
@@ -2051,6 +2051,9 @@ impl<'r> Analyzer<'r> {
         }
         if let Some(origin) = ta_int_input {
             self.ta_int_inputs.insert(id, origin);
+        }
+        if let Some((_, true)) = known_int {
+            self.ints_from_input_defaults.insert(id);
         }
         if let Some(plot_slot) = plot_handle {
             self.plot_handles.insert(id, plot_slot);
@@ -2430,6 +2433,7 @@ impl<'r> Analyzer<'r> {
         }
         // A reassigned variable no longer carries a known compile-time value.
         symbol.const_int = None;
+        self.ints_from_input_defaults.remove(&symbol_id);
         self.ta_int_inputs.remove(&symbol_id);
         self.const_input_values.remove(&symbol_id);
         self.held_input_display_bits.remove(&symbol_id);

@@ -1134,7 +1134,27 @@ impl<'r> Analyzer<'r> {
     ///
     /// `next_ta_slot` hands out independent per-site `ta.*` state slots in the
     /// secondary context's OWN state space (never shared with `main`).
+    ///
+    /// A lowering that fails forgets the default-derived `ta.ema` lengths it
+    /// recorded (`request_default_ema_lengths`): the request that would have
+    /// kept them is rejected, or another route evaluates the expression.
     pub(crate) fn lower_htf_expr(
+        &self,
+        expr: &HirExpr,
+        next_ta_slot: &mut u32,
+        next_history_slot: &mut u32,
+    ) -> Option<HtfExpr> {
+        let recorded = self.request_default_ema_lengths.borrow().len();
+        let lowered = self.lower_htf_node(expr, next_ta_slot, next_history_slot);
+        if lowered.is_none() {
+            self.request_default_ema_lengths
+                .borrow_mut()
+                .truncate(recorded);
+        }
+        lowered
+    }
+
+    fn lower_htf_node(
         &self,
         expr: &HirExpr,
         next_ta_slot: &mut u32,
@@ -1389,6 +1409,33 @@ impl<'r> Analyzer<'r> {
                         length,
                         source: Box::new(src),
                     }
+                })
+            }
+            // An EMA length computed from inputs is a run-time length on the
+            // chart. The secondary context has none, so it keeps the length
+            // the inputs' defaults give, as it did while that length was
+            // folded at compile time. Any other run-time length is `E0244`.
+            HirExprKind::TaCallDynamic {
+                func: TaFunc::Ema,
+                slot,
+                source,
+                length: length_expr,
+            } => {
+                let default_length = *self.input_default_ema_lengths.get(slot)?;
+                let length = u32::try_from(default_length)
+                    .ok()
+                    .filter(|length| (1..=100_000).contains(length))?;
+                let src = self.lower_htf_expr(source, next_ta_slot, next_history_slot)?;
+                self.request_default_ema_lengths
+                    .borrow_mut()
+                    .push((length_expr.span, default_length));
+                let ta_slot = *next_ta_slot;
+                *next_ta_slot += 1;
+                Some(HtfExpr::Ta {
+                    func: TaFunc::Ema,
+                    ta_slot,
+                    length,
+                    source: Box::new(src),
                 })
             }
             // Other engine-backed ta.* remain E0244.

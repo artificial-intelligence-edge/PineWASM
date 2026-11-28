@@ -146,6 +146,16 @@ slots like any other. See [`language-support.md`](language-support.md#functions-
   return status 12, mapped by standalone WebAssembly to `Indicator failure: TA input length out of
   range`. Existing compiled artifacts need recompilation once with this
   compiler to acquire the binding metadata.
+
+  A `ta.ema` length computed from inputs (`n + 1`, `n * 2`, an alias of one)
+  is not an input-backed parameter. It is a run-time length
+  (`EMA_SIMPLE_DYNAMIC`): the call evaluates it when it executes, checks
+  1..=100000, and keeps one seed-then-recurse smoother for its call site, with
+  no source history. The VM and standalone WebAssembly modules run it natively
+  and agree bit for bit; a standalone module reports a length outside the
+  range with the same status 12, from the bar where the call ran, and starts
+  the next request with fresh smoothers. A chart-tier WebAssembly module uses
+  the VM fallback for it.
 - **`ta.*` call-site state: one hidden slot per call site.** Every
   syntactic `ta.change(...)`/`ta.sma(...)` call site owns its own hidden,
   non-persistent slot (compiled exactly like the materialized-history slots

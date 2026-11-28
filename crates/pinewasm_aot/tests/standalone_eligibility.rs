@@ -52,8 +52,8 @@ const EMISSION_REFUSALS: &[(&str, &str, &str, &str)] = &[];
 /// here every program is built both ways.
 const PINNED_COUNTS: &[(&str, &str, usize, usize)] = &[
     // (corpus, build, programs, accepted)
-    ("matrix", "strategy", 8181, 7835),
-    ("matrix", "indicator", 8181, 7835),
+    ("matrix", "strategy", 8181, 7839),
+    ("matrix", "indicator", 8181, 7839),
     ("fixtures", "strategy", 51, 12),
     ("fixtures", "indicator", 51, 34),
     ("fixtures", "strategy+slice", 51, 12),

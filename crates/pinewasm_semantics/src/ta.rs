@@ -2,6 +2,7 @@
 //! validation, the `ta.vwap` overload family, and lowering to engine-backed
 //! TA state slots.
 
+use crate::registry::TA_LENGTH_RANGE;
 use crate::*;
 
 enum TaLengthArg {
@@ -26,6 +27,65 @@ impl<'r> Analyzer<'r> {
                 .get(&self.lookup_variable(&name.name)?)
                 .copied(),
             _ => None,
+        }
+    }
+
+    /// Whether a length expression reads a name declared `series`. Such a
+    /// length can still be known at compile time (a helper parameter bound to
+    /// a constant argument), but it is not a `simple int`.
+    fn ast_reads_series_name(&self, expr: &ast::Expr) -> bool {
+        match expr {
+            ast::Expr::Group { inner, .. } => self.ast_reads_series_name(inner),
+            ast::Expr::Unary { operand, .. } => self.ast_reads_series_name(operand),
+            ast::Expr::Binary { lhs, rhs, .. } => {
+                self.ast_reads_series_name(lhs) || self.ast_reads_series_name(rhs)
+            }
+            ast::Expr::Ident(name) => self.lookup_variable(&name.name).is_some_and(|symbol| {
+                self.symbols[symbol.0 as usize].qualifier > Qualifier::Simple
+            }),
+            _ => false,
+        }
+    }
+
+    /// `W0010`: a compile-time argument is calculated from an input, so the
+    /// call keeps the value the input defaults give. One warning for each
+    /// argument and value: every call of an inlined helper analyzes its body
+    /// again.
+    fn warn_fixed_at_input_default(
+        &mut self,
+        func_name: &str,
+        param_name: &str,
+        value: i64,
+        span: Span,
+    ) {
+        if !self.input_default_warnings.insert((span, value)) {
+            return;
+        }
+        self.warning(
+            codes::W0010,
+            format!(
+                "`{func_name}` argument `{param_name}` is calculated from an input, so this call keeps the value the input defaults give ({value})"
+            ),
+            span,
+            "a selected input value does not change this argument; pass the input itself to follow it",
+        );
+    }
+
+    /// Report each `ta.ema` length that a `request.*()` expression keeps at
+    /// the value the input defaults give (`W0010`).
+    pub(crate) fn report_request_default_lengths(&mut self) {
+        let mut sites = std::mem::take(&mut *self.request_default_ema_lengths.borrow_mut());
+        sites.sort_by_key(|(span, value)| (span.source, span.start, span.end, *value));
+        sites.dedup();
+        for (span, value) in sites {
+            self.warning(
+                codes::W0010,
+                format!(
+                    "`ta.ema` argument `length` is calculated from an input, so inside a `request.*()` call it keeps the value the input defaults give ({value})"
+                ),
+                span,
+                "outside the request this length follows the selected input",
+            );
         }
     }
 
@@ -300,6 +360,16 @@ impl<'r> Analyzer<'r> {
                             "length is too large",
                         )
                     } else {
+                        if self.ast_ta_input(arg).is_none()
+                            && matches!(self.ast_known_int(other), Some((_, true)))
+                        {
+                            self.warn_fixed_at_input_default(
+                                func.name,
+                                param.name,
+                                value,
+                                arg.span(),
+                            );
+                        }
                         Some(TaLengthArg::Fixed(value as u32, None))
                     };
                 }
@@ -389,7 +459,21 @@ impl<'r> Analyzer<'r> {
         }
         if ta == TaFunc::Ema && args.len() == 2 {
             let length = &args[1];
-            if self.ast_const_int(length).is_none() && self.ast_ta_input(length).is_none() {
+            // An input default can determine a length at compile time even
+            // when the selected input changes that length at runtime. Such a
+            // length is a run-time one, with two exceptions that keep the
+            // fixed lowering: a length that reads a `series` name is not a
+            // `simple int`, and a length that the defaults put out of range
+            // is the same `E0219` as a direct input with that default.
+            let fixed = match self.ast_known_int(length) {
+                Some((value, uses_input_default)) => {
+                    !uses_input_default
+                        || self.ast_reads_series_name(length)
+                        || !(TA_LENGTH_RANGE.0..=TA_LENGTH_RANGE.1).contains(&value)
+                }
+                None => false,
+            };
+            if self.ast_ta_input(length).is_none() && !fixed {
                 return self.analyze_simple_length_ema(func, args, span);
             }
         }
@@ -810,6 +894,9 @@ impl<'r> Analyzer<'r> {
         }
         self.warn_if_not_executed_every_bar("`ta.ema` call", "this call's series state", span);
         let slot = self.allocate_synthetic_slot(Type::Float, span);
+        if let Some((default_length, true)) = self.ast_known_int(&args[1]) {
+            self.input_default_ema_lengths.insert(slot, default_length);
+        }
         HirExpr {
             kind: HirExprKind::TaCallDynamic {
                 func: TaFunc::Ema,
@@ -1534,6 +1621,7 @@ impl<'r> Analyzer<'r> {
                 Some(value)
             }
         };
+        let mut uses_input_default = false;
         let (value, binding) = match literal {
             ast::Expr::Int { value, .. } => (apply_sign(*value, negated), None),
             ast::Expr::Float { .. } => {
@@ -1571,13 +1659,23 @@ impl<'r> Analyzer<'r> {
                         .ast_const_int(other)
                         .and_then(|v| apply_sign(v, negated)),
                 };
+                // No binding reaches this argument, so a value the input
+                // defaults gave is the value of every run.
+                uses_input_default = bind_input
+                    && binding.is_none()
+                    && matches!(self.ast_known_int(other), Some((_, true)));
                 (value, binding)
             }
         };
         let error = match value {
             Some(v) if v < min => format!("must be at least {min}, found {v}"),
             Some(v) if v > max => format!("must be at most {max}, found {v}"),
-            Some(v) => return Some((v, binding)),
+            Some(v) => {
+                if uses_input_default {
+                    self.warn_fixed_at_input_default(func_name, param_name, v, arg.span());
+                }
+                return Some((v, binding));
+            }
             None if matches!(literal, ast::Expr::Int { .. }) => format!("must be at least {min}"),
             None => "must be an int literal".to_string(),
         };

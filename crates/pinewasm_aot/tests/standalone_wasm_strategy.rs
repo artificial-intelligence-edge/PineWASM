@@ -712,6 +712,106 @@ fn aot_posture_matches_the_interpreter_position_sign_bar_for_bar() {
     );
 }
 
+/// Both EMA lengths are computed from inputs, so each is a run-time length
+/// (`EMA_SIMPLE_DYNAMIC`) rather than an engine parameter.
+const COMPUTED_EMA_CROSSOVER: &str = concat!(
+    "strategy(\"Computed EMA crossover\", initial_capital = 10000)\n",
+    "fastLen = input.int(4, \"Fast EMA\", minval = 1, maxval = 200)\n",
+    "slowLen = input.int(9, \"Slow EMA\", minval = 1, maxval = 400)\n",
+    "fast = ta.ema(close, fastLen + 1)\n",
+    "slow = ta.ema(close, slowLen * 2)\n",
+    "if fast > slow\n",
+    "    strategy.entry(\"L\", strategy.long)\n",
+    "if fast < slow\n",
+    "    strategy.close(\"L\")\n",
+    "plot(close)\n",
+);
+
+/// A strategy whose EMA lengths are computed from its inputs compiles to a
+/// standalone module, and those inputs are parameters a host can vary. For
+/// every selection the module answers exactly as its twin does, the same
+/// strategy with each length read from an input directly, when the twin is
+/// given the computed lengths. At the defaults it also holds the position
+/// the interpreter holds on every bar. One resident instance takes all the
+/// selections, so nothing may carry over between them.
+#[test]
+fn a_strategy_with_computed_ema_lengths_follows_the_selected_inputs() {
+    let bars = synthetic_bars();
+    let data = market_data(&bars);
+    let program = compile_csil(COMPUTED_EMA_CROSSOVER);
+    assert_eq!(
+        program
+            .main()
+            .code
+            .iter()
+            .filter(|instruction| matches!(
+                instruction,
+                pinewasm_csil::CsilInstr::EmaSimpleDynamic { .. }
+            ))
+            .count(),
+        2,
+        "both lengths are run-time ones"
+    );
+    let direct_source = COMPUTED_EMA_CROSSOVER
+        .replace("fastLen + 1", "fastLen")
+        .replace("slowLen * 2", "slowLen");
+    let computed_wasm = compile_strategy_sliced(COMPUTED_EMA_CROSSOVER);
+    pinewasm_aot::audit_standalone_wasm(&computed_wasm)
+        .expect("the emitted bytes pass the standalone WebAssembly audit");
+    let direct_wasm = compile_strategy_sliced(&direct_source);
+    let request = |fast: i64, slow: i64| {
+        wire(&bars).replacen(
+            "\"params\":{}",
+            &format!("\"params\":{{\"fast_ema\":{fast},\"slow_ema\":{slow}}}"),
+            1,
+        )
+    };
+    let mut computed = StandaloneWasm::new(&computed_wasm);
+    let mut direct = StandaloneWasm::new(&direct_wasm);
+
+    let at_defaults = computed
+        .evaluate(&wire(&bars))
+        .expect("the defaults evaluate");
+    let signals = posture_signals(&at_defaults, &bars, bars.len());
+    assert!(!signals.is_empty(), "the feed must produce trades");
+    assert_eq!(
+        posture_lane(&signals, &bars),
+        interpreter_posture(COMPUTED_EMA_CROSSOVER, &data),
+        "the default lengths hold the interpreter's position on every bar"
+    );
+
+    let mut outputs = Vec::new();
+    for (fast, slow) in [(4, 9), (2, 5), (11, 30), (4, 9), (1, 1)] {
+        let got = computed
+            .evaluate(&request(fast, slow))
+            .unwrap_or_else(|e| panic!("fast={fast}, slow={slow}: {e}"));
+        let expected = direct
+            .evaluate(&request(fast + 1, slow * 2))
+            .unwrap_or_else(|e| panic!("twin, fast={fast}, slow={slow}: {e}"));
+        assert_eq!(
+            String::from_utf8_lossy(&got),
+            String::from_utf8_lossy(&expected),
+            "fast={fast}, slow={slow}"
+        );
+        outputs.push(got);
+    }
+    assert_eq!(outputs[0], at_defaults, "the defaults, selected by name");
+    assert_eq!(outputs[0], outputs[3], "the repeated selection");
+    assert_ne!(outputs[0], outputs[1], "the lengths must follow the inputs");
+    assert_ne!(outputs[0], outputs[2], "the lengths must follow the inputs");
+
+    // A length that leaves the legal range is an indicator failure, and the
+    // instance stays usable.
+    let error = computed
+        .evaluate(&request(-1, 9))
+        .expect_err("a zero EMA length must stop the run");
+    assert_eq!(error, "Indicator failure: TA input length out of range");
+    assert_eq!(
+        computed.evaluate(&wire(&bars)).expect("recovers"),
+        at_defaults
+    );
+}
+
 #[test]
 fn a_strategy_that_compiled_whole_keeps_its_bytes() {
     // The slice and the native heap are a second attempt, made only for a

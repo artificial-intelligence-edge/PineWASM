@@ -2028,9 +2028,26 @@ Shared rules:
   `InvalidTaLength`. Dynamic SMA history retains up to the maximum legal
   window length, while a fixed window retains its selected capacity.
   Native WebAssembly supports the literal/direct-input route; dynamic-length
-  routes use the hosted VM. `ta.change` retains its fixed-length restrictions
-  and defaults to length 1. Wrong argument counts are `E0204`, and
-  non-numeric sources are `E0205`. See compatibility note 14.
+  routes use the hosted VM. `ta.ema` takes any `simple int` length: a literal
+  or a direct input selects an engine parameter, and an expression computed
+  from inputs (`n + 1`, `n * 2`, an alias or helper parameter that holds one),
+  like any other `simple int` expression, is evaluated when the call runs
+  (`EMA_SIMPLE_DYNAMIC`), so it follows the selected inputs. The interpreter
+  and standalone WebAssembly modules run that route natively; a chart-tier
+  WebAssembly module uses the hosted VM. A length that the defaults put out
+  of range is `E0219`, as it is for a direct input with that default. Three
+  places still keep the length that the inputs' defaults give, and each one
+  warns `W0010`: arithmetic over an input in every function other than
+  `ta.ema` (`ta.sma(close, n + 1)`, `ta.rsi(close, n * 2)`,
+  `ta.highest(high, n + 2)`, `math.sum(close, n - 1)`), including the
+  functions that take a run-time length from a series expression; a
+  calculated `ta.ema` length inside a `request.*()` expression (the secondary
+  context has no run-time lengths, so the same call follows the input on the
+  chart and not in the request); and a calculated `ta.ema` length that reads
+  a `series` name, such as a `series int` helper parameter. Pass the input
+  directly to keep such a length adjustable. `ta.change` retains its
+  fixed-length restrictions and defaults to length 1. Wrong argument counts
+  are `E0204`, and non-numeric sources are `E0205`. See compatibility note 14.
 - **One hidden slot per call site.** Each syntactic `ta.*` call site owns
   one hidden, non-persistent series slot (`%h0`, `%h1`, ... — the same
   machinery as materialized history): when the site executes, it stores the
@@ -2757,6 +2774,7 @@ assignment.
 | W0007 | warning | More warnings than a compile reports. The first 1,000 are listed and this one, after them, says that the rest were left out. It has no label |
 | W0008 | warning | A stateful call is guarded by the lazily evaluated right-hand side of `and` or `or`, so some bars can skip it and its history can drift. Evaluate the call once before the boolean expression and reference its result. |
 | W0009 | warning | A stateful call appears in a ternary branch. Only the selected arm runs, so the call's history can advance unevenly; evaluate it before the conditional and select its saved result. |
+| W0010 | warning | A compile-time argument of a stateful call, such as a window length, is calculated from an input (`ta.sma(close, n + 1)`). The call keeps the value that the input defaults give, so a selected input value does not change it. A direct input (`ta.sma(close, n)`) follows the selected value, and so does a calculated `ta.ema` length on the chart; inside a `request.*()` expression, or where it reads a `series` name such as a `series int` helper parameter, a calculated `ta.ema` length is kept and reported too. Reported once for each argument and value, and for a request only when the script has no error. |
 
 Every code is defined once as a constant in `pinewasm_span::codes` (with its
 canonical meaning as the doc comment); emission sites reference the constants,

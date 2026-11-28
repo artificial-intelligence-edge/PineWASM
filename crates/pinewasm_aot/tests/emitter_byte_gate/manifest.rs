@@ -3,22 +3,22 @@
 //! `EMITTER_BYTE_GATE_BLESS=1 cargo test -p pinewasm_aot --test emitter_byte_gate`
 
 pub const INVENTORY: &str = r"# Programs with at least one natively lowered module (a `native` chart module or a
-# standalone module): 57 of 61 fixtures, 7835 of 8181 matrix cells.
+# standalone module): 57 of 61 fixtures, 7839 of 8181 matrix cells.
 # Columns: <variant><TAB><fixtures containing it><TAB><matrix cells containing it>.
-[CsilInstr] 80 variants, 65 exercised, 15 never exercised
-PushNa	19	938
+[CsilInstr] 80 variants, 66 exercised, 14 never exercised
+PushNa	19	940
 PushBool	9	177
-PushI64	34	7835
-PushF64	31	6582
+PushI64	34	7839
+PushF64	31	6586
 PushStr	12	0
-PushColor	55	7835
+PushColor	55	7839
 Dup	6	73
 Pop	12	0
-ReadBuiltin	47	4886
-ReadUserSlot	43	6731
+ReadBuiltin	47	4890
+ReadUserSlot	43	6735
 ReadBuiltinDynamic	1	38
 ReadUserSlotDynamic	1	0
-StoreUserSlotCurrent	45	6764
+StoreUserSlotCurrent	45	6768
 ReadInput	4	2003
 ReadSecurity	2	0
 ReadSecurityExpr	1	0
@@ -33,11 +33,11 @@ WindowMean	8	88
 WindowMeanDynamic	0	0
 WindowExtremumDynamic	0	0
 WindowStatisticDynamic	0	0
-EmaSimpleDynamic	0	0
+EmaSimpleDynamic	0	4
 CallPure	14	5063
 CallCollection	12	493
 CallTa	8	430
-IntAdd	18	770
+IntAdd	18	772
 IntSub	5	60
 IntMul	2	297
 IntDiv	0	0
@@ -50,10 +50,10 @@ F64Mul	11	1985
 F64Div	5	1911
 F64Rem	1	38
 F64Neg	7	121
-IntToF64	32	7835
+IntToF64	32	7839
 StrConcat	2	0
-Select	21	7835
-CmpGt	13	7325
+Select	21	7839
+CmpGt	13	7329
 CmpGe	6	384
 CmpLt	5	78
 CmpLe	5	384
@@ -67,7 +67,7 @@ JumpIfFalse	20	1423
 JumpIfExact	6	73
 JumpIfSlotWritten	14	1469
 PlotF64	2	0
-PlotStyledF64	55	7835
+PlotStyledF64	55	7839
 VisualColor	0	0
 FillColor	0	0
 RuntimeError	0	0
@@ -85,8 +85,8 @@ Log	2	0
 Alert	1	0
 AlertCondition	1	0
 Order	3	0
-Return	57	7835
-[CsilInstr never exercised] ReadPivotLevels ReadTimeTf FootprintRowByPrice WindowMeanDynamic WindowExtremumDynamic WindowStatisticDynamic EmaSimpleDynamic IntDiv VisualColor FillColor RuntimeError ReadDrawingsAll SetCell ClearCells MergeCells
+Return	57	7839
+[CsilInstr never exercised] ReadPivotLevels ReadTimeTf FootprintRowByPrice WindowMeanDynamic WindowExtremumDynamic WindowStatisticDynamic IntDiv VisualColor FillColor RuntimeError ReadDrawingsAll SetCell ClearCells MergeCells
 [PureFunc] 73 variants, 46 exercised, 27 never exercised
 Na	5	78
 Nz	2	516
@@ -9435,12 +9435,12 @@ strategy	refused:UnsupportedOpcode
 indicator	refused:UnsupportedOpcode
 P	matrix:int.function|ta.ema(close,v)|float
 chart	hosted:UnsupportedOpcode	63e3f4bbb39d	2	c250edd8f3d5
-strategy	refused:UnsupportedOpcode
-indicator	refused:UnsupportedOpcode
+strategy	ok	d1f12ec9dd6b	163	1cee155b274a
+indicator	ok	6ab9158d41cd	163	0538f8f67bc1
 P	matrix:int.function|ta.ema(close,v)|direct
 chart	hosted:UnsupportedOpcode	63e3f4bbb39d	2	c250edd8f3d5
-strategy	refused:UnsupportedOpcode
-indicator	refused:UnsupportedOpcode
+strategy	ok	9c411c6874e3	163	ec4c4dde7292
+indicator	ok	f2f8dc7835af	163	f5660138cb63
 P	matrix:int.function|close[v]|float
 chart	native	8ebe1a8f4fa9	6	a44e5ccbfc41
 strategy	ok	80bc8d596c54	163	276e60ad89ab
@@ -14051,12 +14051,12 @@ strategy	refused:UnsupportedOpcode
 indicator	refused:UnsupportedOpcode
 P	matrix:int.na|ta.ema(close,v)|float
 chart	hosted:UnsupportedOpcode	63e3f4bbb39d	2	c250edd8f3d5
-strategy	refused:UnsupportedOpcode
-indicator	refused:UnsupportedOpcode
+strategy	ok	53ad2c37af03	163	79a8fe9f6f45
+indicator	ok	1eb4e63b22af	163	1f68c7cc3bb4
 P	matrix:int.na|ta.ema(close,v)|direct
 chart	hosted:UnsupportedOpcode	63e3f4bbb39d	2	c250edd8f3d5
-strategy	refused:UnsupportedOpcode
-indicator	refused:UnsupportedOpcode
+strategy	ok	a0d1d1a81f9f	163	a9d7de997b45
+indicator	ok	dec2393fda44	163	6b719916fb2d
 P	matrix:int.na|close[v]|float
 chart	native	5a6073f386fd	6	ea5306ee0ec2
 strategy	ok	a3867015835f	163	7f94bc4711a0

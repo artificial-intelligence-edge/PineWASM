@@ -100,6 +100,7 @@ fn analyze_into(
 ) -> AnalysisResult {
     let mut analyzer = Analyzer::new(registry, libs);
     analyzer.diagnostics = diagnostics;
+    let before_analysis = analyzer.diagnostics.mark();
     analyzer.seed_drawing_types();
     analyzer.seed_footprint_types();
     // After seeding (so built-in object receivers such as `line` resolve) and
@@ -119,6 +120,11 @@ fn analyze_into(
         body = prefixed;
     }
     analyzer.finalize_temporal_fixedness(&mut body);
+    // A script with an error may hold a request that was rejected after its
+    // expression lowered, so only a clean analysis says what its requests keep.
+    if !analyzer.diagnostics.errors_since(before_analysis) {
+        analyzer.report_request_default_lengths();
+    }
     analyzer.finalize_automatic_colors(&body);
     analyzer.finalize_arrow_static_colors(&body);
     analyzer.finalize_arrow_runtime_colorers(&body);
@@ -241,6 +247,19 @@ struct Analyzer<'r> {
     /// arguments must be able to see through aliases without weakening the
     /// qualifier requirement to input/simple/series.
     const_input_values: HashMap<SymbolId, InputValue>,
+    /// Symbols whose cached integer value depends on an input's default.
+    ints_from_input_defaults: HashSet<SymbolId>,
+    /// Per run-time `ta.ema` call site whose length is computed from inputs:
+    /// the length those inputs' defaults give. A `request.security` compound
+    /// has no run-time lengths, so its secondary context keeps this value.
+    input_default_ema_lengths: HashMap<SeriesSlot, i64>,
+    /// `ta.ema` length arguments that a `request.*()` expression lowered with
+    /// the length the input defaults give. Lowering can visit one site more
+    /// than once, so each is reported once (`W0010`) when analysis ends.
+    request_default_ema_lengths: std::cell::RefCell<Vec<(Span, i64)>>,
+    /// Arguments that already carry a `W0010`. An inlined helper is analyzed
+    /// once per call, and each call would repeat the same warning.
+    input_default_warnings: HashSet<(Span, i64)>,
     /// Input-display verdict (`input_display_bits`) of the initializer of a
     /// const `plot_display` alias. The folded set alone cannot tell
     /// `display.all - display.data_window - display.status_line` (valid for
@@ -890,6 +909,10 @@ impl<'r> Analyzer<'r> {
             input_color_property_transparencies: HashMap::new(),
             const_input_property_transparencies: HashMap::new(),
             const_input_values: HashMap::new(),
+            ints_from_input_defaults: HashSet::new(),
+            input_default_ema_lengths: HashMap::new(),
+            request_default_ema_lengths: std::cell::RefCell::new(Vec::new()),
+            input_default_warnings: HashSet::new(),
             held_input_display_bits: HashMap::new(),
             default_display_masks: HashMap::new(),
             display_set_ops: HashMap::new(),

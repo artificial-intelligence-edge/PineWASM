@@ -1474,34 +1474,44 @@ impl<'r> Analyzer<'r> {
     /// function parameter bound to a literal argument). `None` for anything
     /// else; this is deliberately not a general constant folder.
     pub(crate) fn ast_const_int(&self, expr: &ast::Expr) -> Option<i64> {
+        self.ast_known_int(expr).map(|(value, _)| value)
+    }
+
+    /// The statically known integer and whether it uses a Pine input's default.
+    pub(crate) fn ast_known_int(&self, expr: &ast::Expr) -> Option<(i64, bool)> {
         match expr {
-            ast::Expr::Group { inner, .. } => self.ast_const_int(inner),
+            ast::Expr::Group { inner, .. } => self.ast_known_int(inner),
             ast::Expr::Unary {
                 op: ast::UnaryOp::Neg,
                 operand,
                 ..
-            } => self.ast_const_int(operand).and_then(i64::checked_neg),
+            } => {
+                let (value, uses_input_default) = self.ast_known_int(operand)?;
+                Some((value.checked_neg()?, uses_input_default))
+            }
             ast::Expr::Unary {
                 op: ast::UnaryOp::Pos,
                 operand,
                 ..
-            } => self.ast_const_int(operand),
+            } => self.ast_known_int(operand),
             ast::Expr::Binary { op, lhs, rhs, .. } => {
-                let lhs = self.ast_const_int(lhs)?;
-                let rhs = self.ast_const_int(rhs)?;
-                match op {
+                let (lhs, lhs_uses_input_default) = self.ast_known_int(lhs)?;
+                let (rhs, rhs_uses_input_default) = self.ast_known_int(rhs)?;
+                let value = match op {
                     ast::BinaryOp::Add => lhs.checked_add(rhs),
                     ast::BinaryOp::Sub => lhs.checked_sub(rhs),
                     ast::BinaryOp::Mul => lhs.checked_mul(rhs),
                     ast::BinaryOp::Rem => lhs.checked_rem(rhs),
                     // Int division can retain a fractional runtime value.
                     _ => None,
-                }
+                }?;
+                Some((value, lhs_uses_input_default || rhs_uses_input_default))
             }
-            ast::Expr::Int { value, .. } => Some(*value),
+            ast::Expr::Int { value, .. } => Some((*value, false)),
             ast::Expr::Ident(ident) => {
                 let id = self.lookup_variable(&ident.name)?;
-                self.symbols[id.0 as usize].const_int
+                let value = self.symbols[id.0 as usize].const_int?;
+                Some((value, self.ints_from_input_defaults.contains(&id)))
             }
             _ => None,
         }
@@ -1629,7 +1639,7 @@ impl<'r> Analyzer<'r> {
             let mut value = self.analyze_expr_expecting(arg_expr, declared_type.as_ref());
             // Facts read from the source expression must resolve its names in
             // the same scope as its value did.
-            let arg_const_int = self.ast_const_int(arg_expr);
+            let arg_known_int = self.ast_known_int(arg_expr);
             let arg_ta_input = self.ast_ta_input(arg_expr);
             if let Some(caller_scopes) = caller_scopes {
                 self.leave_definition_scope(caller_scopes);
@@ -1754,7 +1764,10 @@ impl<'r> Analyzer<'r> {
             // literal-bound parameter) stamps its value on the temp, so
             // literal-required positions inside the body — `ta.*` engine
             // lengths — see through the inlining.
-            self.symbols[temp_id.0 as usize].const_int = arg_const_int;
+            self.symbols[temp_id.0 as usize].const_int = arg_known_int.map(|(value, _)| value);
+            if let Some((_, true)) = arg_known_int {
+                self.ints_from_input_defaults.insert(temp_id);
+            }
             // Preserve typed constant values across parameter binding too;
             // request selectors and const metadata must see the same value
             // through a helper as they do through an ordinary alias.
