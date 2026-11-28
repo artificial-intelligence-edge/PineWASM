@@ -6,8 +6,15 @@ interface, market-data client, broker connection, or artifact store.
 
 ## Install
 
-PineWASM uses the same package name whether it comes from a local tarball or a
-registry. To build a tarball from a trusted source checkout, run:
+Install [PineWASM from npm](https://www.npmjs.com/package/@aiedge/pinewasm) in your project:
+
+```sh
+npm install @aiedge/pinewasm
+```
+
+### Build from source
+
+To build a tarball from a trusted source checkout, run:
 
 ```sh
 cargo xtask wasm
@@ -19,13 +26,6 @@ project:
 
 ```sh
 npm install /absolute/path/to/aiedge-pinewasm-<version>.tgz
-```
-
-A source checkout does not establish that a registry release is available. If a
-maintainer publishes a verified release, it uses the same package name:
-
-```sh
-npm install @aiedge/pinewasm
 ```
 
 Generated package metadata and artifact notices record the source repository

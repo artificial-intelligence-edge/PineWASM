@@ -66,16 +66,19 @@ Repeating the timed runs requires a separate checkout containing the measured Pi
 Open [AI Edge Studio][studio] to load a sample and edit Pine Script in your browser without signing in.
 A free account lets you run one compatible browser optimization study at a time.
 
-From the repository root, build the JavaScript package once and set up a scratch folder (needs
-[`rustup`](https://rustup.rs/) and Node.js 22.18 or newer):
+Install [PineWASM from npm](https://www.npmjs.com/package/@aiedge/pinewasm) in your project.
 
 ~~~sh
-cargo xtask wasm
-mkdir -p target/quickstart && cd target/quickstart
-npm install ../wasm-pkg yahoo-finance2
+npm install @aiedge/pinewasm
 ~~~
 
-Save this as `quickstart.mts` in that folder:
+To run the example below, use Node.js 22.18 or newer and install its market-data dependency:
+
+~~~sh
+npm install yahoo-finance2
+~~~
+
+Save this as `quickstart.mts` in your project:
 
 ~~~ts
 import { readFileSync } from "node:fs";
@@ -116,8 +119,7 @@ It downloads a year of daily SPY bars, runs a 20-day moving average over them, a
 latest five values. PineWASM itself never fetches data, so any OHLCV source works the same way;
 `yahoo-finance2` is a community library, so check Yahoo's terms before relying on it. See
 [Use PineWASM from your code](#use-pinewasm-from-your-code) for error handling, backtests,
-live data and the Rust API. If `cargo xtask wasm`
-refuses an inherited Cargo configuration, see the [release build prerequisites][docs-releasing].
+live data and the Rust API.
 
 ## Execution routes
 
@@ -237,7 +239,7 @@ PineWASM pins its choice with a test and marks the row *assumed*.
 
 | Host | Interface | How to get it |
 | --- | --- | --- |
-| JavaScript and TypeScript | `@aiedge/pinewasm` | Build locally with `cargo xtask wasm` |
+| JavaScript and TypeScript | `@aiedge/pinewasm` | [`npm install @aiedge/pinewasm`](https://www.npmjs.com/package/@aiedge/pinewasm) |
 | Rust | `pinewasm_compiler` | Use the crate from this workspace (not published to crates.io) |
 | Any WebAssembly host | Per-script `.wasm` modules | Emit them with the compiler's AOT API |
 
