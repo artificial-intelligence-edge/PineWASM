@@ -16,6 +16,10 @@
 //!    with full results in 192 MiB, and a host memory limit a run
 //!    cannot fit in surfaces as the documented allocation error rather than a
 //!    trap.
+//! 4. **Calculated lengths.** A requested `ta.ema` whose length is calculated
+//!    from an input keeps the length the input defaults give, while the same
+//!    call on the chart follows the selected input, in the module and in the
+//!    interpreter alike.
 
 use pinewasm_aot::{
     compile_standalone_wasm_program, StandaloneWasmModuleType, StandaloneWasmOptions,
@@ -49,6 +53,19 @@ const MULTI_TIMEFRAME: &str = concat!(
     "if ta.change(h1) != 0 and h1 > h4\n",
     "    strategy.entry(\"L\", strategy.long)\n",
     "if ta.change(d1) != 0 or h1 < h4\n",
+    "    strategy.close(\"L\")\n",
+);
+
+/// The hourly EMA and the chart EMA read the same calculated length.
+const REQUESTED_COMPUTED_EMA: &str = concat!(
+    "//@version=6\n",
+    "strategy(\"Requested EMA\", initial_capital=1000000, default_qty_type=strategy.fixed, default_qty_value=1)\n",
+    "n = input.int(4, \"N\", minval=1)\n",
+    "slow = request.security(syminfo.tickerid, \"60\", ta.ema(close, n + 1))\n",
+    "fast = ta.ema(close, n + 1)\n",
+    "if ta.crossover(fast, slow)\n",
+    "    strategy.entry(\"L\", strategy.long)\n",
+    "if ta.crossunder(fast, slow)\n",
     "    strategy.close(\"L\")\n",
 );
 
@@ -307,5 +324,74 @@ fn a_host_memory_limit_is_a_documented_error_not_a_trap() {
     assert!(
         matches!(evaluate(&wasm, &input, Some(64 << 20)), Outcome::Ok(_)),
         "the run fits in 64 MiB"
+    );
+}
+
+/// `(entry time, exit time)` of every interpreter trade with input 0 set to
+/// `n`.
+fn vm_trade_times_with_input(source: &str, data: &MarketData, n: i64) -> Vec<(i64, i64)> {
+    let options = RunOptions {
+        inputs: [(0, pinewasm_hir::InputValue::Int(n))]
+            .into_iter()
+            .collect(),
+        ..RunOptions::default()
+    };
+    let outcome = run(&program(source), data, &options);
+    assert!(outcome.errors.is_empty(), "n={n}: {:?}", outcome.errors);
+    outcome
+        .strategy
+        .expect("strategy outcome")
+        .trades
+        .iter()
+        .map(|trade| {
+            (
+                data.time[trade.entry_bar as usize],
+                data.time[trade.exit_bar as usize],
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_requested_computed_ema_keeps_its_default_length_while_the_chart_follows_the_input() {
+    // The twin writes the length the default gives (4 + 1) into the request.
+    let twin = REQUESTED_COMPUTED_EMA.replacen(
+        "\"60\", ta.ema(close, n + 1))",
+        "\"60\", ta.ema(close, 5))",
+        1,
+    );
+    assert_ne!(twin, REQUESTED_COMPUTED_EMA);
+    let wasm = module(REQUESTED_COMPUTED_EMA);
+    let twin_wasm = module(&twin);
+    let data = feed(MIDNIGHT, 12 * 96);
+    let mut by_selection = Vec::new();
+    for n in [4, 2, 9, 30, 4] {
+        let input =
+            request(&data).replacen("\"params\":{}", &format!("\"params\":{{\"n\":{n}}}"), 1);
+        let trades = match evaluate(&wasm, &input, None) {
+            Outcome::Ok(out) => trade_times(&out, &data),
+            other => panic!("n={n}: {other:?}"),
+        };
+        let twin_trades = match evaluate(&twin_wasm, &input, None) {
+            Outcome::Ok(out) => trade_times(&out, &data),
+            other => panic!("n={n}: twin: {other:?}"),
+        };
+        assert_eq!(
+            vm_trade_times_with_input(REQUESTED_COMPUTED_EMA, &data, n),
+            trades,
+            "n={n}: the module and the interpreter"
+        );
+        assert_eq!(twin_trades, trades, "n={n}: the request keeps length 5");
+        by_selection.push(trades);
+    }
+    assert!(
+        by_selection[0].len() > 5,
+        "{} trades",
+        by_selection[0].len()
+    );
+    assert_eq!(by_selection[0], by_selection[4], "the repeated selection");
+    assert_ne!(
+        by_selection[0], by_selection[2],
+        "the chart EMA follows the input"
     );
 }

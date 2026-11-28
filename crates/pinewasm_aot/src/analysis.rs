@@ -4605,7 +4605,24 @@ impl<'p> TypeInference<'p> {
             I::WindowMeanDynamic { .. } => return Err(unsupported(instr)),
             I::WindowExtremumDynamic { .. } => return Err(unsupported(instr)),
             I::WindowStatisticDynamic { .. } => return Err(unsupported(instr)),
-            I::EmaSimpleDynamic { .. } => return Err(unsupported(instr)),
+            I::EmaSimpleDynamic { .. } => {
+                // Only the standalone WebAssembly tier lowers a run-time EMA
+                // length (`body/ema.rs`): its status protocol can report a
+                // length that is out of range once the script is running. A
+                // chart module keeps the hosted fallback, where the
+                // interpreter raises that error itself.
+                if self.broker != StrategyBroker::Linked {
+                    return Err(unsupported(instr));
+                }
+                // (source, length), the length on top. A fractional int
+                // never reaches the length (`fraction::reads_whole_part`).
+                demand_pop!(VTy::I64);
+                demand_pop!(VTy::F64);
+                ops.push(VTy::F64);
+                ops.push(VTy::I64);
+                results.push(VTy::F64);
+                stack.push(Cell::Ty(VTy::F64));
+            }
             I::CallTa { state } => {
                 let decl = self
                     .program

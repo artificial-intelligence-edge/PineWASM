@@ -14,6 +14,7 @@
 mod aeneas_refactor_tests;
 mod chart_fuel;
 mod chart_time;
+mod ema;
 mod plan;
 mod pure;
 mod sma;
@@ -2661,7 +2662,13 @@ impl<'a, 'f> BodyEmitter<'a, 'f> {
             Csil::WindowMeanDynamic { .. } => return Err(self.unsup(instr)),
             Csil::WindowExtremumDynamic { .. } => return Err(self.unsup(instr)),
             Csil::WindowStatisticDynamic { .. } => return Err(self.unsup(instr)),
-            Csil::EmaSimpleDynamic { .. } => return Err(self.unsup(instr)),
+            Csil::EmaSimpleDynamic { slot } => {
+                // The analysis admits this only for the standalone tier.
+                if self.ctx.projection.is_none() {
+                    return Err(self.unsup(instr));
+                }
+                self.emit_ema_simple_dynamic(pc, *slot);
+            }
             Csil::CallTa { state } => {
                 self.emit_call_ta(pc, *state)?;
             }

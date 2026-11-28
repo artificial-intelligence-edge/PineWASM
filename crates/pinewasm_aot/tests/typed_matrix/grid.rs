@@ -3,10 +3,11 @@
 //! `TYPED_MATRIX_BLESS=1 cargo test -p pinewasm_aot --test typed_matrix`
 
 pub const PINNED: &str = r"# Cell lines: <source>|<consumer>|<context><TAB><outcome>. Total lines: @total<TAB><outcome><TAB><count>.
-@total	UnsupportedOpcode	346
+@total	UnsupportedOpcode	342
 @total	frontend:E0219	26
 @total	frontend:E0226	20
-@total	ok	7835
+@total	ok	7837
+@total	ok:runtime-error	2
 int.literal|identity|widen	ok
 int.literal|identity|float	ok
 int.literal|identity|direct	ok
@@ -2287,8 +2288,8 @@ int.function|ta.highest(v,3)|float	ok
 int.function|ta.highest(v,3)|direct	ok
 int.function|ta.sma(close,v)|float	UnsupportedOpcode
 int.function|ta.sma(close,v)|direct	UnsupportedOpcode
-int.function|ta.ema(close,v)|float	UnsupportedOpcode
-int.function|ta.ema(close,v)|direct	UnsupportedOpcode
+int.function|ta.ema(close,v)|float	ok
+int.function|ta.ema(close,v)|direct	ok
 int.function|close[v]|float	ok
 int.function|close[v]|direct	ok
 int.function|int(v/2)|widen	ok
@@ -3457,8 +3458,8 @@ int.na|ta.highest(v,3)|float	ok
 int.na|ta.highest(v,3)|direct	ok
 int.na|ta.sma(close,v)|float	UnsupportedOpcode
 int.na|ta.sma(close,v)|direct	UnsupportedOpcode
-int.na|ta.ema(close,v)|float	UnsupportedOpcode
-int.na|ta.ema(close,v)|direct	UnsupportedOpcode
+int.na|ta.ema(close,v)|float	ok:runtime-error
+int.na|ta.ema(close,v)|direct	ok:runtime-error
 int.na|close[v]|float	ok
 int.na|close[v]|direct	ok
 int.na|int(v/2)|widen	ok

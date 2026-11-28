@@ -537,6 +537,85 @@ plot(wma)
     }
 }
 
+/// A `ta.ema` length computed from inputs is a run-time length on the chart,
+/// so the chart series follows the selected input. The secondary context of
+/// a `request.security` compound has no run-time lengths: it keeps the length
+/// the inputs' defaults give, in every shape of the call, as it did while
+/// that length was folded at compile time, and reports each one (`W0010`).
+/// The script compiles either way.
+#[test]
+fn a_computed_ema_length_in_a_request_keeps_the_length_its_defaults_give() {
+    use pinewasm_compiler::InputValue;
+
+    let script = r#"//@version=6
+indicator("Requested computed EMA")
+n = input.int(4, minval=1)
+m = n * 2 - 3
+ema(simple int length) => ta.ema(close, length)
+e = ta.ema(close, n + 1)
+plot(request.security(syminfo.tickerid, "1D", ta.ema(close, n + 1)))
+plot(request.security(syminfo.tickerid, "1D", ta.ema(close, m)))
+plot(request.security(syminfo.tickerid, "1D", ema(n + 1)))
+plot(request.security(syminfo.tickerid, "1D", e))
+plot(request.security(syminfo.tickerid, "1D", ta.ema(close, 5)))
+plot(e)
+plot(ta.ema(close, 5))
+plot(ta.ema(close, 8))
+"#;
+    let market = data();
+    for selected in [None, Some(7)] {
+        let mut options = RunOptions::default();
+        if let Some(n) = selected {
+            options.inputs.insert(0, InputValue::Int(n));
+        }
+        let result = compile_and_run_with_libraries(
+            script,
+            &[],
+            &market,
+            CompileOptions::default(),
+            &options,
+        );
+        assert!(
+            result.compile.as_ref().unwrap().success,
+            "{:?}",
+            result.diagnostics
+        );
+        assert!(
+            result.runtime_errors.is_empty(),
+            "{:?}",
+            result.runtime_errors
+        );
+        // Each of the four calculated lengths says that the request keeps it.
+        let kept: Vec<_> = result
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.code.as_deref() == Some("W0010"))
+            .collect();
+        assert_eq!(kept.len(), 4, "{:?}", result.diagnostics);
+        for warning in kept {
+            assert!(
+                warning.message.contains("inside a `request.*()` call"),
+                "{warning:?}"
+            );
+        }
+        let literal = &result.plots[4].values;
+        assert!(
+            literal.iter().any(|value| *value != Value::Na),
+            "the daily EMA must produce values"
+        );
+        for requested in &result.plots[..4] {
+            assert_eq!(&requested.values, literal, "selected: {selected:?}");
+        }
+        // On the chart the same call follows the input.
+        let on_chart = if selected.is_some() { 7 } else { 6 };
+        assert_eq!(
+            result.plots[5].values, result.plots[on_chart].values,
+            "selected: {selected:?}"
+        );
+        assert_ne!(result.plots[6].values, result.plots[7].values);
+    }
+}
+
 #[test]
 fn requested_enum_switch_runs_only_the_selected_average_on_daily_bars() {
     use pinewasm_compiler::InputValue;

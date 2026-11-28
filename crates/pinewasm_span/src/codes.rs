@@ -236,3 +236,7 @@ pub const W0008: &str = "W0008";
 /// A stateful call appears in a ternary branch; evaluate it before the
 /// conditional so that its history is the same on every bar.
 pub const W0009: &str = "W0009";
+/// A compile-time argument of a stateful call (a window length) is calculated
+/// from an input, so the call keeps the value the input defaults give and a
+/// selected input does not change it.
+pub const W0010: &str = "W0010";

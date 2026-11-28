@@ -496,6 +496,98 @@ fn simple_expression_ema_matches_input_bound_engine_across_runs() {
 }
 
 #[test]
+fn computed_ema_lengths_use_the_selected_input() {
+    let program = compile(
+        "//@version=6\nindicator(\"Computed EMA length\")\nn = input.int(3)\nresolved = n * 2\nema(simple int length) => ta.ema(close, length)\nplot(ta.ema(close, n + 1))\nplot(ta.ema(close, resolved))\nplot(ema(n * 2))\nplot(ema(4))\n",
+    );
+    let direct = compile(
+        "//@version=6\nindicator(\"Direct EMA length\")\na = input.int(4)\nb = input.int(6)\nplot(ta.ema(close, a))\nplot(ta.ema(close, b))\nplot(ta.ema(close, b))\nplot(ta.ema(close, 4))\n",
+    );
+    assert_eq!(
+        program
+            .main()
+            .code
+            .iter()
+            .filter(|instruction| matches!(
+                instruction,
+                pinewasm_csil::CsilInstr::EmaSimpleDynamic { .. }
+            ))
+            .count(),
+        3,
+        "the helper called with a literal still uses fixed-length lowering"
+    );
+    let data = data_from_close(&[1.0, 2.0, 4.0, 3.0, 8.0, 5.0, 9.0, 7.0, 8.0]);
+
+    for length in [3, 2, 4] {
+        let selected = RunOptions {
+            inputs: [(0, pinewasm_hir::InputValue::Int(length))].into(),
+            ..RunOptions::default()
+        };
+        let direct_inputs = RunOptions {
+            inputs: [
+                (0, pinewasm_hir::InputValue::Int(length + 1)),
+                (1, pinewasm_hir::InputValue::Int(length * 2)),
+            ]
+            .into(),
+            ..RunOptions::default()
+        };
+        let actual = run(&program, &data, &selected);
+        let expected = run(&direct, &data, &direct_inputs);
+        assert!(actual.errors.is_empty(), "{:?}", actual.errors);
+        assert!(expected.errors.is_empty(), "{:?}", expected.errors);
+        for (actual, expected) in actual.plots.iter().zip(&expected.plots) {
+            assert_eq!(actual.values, expected.values, "length={length}");
+        }
+    }
+}
+
+/// A length computed from inputs is checked when the call runs, with the
+/// selected inputs: a selection that gives an illegal length stops the run.
+/// Only the defaults are checked at compile time.
+#[test]
+fn a_computed_ema_length_is_checked_with_the_selected_input() {
+    // The default gives length 2. (A default that gives a length out of
+    // range is a compile error, like a direct input with that default.)
+    let program = compile(
+        "//@version=6\nindicator(\"Computed EMA length\")\nn = input.int(7)\nplot(ta.ema(close, n - 5))\n",
+    );
+    let data = data_from_close(&[1.0, 2.0, 4.0, 3.0]);
+    let outcome = run(&program, &data, &RunOptions::default());
+    assert!(outcome.errors.is_empty(), "{:?}", outcome.errors);
+    assert_eq!(
+        floats(&outcome.plots[0].values),
+        vec![
+            None,
+            Some(1.5),
+            Some(3.166_666_666_666_666_5),
+            Some(3.055_555_555_555_555_4)
+        ]
+    );
+
+    // A selected value that puts the length out of range stops the run.
+    let selected = RunOptions {
+        inputs: [(0, pinewasm_hir::InputValue::Int(3))].into(),
+        ..RunOptions::default()
+    };
+    let outcome = run(&program, &data, &selected);
+    assert_eq!(outcome.errors.len(), 1, "{:?}", outcome.errors);
+    assert_eq!(outcome.errors[0].kind, RuntimeErrorKind::InvalidTaLength);
+}
+
+/// Arithmetic over constants alone is still a compile-time length: nothing
+/// about it can change between runs, so it keeps the engine's fixed lowering.
+#[test]
+fn a_constant_ema_length_expression_keeps_the_fixed_lowering() {
+    let program = compile(
+        "//@version=6\nindicator(\"Constant EMA length\")\nk = 4\nplot(ta.ema(close, k + 1))\nplot(ta.ema(close, (k - 1) * 2))\n",
+    );
+    assert!(!program.main().code.iter().any(|instruction| matches!(
+        instruction,
+        pinewasm_csil::CsilInstr::EmaSimpleDynamic { .. }
+    )));
+}
+
+#[test]
 fn highest_lowest_series_lengths_follow_the_current_bar() {
     let plots = run_close(
         "//@version=6\nindicator(\"Dynamic extrema\")\nlength = bar_index < 3 ? 2 : 3\nplot(ta.highest(close, length))\nplot(ta.lowest(close, length))\n",
