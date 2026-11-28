@@ -20,7 +20,7 @@ jobs:
   publish:
     if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.id == github.event.repository.id)) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     environment: npm-production
     permissions:
       contents: read
@@ -92,11 +92,13 @@ jobs:
           registry=https://registry.npmjs.org
           npm publish ./package.tgz --ignore-scripts --provenance --access public --tag latest --registry="$registry"
           integrity="sha512-$(openssl dgst -sha512 -binary package.tgz | openssl base64 -A)"
-          for delay in 1 2 4 8 16; do
-            if [[ "$(npm view @aiedge/pinewasm@latest version --registry="$registry")" == "$VERSION" ]] &&
-               [[ "$(npm view "@aiedge/pinewasm@$VERSION" dist.integrity --registry="$registry")" == "$integrity" ]]; then
+          # npm can acknowledge publication minutes before its public registry serves it.
+          for attempt in {1..60}; do
+            if [[ "$(npm view @aiedge/pinewasm@latest version --prefer-online --registry="$registry")" == "$VERSION" ]] &&
+               [[ "$(npm view "@aiedge/pinewasm@$VERSION" dist.integrity --prefer-online --registry="$registry")" == "$integrity" ]]; then
               exit 0
             fi
-            sleep "$delay"
+            echo "Waiting for registry visibility ($attempt/60)."
+            sleep 10
           done
           exit 1
