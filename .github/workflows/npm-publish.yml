@@ -62,6 +62,26 @@ jobs:
           sha256sum --check SHA256SUMS
           tar -xOzf wasm-pkg.tar.gz ./package.json | jq -e --arg version "$version" '
             .name == "@aiedge/pinewasm" and .version == $version and .publishConfig == {"access":"public"}' >/dev/null
+          # Preserve the validated files while applying npm's package/ archive layout.
+          python3 - <<'PYTHON'
+          import tarfile
+          from pathlib import PurePosixPath
+
+          seen = set()
+          with tarfile.open("wasm-pkg.tar.gz", "r:gz") as source, tarfile.open("package.tgz", "w:gz") as target:
+              for member in source:
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise ValueError(f"unsafe package path: {path}")
+                  if member.isdir():
+                      continue
+                  if not member.isfile() or path in seen or not path.parts:
+                      raise ValueError(f"invalid package entry: {path}")
+                  seen.add(path)
+                  stream = source.extractfile(member)
+                  member.name = f"package/{path}"
+                  target.addfile(member, stream)
+          PYTHON
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Publish verified archive and check registry integrity
         if: steps.package.outputs.version != ''
@@ -70,8 +90,8 @@ jobs:
         run: |
           set -euo pipefail
           registry=https://registry.npmjs.org
-          npm publish ./wasm-pkg.tar.gz --ignore-scripts --provenance --access public --tag latest --registry="$registry"
-          integrity="sha512-$(openssl dgst -sha512 -binary wasm-pkg.tar.gz | openssl base64 -A)"
+          npm publish ./package.tgz --ignore-scripts --provenance --access public --tag latest --registry="$registry"
+          integrity="sha512-$(openssl dgst -sha512 -binary package.tgz | openssl base64 -A)"
           for delay in 1 2 4 8 16; do
             if [[ "$(npm view @aiedge/pinewasm@latest version --registry="$registry")" == "$VERSION" ]] &&
                [[ "$(npm view "@aiedge/pinewasm@$VERSION" dist.integrity --registry="$registry")" == "$integrity" ]]; then
