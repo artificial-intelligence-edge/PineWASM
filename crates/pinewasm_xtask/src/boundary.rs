@@ -20,7 +20,7 @@ const PUBLIC_PATTERNS: &[&str] = &[
     r"^\.github/ci/components\.toml$",
     r"^\.github/ci/(native_cache|test_native_cache|test_policy_preflight|test_contributor_policy_dispatch|toolchain_identity|test_toolchain_identity|install_job_gh|test_install_job_gh|emit_owned_record|test_emit_owned_record)\.py$",
     r"^docs/ci\.md$",
-    r"^\.github/workflows/(ci|runtime-safety|contributor-policy)\.yml$",
+    r"^\.github/workflows/(ci|runtime-safety|contributor-policy|npm-publish)\.yml$",
     r"^\.(gitattributes|gitignore)$",
     r"^(CODE_OF_CONDUCT|CONTRIBUTING|SECURITY)\.md$",
     // Repository instruction files. Local tool state is denied separately.
