@@ -1,0 +1,82 @@
+name: Publish compiler to npm
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful main CI run containing the verified package
+        required: true
+        type: string
+
+permissions: {}
+concurrency:
+  group: npm-production
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.repository_id == '1470159731' && github.repository == 'artificial-intelligence-edge/PineWASM' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.id == github.event.repository.id)) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: npm-production
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify main CI run and download its package
+        id: package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          api="repos/$GITHUB_REPOSITORY"
+          run=$(gh api "$api/actions/runs/$RUN_ID")
+          jq -e --arg repo "$GITHUB_REPOSITORY" '
+            .path == ".github/workflows/ci.yml" and .head_repository.full_name == $repo and
+            .head_branch == "main" and (.event == "push" or .event == "workflow_dispatch") and
+            .status == "completed" and .conclusion == "success"' <<<"$run" >/dev/null
+          sha=$(jq -r .head_sha <<<"$run")
+          attempt=$(jq -r .run_attempt <<<"$run")
+          version=$(gh api "$api/contents/crates/pinewasm_compiler/VERSION?ref=$sha" --jq .content | base64 -d)
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          latest=$(npm view @aiedge/pinewasm@latest version --registry=https://registry.npmjs.org)
+          if [[ "$version" == "$latest" ]]; then
+            echo "Version $version is already latest."
+            exit 0
+          fi
+          if [[ "$(printf '%s\n' "$version" "$latest" | sort -V | tail -1)" != "$version" ]]; then
+            echo "Skipping superseded version $version."
+            exit 0
+          fi
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name "pinewasm-wasm-pkg-$RUN_ID-$attempt-$sha"
+          sha256sum --check SHA256SUMS
+          tar -xOzf wasm-pkg.tar.gz ./package.json | jq -e --arg version "$version" '
+            .name == "@aiedge/pinewasm" and .version == $version and .publishConfig == {"access":"public"}' >/dev/null
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Publish verified archive and check registry integrity
+        if: steps.package.outputs.version != ''
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          registry=https://registry.npmjs.org
+          npm publish ./wasm-pkg.tar.gz --ignore-scripts --provenance --access public --tag latest --registry="$registry"
+          integrity="sha512-$(openssl dgst -sha512 -binary wasm-pkg.tar.gz | openssl base64 -A)"
+          for delay in 1 2 4 8 16; do
+            if [[ "$(npm view @aiedge/pinewasm@latest version --registry="$registry")" == "$VERSION" ]] &&
+               [[ "$(npm view "@aiedge/pinewasm@$VERSION" dist.integrity --registry="$registry")" == "$integrity" ]]; then
+              exit 0
+            fi
+            sleep "$delay"
+          done
+          exit 1

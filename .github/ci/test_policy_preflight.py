@@ -388,7 +388,7 @@ class RunnerTrustTests(unittest.TestCase):
         for filename in ('dependabot.yml', 'dependabot.yaml'):
             self.assertFalse((WORKFLOW.parent.parent / filename).exists(), filename)
 
-    def assert_repository_identity_guards(self, source, contributor_policy=False, main_only=False):
+    def assert_repository_identity_guards(self, source, contributor_policy=False, main_only=False, publisher=False):
         for name, job in jobs(source).items():
             fields = job_fields(job)
             if 'runs-on' not in fields:
@@ -404,6 +404,11 @@ class RunnerTrustTests(unittest.TestCase):
                 self.assertIn("github.event_name == 'push'", condition, name)
                 self.assertIn("github.event_name == 'workflow_dispatch'", condition, name)
                 self.assertNotIn('github.event.pull_request', condition, name)
+            elif publisher:
+                for guard in ("github.ref == 'refs/heads/main'", "github.event_name == 'workflow_dispatch'",
+                              "github.event_name == 'workflow_run'", "github.event.workflow_run.conclusion == 'success'",
+                              "github.event.workflow_run.head_repository.id == github.event.repository.id"):
+                    self.assertIn(guard, condition, name)
             elif not contributor_policy:
                 self.assertIn(
                     'github.event.pull_request.head.repo.id == github.event.repository.id',
@@ -416,7 +421,7 @@ class RunnerTrustTests(unittest.TestCase):
             with self.subTest(workflow=path.name):
                 self.assert_repository_identity_guards(
                     path.read_text(), contributor_policy=path.name == 'contributor-policy.yml',
-                    main_only=path.name == 'ci.yml',
+                    main_only=path.name == 'ci.yml', publisher=path.name == 'npm-publish.yml',
                 )
 
     def test_no_lane_depends_on_repository_visibility(self):
