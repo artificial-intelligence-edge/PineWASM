@@ -15,7 +15,13 @@ editing controls, visualization, and artifact persistence.
 
 ## Build and import
 
-Use the repository-owned package pipeline. It selects the pinned Rust
+Install the [public npm package](https://www.npmjs.com/package/@aiedge/pinewasm) in your project:
+
+```sh
+npm install @aiedge/pinewasm
+```
+
+To build from source, use the repository-owned package pipeline. It selects the pinned Rust
 toolchain, builds a fresh pinned `wasm-bindgen-cli`, and runs the pinned
 Binaryen optimizer:
 
@@ -30,8 +36,8 @@ v6 source migration ([migration.md](migration.md)) for hosts that offer a
 conversion when a script is rejected with `E0249`. The standard package omits
 it.
 
-The generated `@aiedge/pinewasm` ES module and `.wasm` binary land in
-`target/wasm-pkg/`:
+Local builds write the ES module and `.wasm` binary to `target/wasm-pkg/`.
+The npm package exposes the same imports:
 
 ```ts
 import init, {
